@@ -2,7 +2,7 @@
 #Operating System(s)#######################
 # Designed for: Backtrack 5 R3 (GNOME)    #
 #              [x64 & x86]                #
-# Working on: 2012-09-09                  #
+# Working on: 2012-09-14                  #
 #Author####################################
 # g0tmilk ~ http://g0tmi1k.blogspot.com   #
 #Note######################################
@@ -10,9 +10,10 @@
 # 1.) Altering root's password            #
 # 2.) Accepting firefox's addons          #
 # 3.) Nessus adding user & registering    #
-# 4.) Timezone & keyboard layout          #
-# 5.) OpenVAS adding users                #
-# 6.) VM tools installation (Optional)    #
+# 4.) OpenVAS adding users                #
+# 5.) Timezone & keyboard layout          #
+# 6.) Running update script               #
+# 7.) VM tools installation (Optional)    #
 # --------------------------------------- #
 # Some settings will only take affect...  #
 # ...when xserver is reloaded             # 
@@ -73,7 +74,6 @@ else
     command="$command artemisa uberharvest"
 fi
 apt-get -y install $command
-rm -rf /pentest/web/scanners
 
 # Install conky
 apt-get -y install conky
@@ -90,13 +90,6 @@ apt-get -y remove wicd-*
 if [ ! -e /etc/network/interfaces.bkup ]; then cp -f /etc/network/interfaces{,.bkup}; fi
 echo -e auto lo\niface lo inet loopback > /etc/network/interfaces
 service network-manager start
-
-# Install Backtrack updater
-cd /pentest/misc/
-git clone git://github.com/sickn3ss/backtrack_update.git
-cd backtrack_update/
-chmod +x backtrack_update.py 
-ln -s /pentest/misc/backtrack_update/backtrack_update.py /pentest/backtrack_update 
 
 # Install geany
 apt-get -y install geany
@@ -122,6 +115,7 @@ sed -i 's/^.*"Default editor".*/\t<Setting name="Default editor" type="string">2
 # Install nessus
 apt-get -y install nessus
 /opt/nessus/sbin/nessus-adduser #<--- Doesn't automate
+firefox http://www.tenable.com/products/nessus/nessus-plugins/register-a-homefeed
 nessus-fetch --register <key> #<--- Doesn't automate
 
 # Install tftp
@@ -130,17 +124,24 @@ apt-get -y install tftp
 # Install lynx
 apt-get -y install lynx
 
+# Install Backtrack updater
+cd /pentest/misc/
+git clone git://github.com/sickn3ss/backtrack_update.git
+cd backtrack_update/
+chmod +x backtrack_update.py 
+ln -s /pentest/misc/backtrack_update/backtrack_update.py /pentest/backtrack_update 
+./backtrack_update.py --update tools #<--- Doesn't automate
+
 # Setup OpenVAS (http://www.backtrack-linux.org/wiki/index.php/OpenVas)
 openvas-adduser  #<--- Doesn't automate
-openvas-mkcert
-openvas-nvt-sync
+openvas-mkcert #<--- Doesn't automate
 openvas-mkcert-client -n om -i
 openvasmd --rebuild
 openvasad -c 'add_user' -n openvasadmin -r root  #<--- Doesn't automate
 bash /pentest/misc/openvas/openvas-check-setup
 
 # Setup BeEF
-cd /pentest/web/beef/
+#cd /pentest/web/beef/
 bash /usr/local/bin/beef_install.sh
 
 # Setup WPScan 
@@ -202,8 +203,8 @@ if [ ! -e /usr/local/src/bootsplash-3.1.tar.bz2 ]; then wget ftp://ftp.bootsplas
 tar xvjf bootsplash-3.1.tar.bz2
 cd bootsplash-*/Utilities/
 make splash
-mogrify -density 72x72 -units PixelsPerInch /tmp/bootsplash.jpg
 convert "$image" -resize 1024x768! /tmp/bootsplash.jpg 
+mogrify -density 72x72 -units PixelsPerInch /tmp/bootsplash.jpg
 echo -e '# config file version\nversion=3\n\n# should the picture be displayed?\nstate=1\n\n# fgcolor is the text forground color.\n# bgcolor is the text background (i.e. transparent) color.\nfgcolor=7\nbgcolor=0\n\n# (tx, ty) are the (x, y) coordinates of the text window in pixels.\n# tw/th is the width/height of the text window in pixels.\ntx=80\nty=140\ntw=865\nth=560\n\n# name of the picture file (full path recommended)\njpeg=/tmp/bootsplash.jpg\nsilentjpeg=/tmp/bootsplash.jpg\n\nprogress_enable=0\noverpaintok=1' > /tmp/bootsplash.cfg
 if [ ! -e /opt/bootsplash/bootsplash.bkup ]; then cp -f /opt/bootsplash/bootsplash{,.bkup}; fi
 ./splash -s -f /tmp/bootsplash.cfg > /opt/bootsplash/bootsplash
@@ -225,8 +226,10 @@ gconftool-2 --type string --set /apps/panel/toplevels/top_panel_screen0/orientat
 gconftool-2 --type bool --set /apps/panel/toplevels/bottom_panel_screen0/expand false #Right click on bottom toolbar -> Properties -> General -> Expand: Disable
 gconftool-2 --type int --set /apps/metacity/general/num_workspaces 2 #Right click on bottom toolbar (Workspace) -> Properties -> Number of workspaces: 2
 
-# Randomize the wlan0's MAC address on startup
-if [[ `grep macchanger /etc/rc.local -q; echo $?` == 1 ]]; then sed -i 's/^exit 0/macchanger -r wlan0\n\nexit 0/' /etc/rc.local; fi 
+# Randomize the eth0 & wlan0's MAC address on startup
+if [[ `grep macchanger /etc/rc.local -q; echo $?` == 1 ]]; then sed -i 's/^exit 0/for int in eth0 wlan0; do\n\tifconfig $int down\n\t\/usr\/local\/bin\/macchanger -r $int \&\& sleep 3\n\tifconfig $int up\ndone\n\n\nexit 0/' /etc/rc.local; fi 
+#echo -e '#!/bin/bash\nfor int in eth0 wlan0; do\n\techo "Randomizing: $int"\n\tifconfig $int down\n\tmacchanger -r $int\n\tsleep 3\n\tifconfig $int up\n\techo "--------------------"\ndone\nexit 0' > /etc/init.d/macchanger
+#echo -e '#!/bin/bash\n[ "$IFACE" == "lo" ] && exit 0\nifconfig $IFACE down\nmacchanger -r $IFACE\nifconfig $IFACE up\nexit 0' > /etc/network/if-pre-up.d/macchanger
 
 # Add extra bash aliases 
 sed -i 's/#alias/alias/' /root/.bashrc
@@ -268,7 +271,7 @@ prepare-kernel-sources; cd /usr/src/linux/; cp -rf include/generated/* include/l
 
 # Change location (time & keyboard layout)
 dpkg-reconfigure tzdata #<--- Doesn't automate
-dpkg-reconfigure console-setup #<--- Doesn't automate
+#dpkg-reconfigure console-setup && fix-splash #<--- Doesn't automate
 
 # Clean up
 apt-get -y clean
