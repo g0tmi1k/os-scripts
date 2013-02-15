@@ -16,13 +16,16 @@
 # 7.) VM tools installation (Optional)    #
 # --------------------------------------- #
 # Some settings will only take affect...  #
-# ...when xserver is reloaded             # 
+# ...when xserver is reloaded             #
+# --------------------------------------- #
+# For some reason, the bottom pannel...   #
+# ...doesn't become centered              #
 # --------------------------------------- #
 # This will WIPE your...                  #
 # 1.) Firefox bookmarks                   #
 # 2.) Cosmetics                           #
 # --------------------------------------- #
-# The script wasn't designed to be...     # 
+# The script wasn't designed to be...     #
 # ...execute. Copy & paste commands       #
 ###########################################
 # Login and change default password
@@ -38,7 +41,7 @@ startx
 services ssh start
 ifconfig eth0
 
-# Run the rest on the remote computer 
+# Run the rest on the remote computer
 ssh root@<ip> # replace <ip> with the information from ifconfig
 export DISPLAY=:0.0
 ##############################(Optional)###
@@ -68,9 +71,9 @@ apt-get update && apt-get -y dist-upgrade
 
 # Make sure we are fully upgraded (http://www.backtrack-linux.org/backtrack/upgrade-from-backtrack-5-r2-to-backtrack-5-r3/ & http://redmine.backtrack-linux.org:8080/issues/817)
 command="libcrafter blueranger dbd inundator intersect mercury cutycapt trixd00r rifiuti2 netgear-telnetenable jboss-autopwn deblaze sakis3g voiphoney apache-users phrasendrescher kautilya manglefizz rainbowcrack rainbowcrack-mt lynis-audit spooftooph wifihoney twofi truecrack acccheck statsprocessor iphoneanalyzer jad javasnoop mitmproxy ewizard multimac netsniff-ng smbexec websploit dnmap johnny unix-privesc-check sslcaudit dhcpig intercepter-ng u3-pwn binwalk laudanum wifite tnscmd10g bluepot dotdotpwn subterfuge jigsaw urlcrazy creddump android-sdk apktool ded dex2jar droidbox smali termineter bbqsql htexploit smartphone-pentest-framework fern-wifi-cracker powersploit webhandler"
-if [[ `uname -m` == *x64* ]]; then 
+if [[ `uname -m` == *x64* ]]; then
     command="$command multiforcer"
-else 
+else
     command="$command artemisa uberharvest"
 fi
 apt-get -y install $command
@@ -110,6 +113,9 @@ echo -e '\n[saveactions]\nenable_autosave=false\nenable_instantsave=false\nenabl
 
 # Install filezilla
 apt-get -y install filezilla
+filezilla &
+sleep 5
+killall filezilla
 sed -i 's/^.*"Default editor".*/\t<Setting name="Default editor" type="string">2\/usr\/bin\/geany<\/Setting>/' /root/.filezilla/filezilla.xml
 
 # Install nessus
@@ -128,8 +134,8 @@ apt-get -y install lynx
 cd /pentest/misc/
 git clone git://github.com/sickn3ss/backtrack_update.git
 cd backtrack_update/
-chmod +x backtrack_update.py 
-ln -s /pentest/misc/backtrack_update/backtrack_update.py /pentest/backtrack_update 
+chmod +x backtrack_update.py
+ln -s /pentest/misc/backtrack_update/backtrack_update.py /pentest/backtrack_update
 ./backtrack_update.py --update tools #<--- Doesn't automate
 
 # Setup OpenVAS (http://www.backtrack-linux.org/wiki/index.php/OpenVas)
@@ -144,12 +150,12 @@ bash /pentest/misc/openvas/openvas-check-setup
 #cd /pentest/web/beef/
 bash /usr/local/bin/beef_install.sh
 
-# Setup WPScan 
+# Setup WPScan
 gem install --user-install nokogiri
 
 # Setup firefox and replace bookmarks
 /usr/lib/gnome-panel/gnome-panel-add --launcher=/usr/share/applications/backtrack-firefox.desktop --panel=top_panel_screen0 #Application -> Internet -> Right click: Firefox Web Browser -> Add this laucher to panel
-if [[ `grep "browser.startup.page" /root/.mozilla/firefox/*.default/prefs.js -q; echo $?` == 1 ]]; then echo 'user_pref("browser.startup.page", 0);' >> /root/.mozilla/firefox/*.default/prefs.js; else sed -i 's/^.*browser.startup.page.*/user_pref("browser.startup.page", 0);' /root/.mozilla/firefox/*.default/prefs.js; fi #Firefox -> Edit -> Preferences -> General -> When firefox starts: Show a blank page 
+if [[ `grep "browser.startup.page" /root/.mozilla/firefox/*.default/prefs.js -q; echo $?` == 1 ]]; then echo 'user_pref("browser.startup.page", 0);' >> /root/.mozilla/firefox/*.default/prefs.js; else sed -i 's/^.*browser.startup.page.*/user_pref("browser.startup.page", 0);' /root/.mozilla/firefox/*.default/prefs.js; fi #Firefox -> Edit -> Preferences -> General -> When firefox starts: Show a blank page
 if [[ `grep "privacy.donottrackheader.enabled" /root/.mozilla/firefox/*.default/prefs.js -q; echo $?` == 1 ]]; then echo 'user_pref("privacy.donottrackheader.enabled", true);' >> /root/.mozilla/firefox/*.default/prefs.js; else sed -i 's/^.*privacy.donottrackheader.enabled.*/user_pref("privacy.donottrackheader.enabled", true);' /root/.mozilla/firefox/*.default/prefs.js; fi #Privacy -> Enable: Tell websites I do not want to be tracked
 if [[ `grep " browser.showQuitWarning" /root/.mozilla/firefox/*.default/prefs.js -q; echo $?` == 1 ]]; then echo 'user_pref("browser.showQuitWarning", true);' >> /root/.mozilla/firefox/*.default/prefs.js; else sed -i 's/^.*browser.showQuitWarning.*/user_pref("browser.showQuitWarning", true);' /root/.mozilla/firefox/*.default/prefs.js; fi # Stop Ctrl + Q from quitting without warning
 mkdir -p /pentest/web/bookmarks/
@@ -193,7 +199,7 @@ echo -e "# Don't display the copyright page\nstartup_message off\n\n# tab-comple
 image="/usr/share/wallpapers/backtrack/BT5-R3-wp-grey.png"
 #identify $image
 
-# GRUB menu
+# GRUB menu (x86? only)
 convert -resize 1024x768! "$image" /usr/share/images/desktop-base/moreblue-orbit-grub.png
 update-grub2
 
@@ -203,12 +209,13 @@ if [ ! -e /usr/local/src/bootsplash-3.1.tar.bz2 ]; then wget ftp://ftp.bootsplas
 tar xvjf bootsplash-3.1.tar.bz2
 cd bootsplash-*/Utilities/
 make splash
-convert "$image" -resize 1024x768! /tmp/bootsplash.jpg 
-mogrify -density 72x72 -units PixelsPerInch /tmp/bootsplash.jpg
-echo -e '# config file version\nversion=3\n\n# should the picture be displayed?\nstate=1\n\n# fgcolor is the text forground color.\n# bgcolor is the text background (i.e. transparent) color.\nfgcolor=7\nbgcolor=0\n\n# (tx, ty) are the (x, y) coordinates of the text window in pixels.\n# tw/th is the width/height of the text window in pixels.\ntx=80\nty=140\ntw=865\nth=560\n\n# name of the picture file (full path recommended)\njpeg=/tmp/bootsplash.jpg\nsilentjpeg=/tmp/bootsplash.jpg\n\nprogress_enable=0\noverpaintok=1' > /tmp/bootsplash.cfg
+convert "$image" -resize 1024x768! /tmp/bootsplash.jpg
+mogrify -density 72x72 -units PixelsPerInch /opt/bootsplash/bootsplash.jpg
+echo -e '# config file version\nversion=3\n\n# should the picture be displayed?\nstate=1\n\n# fgcolor is the text forground color.\n# bgcolor is the text background (i.e. transparent) color.\nfgcolor=7\nbgcolor=0\n\n# (tx, ty) are the (x, y) coordinates of the text window in pixels.\n# tw/th is the width/height of the text window in pixels.\ntx=80\nty=140\ntw=865\nth=560\n\n# name of the picture file (full path recommended)\njpeg=/opt/bootsplash/bootsplash.jpg\nsilentjpeg=/opt/bootsplash/bootsplash.jpg\n\nprogress_enable=0\noverpaintok=1' > /tmp/bootsplash.cfg
 if [ ! -e /opt/bootsplash/bootsplash.bkup ]; then cp -f /opt/bootsplash/bootsplash{,.bkup}; fi
 ./splash -s -f /tmp/bootsplash.cfg > /opt/bootsplash/bootsplash
 #fix-splash
+rm -rf /tmp/bootsplash.jpg
 
 # Plymouth Bootsplash
 if [ ! -e /lib/plymouth/themes/simple/bt5_1024x768.png.bkup ]; then cp -f /lib/plymouth/themes/simple/bt5_1024x768.png{,.bkup}; fi
@@ -222,19 +229,31 @@ rm -f /root/Desktop/backtrack-install.desktop
 gconftool-2 --type string --set /desktop/gnome/background/picture_filename "$image" #Right click -> Change Desktop Background -> Theme: New Wave, Background -> Add: /usr/share/wallpapers/backtrack/*. Select: BT5-R3-wp-grey.png
 
 # Panels (Needs to restart xserver)
+# For some reason, the bottom pannel doesn't become centered
 gconftool-2 --type string --set /apps/panel/toplevels/top_panel_screen0/orientation right #Right click on top toolbar -> Properties -> General -> Orientation: Right -> Close
 gconftool-2 --type bool --set /apps/panel/toplevels/bottom_panel_screen0/expand false #Right click on bottom toolbar -> Properties -> General -> Expand: Disable
 gconftool-2 --type int --set /apps/metacity/general/num_workspaces 2 #Right click on bottom toolbar (Workspace) -> Properties -> Number of workspaces: 2
 
 # Randomize the eth0 & wlan0's MAC address on startup
-if [[ `grep macchanger /etc/rc.local -q; echo $?` == 1 ]]; then sed -i 's/^exit 0/for int in eth0 wlan0; do\n\tifconfig $int down\n\t\/usr\/local\/bin\/macchanger -r $int \&\& sleep 3\n\tifconfig $int up\ndone\n\n\nexit 0/' /etc/rc.local; fi 
+if [[ `grep macchanger /etc/rc.local -q; echo $?` == 1 ]]; then sed -i 's/^exit 0/for int in eth0 wlan0; do\n\tifconfig $int down\n\t\/usr\/local\/bin\/macchanger -r $int \&\& sleep 3\n\tifconfig $int up\ndone\n\n\nexit 0/' /etc/rc.local; fi
 #echo -e '#!/bin/bash\nfor int in eth0 wlan0; do\n\techo "Randomizing: $int"\n\tifconfig $int down\n\tmacchanger -r $int\n\tsleep 3\n\tifconfig $int up\n\techo "--------------------"\ndone\nexit 0' > /etc/init.d/macchanger
 #echo -e '#!/bin/bash\n[ "$IFACE" == "lo" ] && exit 0\nifconfig $IFACE down\nmacchanger -r $IFACE\nifconfig $IFACE up\nexit 0' > /etc/network/if-pre-up.d/macchanger
 
-# Add extra bash aliases 
+# Add extra bash aliases
 sed -i 's/#alias/alias/' /root/.bashrc
 echo -e '### Directory navigation aliases\nalias ..="cd .."\nalias ...="cd ../.."\nalias ....="cd ../../.."\nalias .....="cd ../../../.."\n\n    \n### Add more aliases\nalias upd="sudo apt-get update"\nalias upg="sudo apt-get upgrade"\nalias ins="sudo apt-get install"\nalias rem="sudo apt-get purge"\nalias fix="sudo apt-get install -f"\n\n\n### Extract file, example. "ex package.tar.bz2"\nex() {\n    if [[ -f $1 ]]; then\n        case $1 in\n            *.tar.bz2)   tar xjf $1  ;;\n            *.tar.gz)    tar xzf $1  ;;\n            *.bz2)       bunzip2 $1  ;;\n            *.rar)       rar x $1    ;;\n            *.gz)        gunzip $1   ;;\n            *.tar)       tar xf $1   ;;\n            *.tbz2)      tar xjf $1  ;;\n            *.tgz)       tar xzf $1  ;;\n            *.zip)       unzip $1    ;;\n            *.Z)         uncompress $1  ;;\n            *.7z)        7z x $1     ;;\n            *)           echo $1 cannot be extracted ;;\n        esac\n    else\n        echo $1 is not a valid file\n    fi\n}\n' >> /root/.bash_aliases
-#bash 
+#bash
+
+# Bash completion
+sed -i '/# enable bash completion in/,+3{/enable bash completion/!s/^#//}' /etc/bash.bashrc
+
+# Prepare kernel sources (http://www.backtrack-linux.org/wiki/index.php/Preparing_Kernel_Headers)
+prepare-kernel-sources; cd /usr/src/linux/; cp -rf include/generated/* include/linux/
+fix-splash
+
+# Change location (time & keyboard layout)
+dpkg-reconfigure tzdata #<--- Doesn't automate
+#dpkg-reconfigure console-setup && fix-splash #<--- Doesn't automate
 
 # At bug (http://redmine.backtrack-linux.org:8080/issues/831)
 touch /var/spool/cron/atjobs/.SEQ
@@ -245,7 +264,7 @@ ln -s /usr/share/GeoIP/GeoIP.dat /usr/local/etc/unicornscan/GeoIP.dat
 cd /usr/share/GeoIP/
 rm -f GeoIP.dat
 wget http://geolite.maxmind.com/download/geoip/database/GeoLiteCountry/GeoIP.dat.gz
-gunzip GeoIP.dat.gz 
+gunzip GeoIP.dat.gz
 
 # Empty folder (http://redmine.backtrack-linux.org:8080/issues/786)
 [ ! "$(ls -A /pentest/web/scanner/ 2>/dev/null)" ] && rm -rf /pentest/web/scanner/
@@ -256,30 +275,28 @@ git clone git://github.com/wireghoul/htshells.git
 
 # 10,000 Top/Worst/Common Passwords (http://redmine.backtrack-linux.org:8080/issues/696)
 cd /pentest/passwords/wordlists/
-wget http://xato.net/files/10k%20most%20common.zip
-unzip "10k most common.zip"
-rm -f "10k most common.zip"
+wget http://xato.net/files/10k%20most%20common.zip && unzip "10k most common.zip" && rm -f "10k most common.zip"
 
 # Incorrect file permissions (http://redmine.backtrack-linux.org:8080/issues/700)
 find /pentest/ -iname readme -perm /u=x,g=x,o=x -exec chmod -x {} \;
-
-# Bash completion
-sed -i '/# enable bash completion in/,+3{/enable bash completion/!s/^#//}' /etc/bash.bashrc
-
-# Prepare kernel sources (http://www.backtrack-linux.org/wiki/index.php/Preparing_Kernel_Headers)
-prepare-kernel-sources; cd /usr/src/linux/; cp -rf include/generated/* include/linux/
-
-# Change location (time & keyboard layout)
-dpkg-reconfigure tzdata #<--- Doesn't automate
-#dpkg-reconfigure console-setup && fix-splash #<--- Doesn't automate
 
 # Clean up
 apt-get -y clean
 apt-get -y autoremove
 apt-get -y autoclean
+history -C
+
+
 
 # Finished!
 reboot
+
+
+# Don't forget to take a snapshot if you're using a VM!
+
+
+
+
 
 #setup autopsy
 #sh -c "cd /pentest/forensics/autopsy/; make; mv /usr/share/applications/backtrack-autopsy.desktop.wait /usr/share/applications/backtrack-autopsy.desktop; rm /usr/share/applications/backtrack-setup-autopsy.desktop;sudo -s" #<--- Doesn't automate

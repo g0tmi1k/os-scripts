@@ -1,0 +1,20 @@
+# Don't display the copyright page
+startup_message off
+
+# tab-completion flash in heading bar
+vbell off
+
+# keep scrollback n lines
+defscrollback 10000
+
+# hardstatus is a bar of text that is visible in all screens
+hardstatus on
+hardstatus alwayslastline
+hardstatus string '%{gk}%{G}%H %{g}[%{Y}%l%{g}] %= %{wk}%?%-w%?%{=b kR}(%{W}%n %t%?(%u)%?%{=b kR})%{= kw}%?%+w%?%?%= %{g} %{Y} %Y-%m-%d %C%a %{W}'
+
+# title bar
+termcapinfo xterm ti@:te@
+
+# default windows
+screen -t bash1 0
+screen -t bash2 1
