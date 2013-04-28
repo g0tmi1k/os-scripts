@@ -227,11 +227,11 @@ wget https://addons.mozilla.org/firefox/downloads/latest/1843/addon-1843-latest.
 wget https://addons.mozilla.org/firefox/downloads/file/150692/foxyproxy_basic-2.6.2-fx+tb+sm.xpi?src=search -O FoxyProxyBasic.zip && unzip FoxyProxyBasic.zip -d foxyproxy-basic@eric.h.jung/ && rm FoxyProxyBasic.zip #FoxyProxy Basic
 wget https://addons.mozilla.org/firefox/downloads/latest/284030/addon-284030-latest.xpi?src=dp-btn-primary -O {6bdc61ae-7b80-44a3-9476-e1d121ec2238}.xpi #HTTPS Finder
 wget https://addons.mozilla.org/firefox/downloads/latest/3829/addon-3829-latest.xpi?src=dp-btn-primary -O {8f8fe09b-0bd3-4470-bc1b-8cad42b8203a}.xpi #Live HTTP Headers
-#iceweasel #<--- Doesn't automate
-for z in *.xpi; do
- d=`basename $z .xpi`
- mkdir $d && unzip $z -d $d
-done
+iceweasel #<--- Doesn't automate
+#for z in *.xpi; do
+# d=`basename $z .xpi`
+# mkdir $d && unzip $z -d $d
+#done
 cd ~/
 
 
