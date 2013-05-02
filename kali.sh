@@ -20,6 +20,13 @@ ssh root@<ip>        # Replace <ip> with the value from ifconfig
 export DISPLAY=:0.0  # Allows for remote configuration
 
 
+##### Change location values (E.g. timezone & keyboard layout)
+#dpkg-reconfigure tzdata         # Timezone <--- Doesn't automate
+#dpkg-reconfigure keyboard-configuration  #dpkg-reconfigure console-setup # Keyboard <--- Doesn't automate   [DONT USE "English (UK) - English (UK, Macintosh)" FOR UK MPB ]
+#dpkg-reconfigure keyboard-configuration  #dpkg-reconfigure console-setup # Keyboard <--- Doesn't automate   [DONT USE "English (UK) - English (UK, Macintosh)" FOR UK MPB, USE "US"]
+sed -i 's/XKBLAYOUT=".*"/XKBLAYOUT="us"/' /etc/default/keyboard && dpkg-reconfigure keyboard-configuration -u  # Keyboard <--- Doesn't automate (Need to restart xserver)
+
+
 ##### Fix Networkmanger: device not managed (Optional)
 #sed -i 's/managed=.*/managed=true/' /etc/NetworkManager/NetworkManager.conf
 if [ ! -e /etc/network/interfaces.bkup ]; then cp -f /etc/network/interfaces{,.bkup}; fi
@@ -28,8 +35,8 @@ service network-manager restart
 
 
 ##### Fix repositories (Optional)
-grep -q 'kali main non-free contrib' /etc/apt/sources.list || echo "deb http://http.kali.org/kali kali main non-free contrib" >>  /etc/apt/sources.list
-grep -q 'kali/updates main contrib non-free' /etc/apt/sources.list || echo "deb http://security.kali.org/kali-security kali/updates main contrib non-free" >>  /etc/apt/sources.list
+grep -q 'kali main non-free contrib' /etc/apt/sources.list || echo "deb http://http.kali.org/kali kali main non-free contrib" >> /etc/apt/sources.list
+grep -q 'kali/updates main contrib non-free' /etc/apt/sources.list || echo "deb http://security.kali.org/kali-security kali/updates main contrib non-free" >> /etc/apt/sources.list
 
 
 ##### Install Virtual Machine tools for better support (Optional)
@@ -47,8 +54,8 @@ tar zxvf VMwareTools*
 cd vmware-tools-distrib/
 perl vmware-install.pl #<enter> x ???  #<--- Doesn't automate
 #--- Install Parallel tools
-grep -q 'cups enabled' /usr/sbin/update-rc.d ||  echo "cups enabled" >> /usr/sbin/update-rc.d
-grep -q 'vmware-tools enabled' /usr/sbin/update-rc.d ||  echo "vmware-tools enabled" >> /usr/sbin/update-rc.d
+grep -q 'cups enabled' /usr/sbin/update-rc.d || echo "cups enabled" >> /usr/sbin/update-rc.d
+grep -q 'vmware-tools enabled' /usr/sbin/update-rc.d || echo "vmware-tools enabled" >> /usr/sbin/update-rc.d
 apt-get -y install gcc make linux-headers-$(uname -r)
 ln -s /usr/src/linux-headers-$(uname -r)/include/generated/uapi/linux/version.h /usr/src/linux-headers-$(uname -r)/include/linux/
 #Virtual Machine -> Install Parallels Tools
@@ -126,8 +133,8 @@ echo -e "# Don't display the copyright page\nstartup_message off\n\n# tab-comple
 
 ##### Add extra aliases
 cp -n /etc/bashrc{,.bkup} # Should fail  #/root/.bash_aliases
-echo -e '\n### axel\nalias axel="axel -a"\n\n### Screen\nalias screen="screen -xRR"\n\n### Directory navigation aliases\nalias ..="cd .."\nalias ...="cd ../.."\nalias ....="cd ../../.."\nalias .....="cd ../../../.."\n\n    \n### Add more aliases\nalias upd="sudo apt-get update"\nalias upg="sudo apt-get upgrade"\nalias ins="sudo apt-get install"\nalias rem="sudo apt-get purge"\nalias fix="sudo apt-get install -f"\n\n\n### Extract file, example. "ex package.tar.bz2"\nex() {\n    if [[ -f $1 ]]; then\n        case $1 in\n            *.tar.bz2)   tar xjf $1  ;;\n            *.tar.gz)    tar xzf $1  ;;\n            *.bz2)       bunzip2 $1  ;;\n            *.rar)       rar x $1    ;;\n            *.gz)        gunzip $1   ;;\n            *.tar)       tar xf $1   ;;\n            *.tbz2)      tar xjf $1  ;;\n            *.tgz)       tar xzf $1  ;;\n            *.zip)       unzip $1    ;;\n            *.Z)         uncompress $1  ;;\n            *.7z)        7z x $1     ;;\n            *)           echo $1 cannot be extracted ;;\n        esac\n    else\n        echo $1 is not a valid file\n    fi\n}\n' >> /etc/bashrc
-
+echo -e '\n### axel\nalias axel="axel -a"\n\n### Screen\nalias screen="screen -xRR"\n\n### Directory navigation aliases\nalias ..="cd .."\nalias ...="cd ../.."\nalias ....="cd ../../.."\nalias .....="cd ../../../.."\n\n\n### Add more aliases\nalias upd="sudo apt-get update"\nalias upg="sudo apt-get upgrade"\nalias ins="sudo apt-get install"\nalias rem="sudo apt-get purge"\nalias fix="sudo apt-get install -f"\n\n\n### Extract file, example. "ex package.tar.bz2"\nex() {\n    if [[ -f $1 ]]; then\n        case $1 in\n            *.tar.bz2)   tar xjf $1  ;;\n            *.tar.gz)    tar xzf $1  ;;\n            *.bz2)       bunzip2 $1  ;;\n            *.rar)       rar x $1    ;;\n            *.gz)        gunzip $1   ;;\n            *.tar)       tar xf $1   ;;\n            *.tbz2)      tar xjf $1  ;;\n            *.tgz)       tar xzf $1  ;;\n            *.zip)       unzip $1    ;;\n            *.Z)         uncompress $1  ;;\n            *.7z)        7z x $1     ;;\n            *)           echo $1 cannot be extracted ;;\n        esac\n    else\n        echo $1 is not a valid file\n    fi\n}' >> /etc/bashrc
+sed -i 's/#alias/alias/g' /root/.bashrc
 
 ##### Bash completion
 #sed -i '/# enable bash completion in/,+3{/enable bash completion/!s/^#//}' /etc/bash.bashrc
@@ -135,7 +142,7 @@ echo -e '\n### axel\nalias axel="axel -a"\n\n### Screen\nalias screen="screen -x
 
 ##### Setup file browser (Need to restart xserver)
 mkdir -p /root/.config/gtk-2.0/
-if [ -e /root/.config/gtk-2.0/gtkfilechooser.ini ]; then sed -i 's/^.*ShowHidden.*/ShowHidden=true/' /root/.config/gtk-2.0/gtkfilechooser.ini; else echo -e "\n[Filechooser Settings]\nLocationMode=path-bar\nShowHidden=true\nExpandFolders=false\nShowSizeColumn=true\nGeometryX=66\nGeometryY=39\nGeometryWidth=780\nGeometryHeight=618\nSortColumn=name\nSortOrder=ascending\n" > /root/.config/gtk-2.0/gtkfilechooser.ini; fi #Open/save Window -> Right click -> Show Hidden Files: Enabled
+if [ -e /root/.config/gtk-2.0/gtkfilechooser.ini ]; then sed -i 's/^.*ShowHidden.*/ShowHidden=true/' /root/.config/gtk-2.0/gtkfilechooser.ini; else echo -e "\n[Filechooser Settings]\nLocationMode=path-bar\nShowHidden=true\nExpandFolders=false\nShowSizeColumn=true\nGeometryX=66\nGeometryY=39\nGeometryWidth=780\nGeometryHeight=618\nSortColumn=name\nSortOrder=ascending" > /root/.config/gtk-2.0/gtkfilechooser.ini; fi #Open/save Window -> Right click -> Show Hidden Files: Enabled
 dconf write /org/gnome/nautilus/preferences/show-hidden-files true
 if [ ! -e /root/.gtk-bookmarks.bkup ]; then cp -f /root/.gtk-bookmarks{,.bkup}; fi
 echo -e 'file:///var/www www\nfile:///usr/share apps\nfile:///tmp tmp\nfile:///usr/local/src/ src' >> /root/.gtk-bookmarks #Places -> Location: {/usr/share,/var/www/,/tmp/, /usr/local/src/} -> Bookmarks -> Add bookmark
