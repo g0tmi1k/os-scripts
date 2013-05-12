@@ -22,7 +22,6 @@ export DISPLAY=:0.0  # Allows for remote configuration
 
 ##### Change location values (E.g. timezone & keyboard layout)
 #dpkg-reconfigure tzdata         # Timezone <--- Doesn't automate
-#dpkg-reconfigure keyboard-configuration  #dpkg-reconfigure console-setup # Keyboard <--- Doesn't automate   [DONT USE "English (UK) - English (UK, Macintosh)" FOR UK MPB ]
 #dpkg-reconfigure keyboard-configuration  #dpkg-reconfigure console-setup # Keyboard <--- Doesn't automate   [DONT USE "English (UK) - English (UK, Macintosh)" FOR UK MPB, USE "US"]
 sed -i 's/XKBLAYOUT=".*"/XKBLAYOUT="us"/' /etc/default/keyboard && dpkg-reconfigure keyboard-configuration -u  # Keyboard <--- Doesn't automate (Need to restart xserver)
 
@@ -136,6 +135,11 @@ cp -n /etc/bashrc{,.bkup} # Should fail  #/root/.bash_aliases
 echo -e '\n### axel\nalias axel="axel -a"\n\n### Screen\nalias screen="screen -xRR"\n\n### Directory navigation aliases\nalias ..="cd .."\nalias ...="cd ../.."\nalias ....="cd ../../.."\nalias .....="cd ../../../.."\n\n\n### Add more aliases\nalias upd="sudo apt-get update"\nalias upg="sudo apt-get upgrade"\nalias ins="sudo apt-get install"\nalias rem="sudo apt-get purge"\nalias fix="sudo apt-get install -f"\n\n\n### Extract file, example. "ex package.tar.bz2"\nex() {\n    if [[ -f $1 ]]; then\n        case $1 in\n            *.tar.bz2)   tar xjf $1  ;;\n            *.tar.gz)    tar xzf $1  ;;\n            *.bz2)       bunzip2 $1  ;;\n            *.rar)       rar x $1    ;;\n            *.gz)        gunzip $1   ;;\n            *.tar)       tar xf $1   ;;\n            *.tbz2)      tar xjf $1  ;;\n            *.tgz)       tar xzf $1  ;;\n            *.zip)       unzip $1    ;;\n            *.Z)         uncompress $1  ;;\n            *.7z)        7z x $1     ;;\n            *)           echo $1 cannot be extracted ;;\n        esac\n    else\n        echo $1 is not a valid file\n    fi\n}' >> /etc/bashrc
 sed -i 's/#alias/alias/g' /root/.bashrc
 
+
+##### Install bash-completion
+apt-get -y install bash-completion
+
+
 ##### Bash completion
 #sed -i '/# enable bash completion in/,+3{/enable bash completion/!s/^#//}' /etc/bash.bashrc
 
@@ -210,6 +214,14 @@ sed -i 's/^.*"Default editor".*/\t<Setting name="Default editor" type="string">2
 
 ##### Install tftp
 apt-get -y install tftp
+
+
+##### Install zsh
+apt-get -y install zsh
+
+
+##### Install terminator
+apt-get -y install terminator
 
 
 ##### Install lynx
