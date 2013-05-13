@@ -65,7 +65,7 @@ cd /media/Parallel\ Tools/
 
 
 ##### Update OS
-apt-get update && apt-get -y dist-upgrade
+apt-get update && apt-get -y dist-upgrade --fix-missing
 #--- Enable bleeding edge ~ http://www.kali.org/kali-monday/bleeding-edge-kali-repositories/
 grep -q 'kali-bleeding-edge' /etc/apt/sources.list || echo -e "\n\n## Bleeding edge\ndeb http://repo.kali.org/kali kali-bleeding-edge main" >> /etc/apt/sources.list
 apt-get update && apt-get -y upgrade
@@ -77,7 +77,8 @@ gsettings set org.gnome.gnome-panel.layout toplevel-id-list "['top-panel']"
 dconf write /org/gnome/gnome-panel/layout/objects/workspace-switcher/toplevel-id "'top-panel'"
 dconf write /org/gnome/gnome-panel/layout/objects/window-list/toplevel-id "'top-panel'"
 #--- Panel position
-dconf write /org/gnome/gnome-panel/layout/toplevels/top-panel/orientation "'right'"
+dconf write /org/gnome/gnome-panel/layout/toplevels/top-panel/orientation "'top'"
+#dconf write /org/gnome/gnome-panel/layout/toplevels/top-panel/orientation "'right'"   # Issue with window-list
 #--- Panel ordering
 dconf write /org/gnome/gnome-panel/layout/objects/menu-bar/pack-type "'start'"
 dconf write /org/gnome/gnome-panel/layout/objects/menu-bar/pack-index 0
@@ -117,8 +118,19 @@ gsettings set org.gnome.shell.overrides dynamic-workspaces false
 #sed -i 's/title_scale=".*"/title_scale="small"/g' /usr/share/themes/Adwaita/metacity-1/metacity-theme-3.xml
 gsettings set org.gnome.desktop.wm.preferences titlebar-font 'Droid Bold 10' # 'Cantarell Bold 11'
 gsettings set org.gnome.desktop.wm.preferences titlebar-uses-system-font false
+#--- Hide desktop icon
+dconf write /org/gnome/nautilus/desktop/computer-icon-visible false
 #--- Restart GNOME panel to apply/take effect (Need to restart xserver)
 #killall gnome-panel && gnome-panel&   #Still need to logoff!
+
+
+##### Console login (Doesn't work - need to login twice!)
+#cp -n /etc/X11/default-display-manager{,.bkup}
+#echo "" > /etc/X11/default-display-manager
+#cp /etc/gdm3/daemon.conf{,.bkup}
+#sed -i 's/^.*AutomaticLoginEnable = .*/AutomaticLoginEnable = True/' /etc/gdm3/daemon.conf
+#sed -i 's/^.*AutomaticLogin = .*/AutomaticLoginEnable = True/' /etc/gdm3/daemon.conf    
+#ln -s /usr/sbin/gdm3 /usr/sbin/startx   # Old school ;)
 
 
 ##### Setup terminal (Need to restart xserver)
