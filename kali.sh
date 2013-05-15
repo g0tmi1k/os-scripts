@@ -153,6 +153,7 @@ wget http://xfce-look.org/CONTENT/content-files/142110-Shiki-Colors-Light-Menus.
 tar zxf /tmp/Shiki-Colors-Light-Menus.tar.gz -C /root/.themes/
 xfconf-query -c xsettings -p /Net/ThemeName -s "Shiki-Colors-Light-Menus"
 xfconf-query -c xsettings -p /Net/IconThemeName -s "gnome-brave"
+sed -i 's#<property name="theme" type="string" value=".*"/>#<property name="theme" type="string" value="Shiki-Colors-Light-Menus"/>#' /root/.config/xfce4/xfconf/xfce-perchannel-xml/xfwm4.xml
 
 
 ##### Configure (tty) resolution
