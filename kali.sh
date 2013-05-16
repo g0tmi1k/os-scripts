@@ -76,21 +76,20 @@ gsettings set org.gnome.gnome-panel.layout toplevel-id-list "['top-panel']"
 dconf write /org/gnome/gnome-panel/layout/objects/workspace-switcher/toplevel-id "'top-panel'"
 dconf write /org/gnome/gnome-panel/layout/objects/window-list/toplevel-id "'top-panel'"
 #--- Panel position
-dconf write /org/gnome/gnome-panel/layout/toplevels/top-panel/orientation "'top'"
-#dconf write /org/gnome/gnome-panel/layout/toplevels/top-panel/orientation "'right'"   # Issue with window-list
+dconf write /org/gnome/gnome-panel/layout/toplevels/top-panel/orientation "'top'" #"'right'"   # Issue with window-list
 #--- Panel ordering
 dconf write /org/gnome/gnome-panel/layout/objects/menu-bar/pack-type "'start'"
 dconf write /org/gnome/gnome-panel/layout/objects/menu-bar/pack-index 0
-dconf write /org/gnome/gnome-panel/layout/objects/window-list/pack-type "'center'"
-dconf write /org/gnome/gnome-panel/layout/objects/window-list/pack-index 0
+dconf write /org/gnome/gnome-panel/layout/objects/window-list/pack-type "'start'" # "'center'"
+dconf write /org/gnome/gnome-panel/layout/objects/window-list/pack-index 5        #0
 dconf write /org/gnome/gnome-panel/layout/objects/workspace-switcher/pack-type "'end'"
 dconf write /org/gnome/gnome-panel/layout/objects/clock/pack-type "'end'"
 dconf write /org/gnome/gnome-panel/layout/objects/user-menu/pack-type "'end'"
 dconf write /org/gnome/gnome-panel/layout/objects/notification-area/pack-type "'end'"
-dconf write /org/gnome/gnome-panel/layout/objects/workspace-switcher/pack-index 0
-dconf write /org/gnome/gnome-panel/layout/objects/clock/pack-index 1
-dconf write /org/gnome/gnome-panel/layout/objects/user-menu/pack-index 2
-dconf write /org/gnome/gnome-panel/layout/objects/notification-area/pack-index 3
+dconf write /org/gnome/gnome-panel/layout/objects/workspace-switcher/pack-index 1
+dconf write /org/gnome/gnome-panel/layout/objects/clock/pack-index 2
+dconf write /org/gnome/gnome-panel/layout/objects/user-menu/pack-index 3
+dconf write /org/gnome/gnome-panel/layout/objects/notification-area/pack-index 4
 #--- Enable Auto hide
 #dconf write /org/gnome/gnome-panel/layout/toplevels/top-panel/auto-hide true
 #--- Add top 10 tools to toolbar
@@ -106,6 +105,15 @@ pack-type='start'
 pack-index=4
 EOT
 dconf write /org/gnome/gnome-panel/layout/object-id-list "$(dconf read /org/gnome/gnome-panel/layout/object-id-list | sed "s/]/, 'object-10-top']/")"
+#--- Show desktop
+dconf load /org/gnome/gnome-panel/layout/objects/object-show-desktop/ << EOT
+[/]
+object-iid='WnckletFactory::ShowDesktopApplet'
+toplevel-id='top-panel'
+pack-type='end'
+pack-index=0
+EOT
+dconf write /org/gnome/gnome-panel/layout/object-id-list "$(dconf read /org/gnome/gnome-panel/layout/object-id-list | sed "s/]/, 'object-show-desktop']/")"
 #--- Fix icon top 10 shortcut icon
 #convert /usr/share/icons/hicolor/48x48/apps/k.png -negate /usr/share/icons/hicolor/48x48/apps/k-invert.png
 #/usr/share/icons/gnome/48x48/status/security-medium.png
@@ -153,6 +161,9 @@ wget http://xfce-look.org/CONTENT/content-files/142110-Shiki-Colors-Light-Menus.
 tar zxf /tmp/Shiki-Colors-Light-Menus.tar.gz -C /root/.themes/
 xfconf-query -c xsettings -p /Net/ThemeName -s "Shiki-Colors-Light-Menus"
 xfconf-query -c xsettings -p /Net/IconThemeName -s "gnome-brave"
+##### Configure file browser (Need to re-login for effect)
+if [ ! -e  /root/.config/Thunar/thunarrc ]; then echo -e "[Configuration]\nLastShowHidden=TRUE" > /root/.config/Thunar/thunarrc; else sed -i 's/LastShowHidden=.*/LastShowHidden=TRUE/' /root/.config/Thunar/thunarrc; fi
+
 
 
 ##### Configure (tty) resolution
