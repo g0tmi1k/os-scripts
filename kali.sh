@@ -163,6 +163,8 @@ wget http://xfce-look.org/CONTENT/content-files/142110-Shiki-Colors-Light-Menus.
 tar zxf /tmp/Shiki-Colors-Light-Menus.tar.gz -C /root/.themes/
 xfconf-query -c xsettings -p /Net/ThemeName -s "Shiki-Colors-Light-Menus"
 xfconf-query -c xsettings -p /Net/IconThemeName -s "gnome-brave"
+#--- Enable compositing
+xfconf-query -c xfwm4 -p /general/use_compositing -s true
 #--- Configure file browser (Need to re-login for effect)
 if [ ! -e  /root/.config/Thunar/thunarrc ]; then echo -e "[Configuration]\nLastShowHidden=TRUE" > /root/.config/Thunar/thunarrc; else sed -i 's/LastShowHidden=.*/LastShowHidden=TRUE/' /root/.config/Thunar/thunarrc; fi
 
@@ -185,11 +187,19 @@ ln -s /usr/sbin/gdm3 /usr/bin/startx   # Old school ;)
 
 ##### Configure terminal (Need to restart xserver)
 gconftool-2 --type bool --set /apps/gnome-terminal/profiles/Default/scrollback_unlimited true #Terminal -> Edit -> Profile Preferences -> Scrolling -> Scrollback: Unlimited -> Close
-gconftool-2 --type int --set /apps/gnome-terminal/profiles/Default/background_darkness 75
+gconftool-2 --type string --set /apps/gnome-terminal/profiles/Default/background_darkness 0.85611499999999996  # Not working 100%!
+gconftool-2 --type string --set /apps/gnome-terminal/profiles/Default/background_type transparent
+
+
+##### Enable Num lock start up
+apt-get -y install numlockx
+cp -n /etc/gdm3/Init/Default{,.bkup}
+grep -q '/usr/bin/numlockx' /etc/gdm3/Init/Default || sed -i 's#exit 0#if [ -x /usr/bin/numlockx ]; then\n/usr/bin/numlockx on\nfi\nexit 0#' /etc/gdm3/Init/Default
+#xfconf-query -c keyboards -p /Default/Numlock -s true
 
 
 ##### Configure startup (Rendomize the hostname, eth0 & wlan0's MAC address)
-#if [[ `grep macchanger /etc/rc.local -q; echo $?` == 1 ]]; then sed -i 's#^exit 0#for int in eth0 wlan0; do\n\tifconfig $int down\n\t/usr/bin/macchanger -r $int \&\& sleep 3\n\tifconfig $int up\ndone\n\n\nexit 0#' /etc/rc.local; fi
+#if [[ `grep -q macchanger /etc/rc.local; echo $?` == 1 ]]; then sed -i 's#^exit 0#for int in eth0 wlan0; do\n\tifconfig $int down\n\t/usr/bin/macchanger -r $int \&\& sleep 3\n\tifconfig $int up\ndone\n\n\nexit 0#' /etc/rc.local; fi
 ##echo -e '#!/bin/bash\nfor int in eth0 wlan0; do\n\techo "Randomizing: $int"\n\tifconfig $int down\n\tmacchanger -r $int\n\tsleep 3\n\tifconfig $int up\n\techo "--------------------"\ndone\nexit 0' > /etc/init.d/macchanger
 ##echo -e '#!/bin/bash\n[ "$IFACE" == "lo" ] && exit 0\nifconfig $IFACE down\nmacchanger -r $IFACE\nifconfig $IFACE up\nexit 0' > /etc/network/if-pre-up.d/macchanger
 #grep -q "hostname" /etc/rc.local hostname || sed -i 's#^exit 0#hostname $(cat /dev/urandom | tr -dc "A-Za-z" | head -c8)\nexit 0#' /etc/rc.local
@@ -198,6 +208,11 @@ gconftool-2 --type int --set /apps/gnome-terminal/profiles/Default/background_da
 ##### Configure screen
 if [ ! -e /root/.screenrc.bkup ] && [ -e /root/.screenrc ]; then cp -f /root/.screenrc{,.bkup}; fi
 echo -e "# Don't display the copyright page\nstartup_message off\n\n# tab-completion flash in heading bar\nvbell off\n\n# keep scrollback n lines\ndefscrollback 1000\n\n# hardstatus is a bar of text that is visible in all screens\nhardstatus on\nhardstatus alwayslastline\nhardstatus string '%{gk}%{G}%H %{g}[%{Y}%l%{g}] %= %{wk}%?%-w%?%{=b kR}(%{W}%n %t%?(%u)%?%{=b kR})%{= kw}%?%+w%?%?%= %{g} %{Y} %Y-%m-%d %C%a %{W}'\n\n# title bar\ntermcapinfo xterm ti@:te@\n\n# default windows (syntax: screen -t label order command)\nscreen -t bash1 0\nscreen -t bash2 1\n\n# select the default window\nselect 1" > /root/.screenrc
+
+
+##### Configure tmux
+cp -n /root/.tmux.conf{,.bkup}
+echo -e '# Make it use C-a, similar to screen..\nunbind C-b\nunbind l\nset -g prefix C-a\nbind-key C-a last-window\n \n# Reload key\nbind r source-file ~/.tmux.conf\n \nset -g default-terminal "screen-256color"\nset -g history-limit 1000\n \n \n# THEME\nset -g status-bg black\nset -g status-fg white\nset -g status-interval 60\nset -g status-left-length 30\nset -g status-left '"'"'#[fg=green](#S) #(whoami)@#H#[default]'"'"'\nset -g status-right '"'"'#[fg=yellow]#(cut -d " " -f 1-3 /proc/loadavg)#[default] #[fg=blue]%H:%M#[default]'"'"'\n \n# set correct term\nset -g default-terminal screen-256color' > /root/.tmux.conf
 
 
 ##### Configure aliases
@@ -230,9 +245,9 @@ sed -i 's/"set mouse=a/set mouse=a/' /root/.vimrc
 
 ##### Configure iceweasel & replace bookmarks
 iceweasel & sleep 15; killall iceweasel   # Start and kill. Files needed for first time run
-if [[ `grep "browser.startup.page" /root/.mozilla/firefox/*.default/prefs.js -q; echo $?` == 1 ]]; then echo 'user_pref("browser.startup.page", 0);' >> /root/.mozilla/firefox/*.default/prefs.js; else sed -i 's/^.*browser.startup.page.*/user_pref("browser.startup.page", 0);' /root/.mozilla/firefox/*.default/prefs.js; fi #Iceweasel -> Edit -> Preferences -> General -> When firefox starts: Show a blank page
-if [[ `grep "privacy.donottrackheader.enabled" /root/.mozilla/firefox/*.default/prefs.js -q; echo $?` == 1 ]]; then echo 'user_pref("privacy.donottrackheader.enabled", true);' >> /root/.mozilla/firefox/*.default/prefs.js; else sed -i 's/^.*privacy.donottrackheader.enabled.*/user_pref("privacy.donottrackheader.enabled", true);' /root/.mozilla/firefox/*.default/prefs.js; fi #Privacy -> Enable: Tell websites I do not want to be tracked
-if [[ `grep " browser.showQuitWarning" /root/.mozilla/firefox/*.default/prefs.js -q; echo $?` == 1 ]]; then echo 'user_pref("browser.showQuitWarning", true);' >> /root/.mozilla/firefox/*.default/prefs.js; else sed -i 's/^.*browser.showQuitWarning.*/user_pref("browser.showQuitWarning", true);' /root/.mozilla/firefox/*.default/prefs.js; fi # Stop Ctrl + Q from quitting without warning
+if [[ `grep -q "browser.startup.page" /root/.mozilla/firefox/*.default/prefs.js; echo $?` == 1 ]]; then echo 'user_pref("browser.startup.page", 0);' >> /root/.mozilla/firefox/*.default/prefs.js; else sed -i 's/^.*browser.startup.page.*/user_pref("browser.startup.page", 0);' /root/.mozilla/firefox/*.default/prefs.js; fi #Iceweasel -> Edit -> Preferences -> General -> When firefox starts: Show a blank page
+if [[ `grep -q "privacy.donottrackheader.enabled" /root/.mozilla/firefox/*.default/prefs.js; echo $?` == 1 ]]; then echo 'user_pref("privacy.donottrackheader.enabled", true);' >> /root/.mozilla/firefox/*.default/prefs.js; else sed -i 's/^.*privacy.donottrackheader.enabled.*/user_pref("privacy.donottrackheader.enabled", true);' /root/.mozilla/firefox/*.default/prefs.js; fi #Privacy -> Enable: Tell websites I do not want to be tracked
+if [[ `grep -q "browser.showQuitWarning" /root/.mozilla/firefox/*.default/prefs.js; echo $?` == 1 ]]; then echo 'user_pref("browser.showQuitWarning", true);' >> /root/.mozilla/firefox/*.default/prefs.js; else sed -i 's/^.*browser.showQuitWarning.*/user_pref("browser.showQuitWarning", true);' /root/.mozilla/firefox/*.default/prefs.js; fi # Stop Ctrl + Q from quitting without warning
 cd /root/.mozilla/firefox/*.default/
 wget http://pentest-bookmarks.googlecode.com/files/bookmarksv1.5.html  # ****!! hardcoded version! Need to manually check for updates
 awk '!a[$0]++' bookmarksv*.html > bookmarks.html
@@ -247,7 +262,7 @@ wget https://addons.mozilla.org/firefox/downloads/file/150692/foxyproxy_basic-2.
 wget https://addons.mozilla.org/firefox/downloads/latest/284030/addon-284030-latest.xpi?src=dp-btn-primary -O {6bdc61ae-7b80-44a3-9476-e1d121ec2238}.xpi #HTTPS Finder
 wget https://addons.mozilla.org/firefox/downloads/latest/3829/addon-3829-latest.xpi?src=dp-btn-primary -O {8f8fe09b-0bd3-4470-bc1b-8cad42b8203a}.xpi #Live HTTP Headers
 wget https://addons.mozilla.org/firefox/downloads/latest/92079/addon-92079-latest.xpi?src=dp-btn-primary  -O {bb6bc1bb-f824-4702-90cd-35e2fb24f25d}.xpi # Cookies Manager+
-wget https://addons.mozilla.org/firefox/downloads/file/79565/tamper_data-11.0.1-fx.xpi?src=dp-btn-primary -O {9c51bd27-6ed8-4000-a2bf-36cb95c0c947}.xpi # Tamper Data
+wget https://addons.mozilla.org/firefox/downloads/file/79565/tamper_data-11.0.1-fx.xpi?src=dp-btn-primary -O {9c51bd27-6ed8-4000-a2bf-36cb95c0c947}.xpi # Tamper Data  - not working 100%
 iceweasel #<--- Doesn't automate
 #--- Configure foxproxy
 sed -i 's/<proxies><proxy name="Default"/<proxies><proxy name="Localhost" id="315347393" notes="Localhost" enabled="true" mode="manual" selectedTabIndex="1" lastresort="false" animatedIcons="true" includeInCycle="true" color="#FF051A" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="false" clearCookiesBeforeUse="false" rejectCookies="false"><matches\/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"\/><autoconf url="http:\/\/wpad\/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"\/><manualconf host="localhost" port="8080" socksversion="5" isSocks="false"\/><\/proxy><proxy name="Default"/' /root/.mozilla/firefox/*.default/foxyproxy.xml
