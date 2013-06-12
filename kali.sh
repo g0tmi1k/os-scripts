@@ -231,16 +231,16 @@ echo -e 'file:///var/www www\nfile:///usr/share apps\nfile:///tmp tmp\nfile:///u
 
 ##### Configure VIM
 cp -n /etc/vim/vimrc /root/.vimrc
-sed -i 's/"syntax on/syntax on/' /root/.vimrc
-sed -i 's/"set background=dark/set background=dark/' /root/.vimrc
-sed -i 's/"set showcmd/set showcmd/' /root/.vimrc
-sed -i 's/"set showmatch/set showmatch/' /root/.vimrc
-sed -i 's/"set ignorecase/set ignorecase/' /root/.vimrc
-sed -i 's/"set smartcase/set smartcase/' /root/.vimrc
-sed -i 's/"set incsearch/set incsearch/' /root/.vimrc
-sed -i 's/"set autowrite/set autowrite/' /root/.vimrc
-sed -i 's/"set hidden/set hidden/' /root/.vimrc
-sed -i 's/"set mouse=a/set mouse=a/' /root/.vimrc
+sed -i 's/.*syntax on/syntax on/' /root/.vimrc
+sed -i 's/.*set background=dark/set background=dark/' /root/.vimrc
+sed -i 's/.*set showcmd/set showcmd/' /root/.vimrc
+sed -i 's/.*set showmatch/set showmatch/' /root/.vimrc
+sed -i 's/.*set ignorecase/set ignorecase/' /root/.vimrc
+sed -i 's/.*set smartcase/set smartcase/' /root/.vimrc
+sed -i 's/.*set incsearch/set incsearch/' /root/.vimrc
+sed -i 's/.*set autowrite/set autowrite/' /root/.vimrc
+sed -i 's/.*set hidden/set hidden/' /root/.vimrc
+sed -i 's/.*set mouse=.*/"set mouse=a/' /root/.vimrc
 
 
 ##### Configure iceweasel & replace bookmarks
@@ -370,7 +370,22 @@ apt-get -y install tftp
 
 ##### Install ZSH
 apt-get -y install zsh
-#Themes: https://github.com/robbyrussell/oh-my-zsh/tree/master/themes/
+#--- Setup oh-my-zsh
+curl -L https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh | sh
+#--- Configure ZSH
+grep -q interactivecomments /etc/zsh/zshrc || echo "setopt interactivecomments" >> /etc/zsh/zshrc
+grep -q ignoreeof /etc/zsh/zshrc || echo "setopt ignoreeof" >> /etc/zsh/zshrc
+grep -q correctall /etc/zsh/zshrc || echo "setopt correctall" >> /etc/zsh/zshrc
+grep -q globdots /etc/zsh/zshrc || echo "setopt globdots" >> /etc/zsh/zshrc
+#--- Configure ZSH (themes) ~ https://github.com/robbyrussell/oh-my-zsh/wiki/Themes
+sed -i 's/ZSH_THEME=.*/ZSH_THEME="alanpeabody"/' /root/.zshrc   # alanpeabody jreese   mh   candy   terminalparty kardan   nicoulaj sunaku
+#--- Configure oh-my-zsh
+sed -i 's/.*DISABLE_AUTO_UPDATE="true"/DISABLE_AUTO_UPDATE="true"/' /root/.zshrc
+sed -i 's/plugins=(.*)/plugins=(git screen tmux last-working-dir)/' /root/.zshrc
+#--- Configure ZSH as default and use it now
+chsh -s `which zsh`
+/usr/bin/env zsh
+source /root/.zshrc
 
 
 ##### Install Terminator
@@ -426,6 +441,7 @@ gunzip rockyou.txt.gz
 apt-get -y clean
 apt-get -y autoremove
 apt-get -y autoclean
+updatedb
 history -c
 
 
