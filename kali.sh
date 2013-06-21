@@ -1,31 +1,32 @@
 #!/bin/sh
-#Operating System(s)#######################
+#Operating System##########################
 # Designed for: Kali Linux [x86]          #
-# Working on: 2013-05-15                  #
+#   Working on: 2013-06-17                #
 #Author####################################
-# g0tmilk ~ http://g0tmi1k.blogspot.com   #
+# g0tmilk ~ http://g0tmi1k.com            #
 #Note######################################
-# The script wasn't designed to be...     #
-# ...executed. Copy & paste commands...   #
-# ...into a ternminal window              #
+# The script WASN'T designed to be...     #
+#    ...executed.                         #
+# Copy & paste commands...                #
+#    ...into a ternminal window           #
 ###########################################
 
 ##### Remote configuration via SSH (Optional)
 services ssh start         # Start SSH to allow for remote config
 update-rc.d ssh enable     # Enable SSH at startup
 ifconfig eth0              # Get IP of the interface
-#--- Use 'remote' computer from here on out!
-ssh root@<ip>        # Replace <ip> with the value from ifconfig
-export DISPLAY=:0.0  # Allows for remote configuration
+#--- Use a 'remote' computer from here on out!
+ssh root@<ip>              # Replace <ip> with the value from ifconfig
+export DISPLAY=:0.0        # Allows for remote configuration
 
 
 ##### Configure location (E.g. timezone & keyboard layout)
-#dpkg-reconfigure tzdata         # Timezone <--- Doesn't automate
+#dpkg-reconfigure tzdata   # Timezone <--- Doesn't automate
 #dpkg-reconfigure keyboard-configuration  #dpkg-reconfigure console-setup # Keyboard <--- Doesn't automate   [DONT USE "English (UK) - English (UK, Macintosh)" FOR UK MPB, USE "US" (Still not perfect)]
 sed -i 's/XKBLAYOUT=".*"/XKBLAYOUT="us"/' /etc/default/keyboard && dpkg-reconfigure keyboard-configuration -u  # Keyboard <--- Doesn't automate (Need to restart xserver)
 
 
-##### Fix Networkmanger: device not managed (Optional)
+##### Fix NetworkManger: device not managed (Optional)
 #sed -i 's/managed=.*/managed=true/' /etc/NetworkManager/NetworkManager.conf
 if [ ! -e /etc/network/interfaces.bkup ]; then cp -f /etc/network/interfaces{,.bkup}; fi
 sed -i '/iface lo inet loopback/q' /etc/network/interfaces    #sed '/^#\|'auto\ lo'\|'iface\ lo'/!d' /etc/network/interfaces
@@ -37,7 +38,7 @@ grep -q 'kali main non-free contrib' /etc/apt/sources.list || echo "deb http://h
 grep -q 'kali/updates main contrib non-free' /etc/apt/sources.list || echo "deb http://security.kali.org/kali-security kali/updates main contrib non-free" >> /etc/apt/sources.list
 
 
-##### Install Virtual Machine tools for better support (Optional)
+##### Install 'VMware Tools' (Optional)
 #--- Install VMware tools ~ http://docs.kali.org/general-use/install-vmware-tools-kali-guest
 grep -q 'cups enabled' /usr/sbin/update-rc.d || echo "cups enabled" >> /usr/sbin/update-rc.d
 grep -q 'vmware-tools enabled' /usr/sbin/update-rc.d || echo "vmware-tools enabled" >> /usr/sbin/update-rc.d
@@ -132,7 +133,7 @@ apt-get -y install nautilus-open-terminal
 #--- Restart GNOME panel to apply/take effect (Need to restart xserver)
 #killall gnome-panel && gnome-panel&   #Still need to logoff!
 
-##### Install & Configure XFCE
+##### Install & configure XFCE
 apt-get -y install xfce4 xfce4-places-plugin
 mv /usr/bin/startx{,-gnome}
 ln -s /usr/bin/startxfce4 /usr/bin/startx   # Old school ;)
@@ -169,14 +170,14 @@ xfconf-query -c xfwm4 -p /general/use_compositing -s true
 if [ ! -e  /root/.config/Thunar/thunarrc ]; then echo -e "[Configuration]\nLastShowHidden=TRUE" > /root/.config/Thunar/thunarrc; else sed -i 's/LastShowHidden=.*/LastShowHidden=TRUE/' /root/.config/Thunar/thunarrc; fi
 
 
-##### Configure (tty) resolution
+##### Configure (TTY) resolution
 cp -n /etc/default/grub{,.bkup}
 sed -i 's/GRUB_TIMEOUT=.*/GRUB_TIMEOUT=1/' /etc/default/grub
 sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT="vga=0x0318 quiet"/' /etc/default/grub
 update-grub
 
 
-##### Configure login (Use console login - non GUI)
+##### Configure login (Console login - non GUI)
 cp -n /etc/X11/default-display-manager{,.bkup}
 echo > /etc/X11/default-display-manager
 cp -n /etc/gdm3/daemon.conf{,.bkup}
@@ -191,7 +192,7 @@ gconftool-2 --type string --set /apps/gnome-terminal/profiles/Default/background
 gconftool-2 --type string --set /apps/gnome-terminal/profiles/Default/background_type transparent
 
 
-##### Enable Num lock start up
+##### Enable num lock start up
 apt-get -y install numlockx
 cp -n /etc/gdm3/Init/Default{,.bkup}
 grep -q '/usr/bin/numlockx' /etc/gdm3/Init/Default || sed -i 's#exit 0#if [ -x /usr/bin/numlockx ]; then\n/usr/bin/numlockx on\nfi\nexit 0#' /etc/gdm3/Init/Default
@@ -230,7 +231,7 @@ echo -e 'file:///var/www www\nfile:///usr/share apps\nfile:///tmp tmp\nfile:///u
 
 
 ##### Configure VIM
-cp -n /etc/vim/vimrc /root/.vimrc
+cp -n /etc/vim/vimrc /root/.vimrc    # /etc/vim/vimrc
 sed -i 's/.*syntax on/syntax on/' /root/.vimrc
 sed -i 's/.*set background=dark/set background=dark/' /root/.vimrc
 sed -i 's/.*set showcmd/set showcmd/' /root/.vimrc
@@ -241,6 +242,16 @@ sed -i 's/.*set incsearch/set incsearch/' /root/.vimrc
 sed -i 's/.*set autowrite/set autowrite/' /root/.vimrc
 sed -i 's/.*set hidden/set hidden/' /root/.vimrc
 sed -i 's/.*set mouse=.*/"set mouse=a/' /root/.vimrc
+grep -q '^set number' /root/.vimrc || echo 'set number' >> /root/.vimrc                           # Add line numbers
+grep -q '^set autoindent' /root/.vimrc || echo 'set autoindent' >> /root/.vimrc                   # Set autoindent
+grep -q '^set expandtab' /root/.vimrc || echo -e 'set expandtab\nset smarttab' >> /root/.vimrc    # Set use spaces instead of tabs
+grep -q '^set softtabstop' /root/.vimrc || echo -e 'set softtabstop=4\nset shiftwidth=4' >> /root/.vimrc   # Set 4 spaces as a 'tab'
+grep -q '^set foldmethod=marker' /root/.vimrc || echo 'set foldmethod=marker' >> /root/.vimrc     # Folding
+grep -q '^nnoremap <space> za' /root/.vimrc || echo 'nnoremap <space> za' >> /root/.vimrc         # Space toggle folds
+grep -q '^set hlsearch' /root/.vimrc || echo 'set hlsearch' >> /root/.vimrc                       # Highlight search results
+grep -q '^set laststatus' /root/.vimrc || echo -e 'set laststatus=2\nset statusline=%F%m%r%h%w\ (%{&ff}){%Y}\ [%l,%v][%p%%]' >> /root/.vimrc   # Status bar
+grep -q '^filetype on' /root/.vimrc || echo -e 'filetype on\nfiletype plugin on\nsyntax enable\nset grepprg=grep\ -nH\ $*' >> /root/.vimrc     # Syntax Highlighting
+grep -q '^set wildmenu' /root/.vimrc || echo -e 'set wildmenu\nset wildmode=list:longest,full' >> /root/.vimrc      # Tab completion
 
 
 ##### Configure iceweasel & replace bookmarks
@@ -273,7 +284,7 @@ sed -i 's/<proxies><proxy name="Default"/<proxies><proxy name="Localhost" id="31
 cd ~/
 
 
-##### Configure Metasploit ~ http://docs.kali.org/general-use/starting-metasploit-framework-in-kali
+##### Configure metasploit ~ http://docs.kali.org/general-use/starting-metasploit-framework-in-kali
 service postgresql start
 service metasploit start
 echo exit > /tmp/msf.rc
@@ -286,7 +297,7 @@ apt-get -y install bash-completion
 #sed -i '/# enable bash completion in/,+3{/enable bash completion/!s/^#//}' /etc/bash.bashrc
 
 
-##### Install Conky
+##### Install conky
 apt-get -y install conky
 #- Configure conky
 if [ ! -e /root/.conkyrc.bkup ] && [ -e /root/.conkyrc ]; then cp -f /root/.conkyrc{,.bkup}; fi
@@ -298,7 +309,7 @@ mkdir -p /root/.config/autostart/
 echo -e '\n[Desktop Entry]\nType=Application\nExec=/root/.conkyscript.sh\nHidden=false\nNoDisplay=false\nX-GNOME-Autostart-enabled=true\nName[en_US]=conky\nName=conky\nComment[en_US]=\nComment=' > /root/.config/autostart/conkyscript.sh.desktop
 
 
-##### Install Geany
+##### Install geany
 apt-get -y install geany
 #--- Add to panel
 dconf load /org/gnome/gnome-panel/layout/objects/geany/ << EOT
@@ -326,7 +337,7 @@ mkdir -p /root/.config/geany/plugins/saveactions/
 echo -e '\n[saveactions]\nenable_autosave=false\nenable_instantsave=false\nenable_backupcopy=true\n\n[autosave]\nprint_messages=false\nsave_all=false\ninterval=300\n\n[instantsave]\ndefault_ft=None\n\n[backupcopy]\ndir_levels=5\ntime_fmt=%Y-%m-%d-%H-%M-%S\nbackup_dir=/root/backups/geany' > /root/.config/geany/plugins/saveactions/saveactions.conf
 
 
-##### Install Meld
+##### Install meld
 apt-get -y install meld
 gconftool-2 --type bool --set /apps/meld/show_line_numbers true
 gconftool-2 --type bool --set /apps/meld/show_whitespace true
@@ -342,15 +353,15 @@ gconftool-2 --type int --set /apps/meld/edit_wrap_lines 2
 apt-get -y install gtk-recordmydesktop
 
 
-##### Install Shutter
+##### Install shutter
 apt-get -y install shutter
 
 
-##### Install Axel
+##### Install axel
 apt-get -y install axel
 
 
-##### Install Gparted
+##### Install gparted
 apt-get -y install gparted
 
 
@@ -388,27 +399,27 @@ chsh -s `which zsh`
 source /root/.zshrc
 
 
-##### Install Terminator
+##### Install terminator
 apt-get -y install terminator
 
 
-##### Install Lynx
+##### Install lynx
 apt-get -y install lynx
 
 
-##### Install VPN support
+##### Install PPTP VPN support
 apt-get -y install network-manager-pptp-gnome network-manager-pptp
 
 
-##### Install Flash
+##### Install flash
 #apt-get -y install flashplugin-nonfree
 
 
-##### Install Java
+##### Install java
 # ???
 
 
-##### Install Nessus
+##### Install nessus
 cd /tmp/
 #--- Get download link
 iceweasel http://www.tenable.com/products/nessus/select-your-operating-system
@@ -422,7 +433,7 @@ iceweasel http://www.tenable.com/products/nessus/nessus-plugins/register-a-homef
 service nessusd start
 
 
-##### Add htshells
+##### Install htshells
 cd /usr/share/
 git clone git://github.com/wireghoul/htshells.git
 
@@ -432,7 +443,7 @@ cd /usr/share/wordlists
 wget http://xato.net/files/10k%20most%20common.zip && unzip "10k most common.zip" && rm -f "10k most common.zip"
 
 
-##### Extract rockyou wordlist
+##### Extract RockYou wordlist
 cd /usr/share/wordlists
 gunzip rockyou.txt.gz
 
@@ -443,6 +454,7 @@ apt-get -y autoremove
 apt-get -y autoclean
 updatedb
 history -c
+rm -f /root/.*_history #/root/.bash_history /root/.zhistory /root/.zsh_history
 
 
 #### Done!
