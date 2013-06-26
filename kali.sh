@@ -6,9 +6,9 @@
 # g0tmilk ~ http://g0tmi1k.com            #
 #Note######################################
 # The script WASN'T designed to be...     #
-#    ...executed.                         #
-# Copy & paste commands...                #
-#    ...into a ternminal window           #
+#    ...executed!                         #
+# Instead copy & paste commands...        #
+#    ...into a ternminal window.          #
 ###########################################
 
 ##### Remote configuration via SSH (Optional)
@@ -433,19 +433,55 @@ iceweasel http://www.tenable.com/products/nessus/nessus-plugins/register-a-homef
 service nessusd start
 
 
-##### Install htshells
-cd /usr/share/
-git clone git://github.com/wireghoul/htshells.git
+##### Install htshells ~ http://bugs.kali.org/view.php?id=422
+git clone git://github.com/wireghoul/htshells.git /usr/share/htshells/
 
 
-##### Add 10,000 Top/Worst/Common Passwords
-cd /usr/share/wordlists
-wget http://xato.net/files/10k%20most%20common.zip && unzip "10k most common.zip" && rm -f "10k most common.zip"
+##### Install veil ~ http://bugs.kali.org/view.php?id=421
+git clone git://github.com/ChrisTruncer/Veil.git /usr/share/veil/
 
 
-##### Extract RockYou wordlist
-cd /usr/share/wordlists
-gunzip rockyou.txt.gz
+##### Extract hyperion
+unzip -o -d /usr/share/windows-binaries/ /usr/share/windows-binaries/Hyperion-1.0.zip 
+#rm -rf /usr/share/windows-binaries/Hyperion-1.0.zip
+
+
+##### Update wordlists
+# Extract RockYou wordlist
+gzip -dc < /usr/share/wordlists/rockyou.txt.gz > /usr/share/wordlists/rockyou.txt  # gunzip rockyou.txt.gz
+#rm -rf /usr/share/wordlists/rockyou.txt.gz
+# Extract sqlmap wordlist
+unzip -d /usr/share/sqlmap/txt/ /usr/share/sqlmap/txt/wordlist.zip
+# Add 10,000 Top/Worst/Common Passwords
+wget http://xato.net/files/10k%20most%20common.zip -O /tmp/10kcommon.zip
+unzip -d /usr/share/wordlists/ /tmp/10kcommon.zip
+rm -f /tmp/10kcommon.zip
+mv -f /usr/share/wordlists/10k{\ most\ ,_most_}common.txt
+# Linking to more - Folders
+ln -sf /usr/share/dirb/wordlists /usr/share/wordlists/dirb
+ln -sf /usr/share/dirbuster/wordlists /usr/share/wordlists/dirbuster
+ln -sf /usr/share/fern-wifi-cracker/extras/wordlists /usr/share/wordlists/fern-wifi
+ln -sf /usr/share/metasploit-framework/data/john/wordlists /usr/share/wordlists/metasploit-jtr
+ln -sf /usr/share/metasploit-framework/data/wordlists /usr/share/wordlists/metasploit
+ln -sf /opt/metasploit/apps/pro/data/wordlists /usr/share/wordlists/metasploit-pro
+ln -sf /usr/share/webslayer/wordlist /usr/share/wordlists/webslayer
+ln -sf /usr/share/wfuzz/wordlist /usr/share/wordlists/wfuzz
+# Linking to more - Files
+unzip -d /usr/share/sqlmap/txt/ /usr/share/sqlmap/txt/wordlist.zip
+ln -sf /usr/share/sqlmap/txt/wordlist.txt /usr/share/wordlists/sqlmap.txt
+ln -sf /usr/share/dnsmap/wordlist_TLAs.txt /usr/share/wordlists/dnsmap.txt
+ln -sf /usr/share/golismero/wordlist/wfuzz/Discovery/all.txt /usr/share/wordlists/wfuzz.txt
+ln -sf /usr/share/nmap/nselib/data/passwords.lst /usr/share/wordlists/nmap.lst
+ln -sf /usr/share/set/src/fasttrack/wordlist.txt /usr/share/wordlists/fasttrack.txt
+ln -sf /usr/share/termineter/framework/data/smeter_passwords.txt /usr/share/wordlists/termineter.txt
+ln -sf /usr/share/w3af/core/controllers/bruteforce/passwords.txt /usr/share/wordlists/w3af.txt
+ln -sf /usr/share/wpscan/spec/fixtures/wpscan/modules/bruteforce/wordlist.txt /usr/share/wordlists/wpscan.txt
+#ln -sf /usr/share/arachni/spec/fixtures/passwords.txt /usr/share/wordlists/arachni
+#ln -sf /usr/share/cisco-auditing-tool/lists/passwords /usr/share/wordlists/cisco-auditing-tool/
+#ln -sf /usr/share/wpscan/spec/fixtures/wpscan/wpscan_options/wordlist.txt /usr/share/wordlists/wpscan-options.txt
+# Not enough? Want more? Check below!
+#apt-cache search wordlist
+#find / \( -iname '*wordlist*' -or -iname '*passwords*' \) #-exec ls -l {} \;
 
 
 ##### Clean the system
