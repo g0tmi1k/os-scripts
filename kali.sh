@@ -292,6 +292,12 @@ msfconsole -r /tmp/msf.rc
 rm /tmp/msf.rc
 
 
+##### Setup SSH
+rm -rf /etc/ssh/ssh_host_*
+rm -rf /root/.ssh/*
+ssh-keygen -b 4096 -t rsa -f /root/.ssh/id_rsa -P ""
+
+
 ##### Install bash-completion
 apt-get -y install bash-completion
 #sed -i '/# enable bash completion in/,+3{/enable bash completion/!s/^#//}' /etc/bash.bashrc
