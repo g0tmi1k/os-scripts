@@ -1,19 +1,17 @@
 #!/bin/sh
-#Operating System##########################
-# Designed for: Kali Linux [x86]          #
-#   Working on: 2013-06-17                #
-#Author####################################
-# g0tmilk ~ http://g0tmi1k.com            #
-#Note######################################
-# The script WASN'T designed to be...     #
-#    ...executed!                         #
-# Instead copy & paste commands...        #
-#    ...into a ternminal window.          #
-###########################################
+#Operating System----------------------------------------#
+# Designed for: Kali Linux [1.0.3 x86]                   #
+#   Working on: 2013-06-30                               #
+#Author--------------------------------------------------#
+# g0tmilk ~ http://g0tmi1k.com                           #
+#Note----------------------------------------------------#
+# The script WASN'T designed to be executed!             #
+# Instead copy & paste commands into a ternminal window. #
+#--------------------------------------------------------#
 
-##### Remote configuration via SSH (Optional)
+
+##### Remote configuration via SSH (optional)
 services ssh start         # Start SSH to allow for remote config
-update-rc.d ssh enable     # Enable SSH at startup
 ifconfig eth0              # Get IP of the interface
 #--- Use a 'remote' computer from here on out!
 ssh root@<ip>              # Replace <ip> with the value from ifconfig
@@ -22,44 +20,50 @@ export DISPLAY=:0.0        # Allows for remote configuration
 
 ##### Configure location (E.g. timezone & keyboard layout)
 #dpkg-reconfigure tzdata   # Timezone <--- Doesn't automate
-#dpkg-reconfigure keyboard-configuration  #dpkg-reconfigure console-setup # Keyboard <--- Doesn't automate   [DONT USE "English (UK) - English (UK, Macintosh)" FOR UK MPB, USE "US" (Still not perfect)]
-sed -i 's/XKBLAYOUT=".*"/XKBLAYOUT="us"/' /etc/default/keyboard && dpkg-reconfigure keyboard-configuration -u  # Keyboard <--- Doesn't automate (Need to restart xserver)
+#dpkg-reconfigure keyboard-configuration  #dpkg-reconfigure console-setup # Keyboard [DONT USE "English (UK) - English (UK, Macintosh)" FOR UK MPB, USE "US" (Still not perfect)] #<--- Doesn't automate
+sed -i 's/XKBLAYOUT=".*"/XKBLAYOUT="us"/' /etc/default/keyboard && dpkg-reconfigure keyboard-configuration -u   # Keyboard #<--- Doesn't automate (need to restart xserver)
 
 
-##### Fix NetworkManger: device not managed (Optional)
+##### Fix NetworkManger (optional)
+#--- 'device not managed'
 #sed -i 's/managed=.*/managed=true/' /etc/NetworkManager/NetworkManager.conf
-if [ ! -e /etc/network/interfaces.bkup ]; then cp -f /etc/network/interfaces{,.bkup}; fi
+if [ -e /etc/network/interfaces ]; then cp -n /etc/network/interfaces{,.bkup}; fi
 sed -i '/iface lo inet loopback/q' /etc/network/interfaces    #sed '/^#\|'auto\ lo'\|'iface\ lo'/!d' /etc/network/interfaces
 service network-manager restart
+#--- 'network disabled'
+service network-manager stop
+rm -f /var/lib/NetworkManager/NetworkManager.state
+service network-manager start
 
 
-##### Fix repositories (Optional)
+##### Fix repositories (optional)
 grep -q 'kali main non-free contrib' /etc/apt/sources.list || echo "deb http://http.kali.org/kali kali main non-free contrib" >> /etc/apt/sources.list
 grep -q 'kali/updates main contrib non-free' /etc/apt/sources.list || echo "deb http://security.kali.org/kali-security kali/updates main contrib non-free" >> /etc/apt/sources.list
 
 
-##### Install 'VMware Tools' (Optional)
+##### Install 'VMware Tools' (optional)
 #--- Install VMware tools ~ http://docs.kali.org/general-use/install-vmware-tools-kali-guest
 grep -q 'cups enabled' /usr/sbin/update-rc.d || echo "cups enabled" >> /usr/sbin/update-rc.d
 grep -q 'vmware-tools enabled' /usr/sbin/update-rc.d || echo "vmware-tools enabled" >> /usr/sbin/update-rc.d
 apt-get -y install gcc make linux-headers-$(uname -r)
-ln -s /usr/src/linux-headers-$(uname -r)/include/generated/uapi/linux/version.h /usr/src/linux-headers-$(uname -r)/include/linux/
-#VM -> Install VMware Tools.
+ln -sf /usr/src/linux-headers-$(uname -r)/include/generated/uapi/linux/version.h /usr/src/linux-headers-$(uname -r)/include/linux/
+# VM -> Install VMware Tools.
 mkdir -p /mnt/cdrom/
 mount -o ro /dev/cdrom /mnt/cdrom
-cp -f /mnt/cdrom/VMwareTools-*.tar.gz /tmp
+cp -f /mnt/cdrom/VMwareTools-*.tar.gz /tmp/
 cd /tmp/
 tar zxvf VMwareTools*
 cd vmware-tools-distrib/
 perl vmware-install.pl #<enter> x ???  #<--- Doesn't automate
+cd ~/
 #--- Install Parallel tools
 grep -q 'cups enabled' /usr/sbin/update-rc.d || echo "cups enabled" >> /usr/sbin/update-rc.d
 grep -q 'vmware-tools enabled' /usr/sbin/update-rc.d || echo "vmware-tools enabled" >> /usr/sbin/update-rc.d
 apt-get -y install gcc make linux-headers-$(uname -r)
-ln -s /usr/src/linux-headers-$(uname -r)/include/generated/uapi/linux/version.h /usr/src/linux-headers-$(uname -r)/include/linux/
+ln -sf /usr/src/linux-headers-$(uname -r)/include/generated/uapi/linux/version.h /usr/src/linux-headers-$(uname -r)/include/linux/
 #Virtual Machine -> Install Parallels Tools
 cd /media/Parallel\ Tools/
-./install #<enter>,<enter>,<enter>... #<--- Doesn't automate
+./install   #<enter>,<enter>,<enter>... #<--- Doesn't automate
 #--- Install VirtualBox Guest Additions
 # Mount CD - Use autorun
 
@@ -77,12 +81,12 @@ gsettings set org.gnome.gnome-panel.layout toplevel-id-list "['top-panel']"
 dconf write /org/gnome/gnome-panel/layout/objects/workspace-switcher/toplevel-id "'top-panel'"
 dconf write /org/gnome/gnome-panel/layout/objects/window-list/toplevel-id "'top-panel'"
 #--- Panel position
-dconf write /org/gnome/gnome-panel/layout/toplevels/top-panel/orientation "'top'" #"'right'"   # Issue with window-list
+dconf write /org/gnome/gnome-panel/layout/toplevels/top-panel/orientation "'top'"    #"'right'"   # Issue with window-list
 #--- Panel ordering
 dconf write /org/gnome/gnome-panel/layout/objects/menu-bar/pack-type "'start'"
 dconf write /org/gnome/gnome-panel/layout/objects/menu-bar/pack-index 0
-dconf write /org/gnome/gnome-panel/layout/objects/window-list/pack-type "'start'" # "'center'"
-dconf write /org/gnome/gnome-panel/layout/objects/window-list/pack-index 5        #0
+dconf write /org/gnome/gnome-panel/layout/objects/window-list/pack-type "'start'"   # "'center'"
+dconf write /org/gnome/gnome-panel/layout/objects/window-list/pack-index 5          #0
 dconf write /org/gnome/gnome-panel/layout/objects/workspace-switcher/pack-type "'end'"
 dconf write /org/gnome/gnome-panel/layout/objects/clock/pack-type "'end'"
 dconf write /org/gnome/gnome-panel/layout/objects/user-menu/pack-type "'end'"
@@ -119,24 +123,24 @@ dconf write /org/gnome/gnome-panel/layout/object-id-list "$(dconf read /org/gnom
 #convert /usr/share/icons/hicolor/48x48/apps/k.png -negate /usr/share/icons/hicolor/48x48/apps/k-invert.png
 #/usr/share/icons/gnome/48x48/status/security-medium.png
 #--- Enable only two workspaces
-gsettings set org.gnome.desktop.wm.preferences num-workspaces 2     #gconftool-2 --type int --set /apps/metacity/general/num_workspaces 2 #dconf write /org/gnome/gnome-panel/layout/objects/workspace-switcher/instance-config/num-rows 4
+gsettings set org.gnome.desktop.wm.preferences num-workspaces 2   #gconftool-2 --type int --set /apps/metacity/general/num_workspaces 2 #dconf write /org/gnome/gnome-panel/layout/objects/workspace-switcher/instance-config/num-rows 4
 gsettings set org.gnome.shell.overrides dynamic-workspaces false
 #--- Smaller title bar
 #sed -i "/title_vertical_pad/s/value=\"[0-9]\{1,2\}\"/value=\"0\"/g" /usr/share/themes/Adwaita/metacity-1/metacity-theme-3.xml
 #sed -i 's/title_scale=".*"/title_scale="small"/g' /usr/share/themes/Adwaita/metacity-1/metacity-theme-3.xml
-gsettings set org.gnome.desktop.wm.preferences titlebar-font 'Droid Bold 10' # 'Cantarell Bold 11'
+gsettings set org.gnome.desktop.wm.preferences titlebar-font 'Droid Bold 10'   # 'Cantarell Bold 11'
 gsettings set org.gnome.desktop.wm.preferences titlebar-uses-system-font false
 #--- Hide desktop icon
 dconf write /org/gnome/nautilus/desktop/computer-icon-visible false
 #--- Add "open with terminal" on right click menu
 apt-get -y install nautilus-open-terminal
-#--- Restart GNOME panel to apply/take effect (Need to restart xserver)
-#killall gnome-panel && gnome-panel&   #Still need to logoff!
+#--- Restart GNOME panel to apply/take effect (need to restart xserver)
+#killall gnome-panel && gnome-panel&   # Still need to logoff!
 
 ##### Install & configure XFCE
 apt-get -y install xfce4 xfce4-places-plugin
 mv /usr/bin/startx{,-gnome}
-ln -s /usr/bin/startxfce4 /usr/bin/startx   # Old school ;)
+ln -sf /usr/bin/startxfce4 /usr/bin/startx   # Old school ;)
 mkdir -p /root/.config/xfce4/{desktop,menu,panel,xfconf,xfwm4}/
 mkdir -p /root/.config/xfce4/panel/launcher-1{5,6,7,9}
 mkdir -p /root/.config/xfce4/xfconf/xfce-perchannel-xml/
@@ -159,42 +163,42 @@ echo -e '<?xml version="1.0" encoding="UTF-8"?>\n\n<channel name="xsettings" ver
 echo -e '<Menu>\n\t<Name>Top 10</Name>\n\t<DefaultAppDirs/>\n\t<Directory>top10.directory</Directory>\n\t<Include>\n\t\t<Category>top10</Category>\n\t</Include>\n</Menu>' > /root/.config/xfce4/menu/top10.menu
 sed -i 's/^enable=.*/enable=False/' /etc/xdg/user-dirs.conf   #sed -i 's/^XDG_/#XDG_/; s/^#XDG_DESKTOP/XDG_DESKTOP/;' /root/.config/user-dirs.dirs
 rm -rf /root/{Documents,Downloads,Music,Pictures,Public,Templates,Videos}/
-rm -r /root/.cache/sessions/*
+rm -f /root/.cache/sessions/*
 wget http://xfce-look.org/CONTENT/content-files/142110-Shiki-Colors-Light-Menus.tar.gz -O /tmp/Shiki-Colors-Light-Menus.tar.gz
 tar zxf /tmp/Shiki-Colors-Light-Menus.tar.gz -C /root/.themes/
 xfconf-query -c xsettings -p /Net/ThemeName -s "Shiki-Colors-Light-Menus"
 xfconf-query -c xsettings -p /Net/IconThemeName -s "gnome-brave"
 #--- Enable compositing
 xfconf-query -c xfwm4 -p /general/use_compositing -s true
-#--- Configure file browser (Need to re-login for effect)
-if [ ! -e  /root/.config/Thunar/thunarrc ]; then echo -e "[Configuration]\nLastShowHidden=TRUE" > /root/.config/Thunar/thunarrc; else sed -i 's/LastShowHidden=.*/LastShowHidden=TRUE/' /root/.config/Thunar/thunarrc; fi
+#--- Configure file browser (need to re-login for effect)
+if [ ! -e  /root/.config/Thunar/thunarrc ]; then mkdir -p /root/.config/Thunar/; echo -e "[Configuration]\nLastShowHidden=TRUE" > /root/.config/Thunar/thunarrc; else sed -i 's/LastShowHidden=.*/LastShowHidden=TRUE/' /root/.config/Thunar/thunarrc; fi
 
 
 ##### Configure (TTY) resolution
-cp -n /etc/default/grub{,.bkup}
+if [ -e /etc/default/grub ]; then cp -n /etc/default/grub{,.bkup}; fi
 sed -i 's/GRUB_TIMEOUT=.*/GRUB_TIMEOUT=1/' /etc/default/grub
 sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT="vga=0x0318 quiet"/' /etc/default/grub
 update-grub
 
 
-##### Configure login (Console login - non GUI)
-cp -n /etc/X11/default-display-manager{,.bkup}
+##### Configure login (console login - non GUI)
+if [ -e /etc/X11/default-display-manager ]; then cp -n /etc/X11/default-display-manager{,.bkup}; fi
 echo > /etc/X11/default-display-manager
-cp -n /etc/gdm3/daemon.conf{,.bkup}
+if [ -e /etc/gdm3/daemon.conf ]; then cp -n /etc/gdm3/daemon.conf{,.bkup}; fi
 sed -i 's/^.*AutomaticLoginEnable = .*/AutomaticLoginEnable = True/' /etc/gdm3/daemon.conf
 sed -i 's/^.*AutomaticLogin = .*/AutomaticLogin = root/' /etc/gdm3/daemon.conf
-ln -s /usr/sbin/gdm3 /usr/bin/startx   # Old school ;)
+#ln -s /usr/sbin/gdm3 /usr/bin/startx   # Old school ;) <--- We want XFCE over GNOME anyway
 
 
-##### Configure terminal (Need to restart xserver)
-gconftool-2 --type bool --set /apps/gnome-terminal/profiles/Default/scrollback_unlimited true #Terminal -> Edit -> Profile Preferences -> Scrolling -> Scrollback: Unlimited -> Close
-gconftool-2 --type string --set /apps/gnome-terminal/profiles/Default/background_darkness 0.85611499999999996  # Not working 100%!
+##### Configure terminal (need to restart xserver)
+gconftool-2 --type bool --set /apps/gnome-terminal/profiles/Default/scrollback_unlimited true    # Terminal -> Edit -> Profile Preferences -> Scrolling -> Scrollback: Unlimited -> Close
+gconftool-2 --type string --set /apps/gnome-terminal/profiles/Default/background_darkness 0.85611499999999996   # Not working 100%!
 gconftool-2 --type string --set /apps/gnome-terminal/profiles/Default/background_type transparent
 
 
-##### Enable num lock start up
+##### Enable num lock at start up (Might not be smart if you're using a smaller keyboard (laptop?))
 apt-get -y install numlockx
-cp -n /etc/gdm3/Init/Default{,.bkup}
+if [ -e /etc/gdm3/Init/Default ]; then cp -n /etc/gdm3/Init/Default{,.bkup}; fi
 grep -q '/usr/bin/numlockx' /etc/gdm3/Init/Default || sed -i 's#exit 0#if [ -x /usr/bin/numlockx ]; then\n/usr/bin/numlockx on\nfi\nexit 0#' /etc/gdm3/Init/Default
 #xfconf-query -c keyboards -p /Default/Numlock -s true
 
@@ -207,31 +211,31 @@ grep -q '/usr/bin/numlockx' /etc/gdm3/Init/Default || sed -i 's#exit 0#if [ -x /
 
 
 ##### Configure screen
-if [ ! -e /root/.screenrc.bkup ] && [ -e /root/.screenrc ]; then cp -f /root/.screenrc{,.bkup}; fi
+if [ -e /root/.screenrc ]; then cp -n /root/.screenrc{,.bkup}; fi
 echo -e "# Don't display the copyright page\nstartup_message off\n\n# tab-completion flash in heading bar\nvbell off\n\n# keep scrollback n lines\ndefscrollback 1000\n\n# hardstatus is a bar of text that is visible in all screens\nhardstatus on\nhardstatus alwayslastline\nhardstatus string '%{gk}%{G}%H %{g}[%{Y}%l%{g}] %= %{wk}%?%-w%?%{=b kR}(%{W}%n %t%?(%u)%?%{=b kR})%{= kw}%?%+w%?%?%= %{g} %{Y} %Y-%m-%d %C%a %{W}'\n\n# title bar\ntermcapinfo xterm ti@:te@\n\n# default windows (syntax: screen -t label order command)\nscreen -t bash1 0\nscreen -t bash2 1\n\n# select the default window\nselect 1" > /root/.screenrc
 
 
 ##### Configure tmux
-cp -n /root/.tmux.conf{,.bkup}
+if [ -e /root/.tmux.conf ]; then cp -n /root/.tmux.conf{,.bkup}; fi
 echo -e '# Make it use C-a, similar to screen..\nunbind C-b\nunbind l\nset -g prefix C-a\nbind-key C-a last-window\n \n# Reload key\nbind r source-file ~/.tmux.conf\n \nset -g default-terminal "screen-256color"\nset -g history-limit 1000\n \n \n# THEME\nset -g status-bg black\nset -g status-fg white\nset -g status-interval 60\nset -g status-left-length 30\nset -g status-left '"'"'#[fg=green](#S) #(whoami)@#H#[default]'"'"'\nset -g status-right '"'"'#[fg=yellow]#(cut -d " " -f 1-3 /proc/loadavg)#[default] #[fg=blue]%H:%M#[default]'"'"'\n \n# set correct term\nset -g default-terminal screen-256color' > /root/.tmux.conf
 
 
 ##### Configure aliases
-cp -n /root/.bash_aliases{,.bkup} # Should fail  #/etc/bashrc
+if [ -e /root/.bash_aliases ]; then cp -n /root/.bash_aliases{,.bkup}; fi   # /etc/bashrc
 echo -e '\n### axel\nalias axel="axel -a"\n\n### Screen\nalias screen="screen -xRR"\n\n### Directory navigation aliases\nalias ..="cd .."\nalias ...="cd ../.."\nalias ....="cd ../../.."\nalias .....="cd ../../../.."\n\n\n### Add more aliases\nalias upd="sudo apt-get update"\nalias upg="sudo apt-get upgrade"\nalias ins="sudo apt-get install"\nalias rem="sudo apt-get purge"\nalias fix="sudo apt-get install -f"\n\n\n### Extract file, example. "ex package.tar.bz2"\nex() {\n    if [[ -f $1 ]]; then\n        case $1 in\n            *.tar.bz2)   tar xjf $1  ;;\n            *.tar.gz)    tar xzf $1  ;;\n            *.bz2)       bunzip2 $1  ;;\n            *.rar)       rar x $1    ;;\n            *.gz)        gunzip $1   ;;\n            *.tar)       tar xf $1   ;;\n            *.tbz2)      tar xjf $1  ;;\n            *.tgz)       tar xzf $1  ;;\n            *.zip)       unzip $1    ;;\n            *.Z)         uncompress $1  ;;\n            *.7z)        7z x $1     ;;\n            *)           echo $1 cannot be extracted ;;\n        esac\n    else\n        echo $1 is not a valid file\n    fi\n}' >> /root/.bash_aliases
 sed -i 's/#alias/alias/g' /root/.bashrc
 
 
-##### Configure file browser (Need to restart xserver)
+##### Configure file browser (need to restart xserver)
 mkdir -p /root/.config/gtk-2.0/
-if [ -e /root/.config/gtk-2.0/gtkfilechooser.ini ]; then sed -i 's/^.*ShowHidden.*/ShowHidden=true/' /root/.config/gtk-2.0/gtkfilechooser.ini; else echo -e "\n[Filechooser Settings]\nLocationMode=path-bar\nShowHidden=true\nExpandFolders=false\nShowSizeColumn=true\nGeometryX=66\nGeometryY=39\nGeometryWidth=780\nGeometryHeight=618\nSortColumn=name\nSortOrder=ascending" > /root/.config/gtk-2.0/gtkfilechooser.ini; fi #Open/save Window -> Right click -> Show Hidden Files: Enabled
+if [ -e /root/.config/gtk-2.0/gtkfilechooser.ini ]; then sed -i 's/^.*ShowHidden.*/ShowHidden=true/' /root/.config/gtk-2.0/gtkfilechooser.ini; else echo -e "\n[Filechooser Settings]\nLocationMode=path-bar\nShowHidden=true\nExpandFolders=false\nShowSizeColumn=true\nGeometryX=66\nGeometryY=39\nGeometryWidth=780\nGeometryHeight=618\nSortColumn=name\nSortOrder=ascending" > /root/.config/gtk-2.0/gtkfilechooser.ini; fi   #Open/save Window -> Right click -> Show Hidden Files: Enabled
 dconf write /org/gnome/nautilus/preferences/show-hidden-files true
-if [ ! -e /root/.gtk-bookmarks.bkup ]; then cp -f /root/.gtk-bookmarks{,.bkup}; fi
-echo -e 'file:///var/www www\nfile:///usr/share apps\nfile:///tmp tmp\nfile:///usr/local/src/ src' >> /root/.gtk-bookmarks #Places -> Location: {/usr/share,/var/www/,/tmp/, /usr/local/src/} -> Bookmarks -> Add bookmark
+if [ -e /root/.gtk-bookmarks ]; then cp -n /root/.gtk-bookmarks{,.bkup}; fi    #/etc/bashrc
+echo -e 'file:///var/www www\nfile:///usr/share apps\nfile:///tmp tmp\nfile:///usr/local/src/ src' >> /root/.gtk-bookmarks
 
 
-##### Configure VIM
-cp -n /etc/vim/vimrc /root/.vimrc    # /etc/vim/vimrc
+##### Configure vim
+cp -f /etc/vim/vimrc /root/.vimrc    # /etc/vim/vimrc
 sed -i 's/.*syntax on/syntax on/' /root/.vimrc
 sed -i 's/.*set background=dark/set background=dark/' /root/.vimrc
 sed -i 's/.*set showcmd/set showcmd/' /root/.vimrc
@@ -242,45 +246,52 @@ sed -i 's/.*set incsearch/set incsearch/' /root/.vimrc
 sed -i 's/.*set autowrite/set autowrite/' /root/.vimrc
 sed -i 's/.*set hidden/set hidden/' /root/.vimrc
 sed -i 's/.*set mouse=.*/"set mouse=a/' /root/.vimrc
-grep -q '^set number' /root/.vimrc || echo 'set number' >> /root/.vimrc                           # Add line numbers
-grep -q '^set autoindent' /root/.vimrc || echo 'set autoindent' >> /root/.vimrc                   # Set autoindent
-grep -q '^set expandtab' /root/.vimrc || echo -e 'set expandtab\nset smarttab' >> /root/.vimrc    # Set use spaces instead of tabs
+grep -q '^set number' /root/.vimrc || echo 'set number' >> /root/.vimrc                                    # Add line numbers
+grep -q '^set autoindent' /root/.vimrc || echo 'set autoindent' >> /root/.vimrc                            # Set autoindent
+grep -q '^set expandtab' /root/.vimrc || echo -e 'set expandtab\nset smarttab' >> /root/.vimrc             # Set use spaces instead of tabs
 grep -q '^set softtabstop' /root/.vimrc || echo -e 'set softtabstop=4\nset shiftwidth=4' >> /root/.vimrc   # Set 4 spaces as a 'tab'
-grep -q '^set foldmethod=marker' /root/.vimrc || echo 'set foldmethod=marker' >> /root/.vimrc     # Folding
-grep -q '^nnoremap <space> za' /root/.vimrc || echo 'nnoremap <space> za' >> /root/.vimrc         # Space toggle folds
-grep -q '^set hlsearch' /root/.vimrc || echo 'set hlsearch' >> /root/.vimrc                       # Highlight search results
+grep -q '^set foldmethod=marker' /root/.vimrc || echo 'set foldmethod=marker' >> /root/.vimrc              # Folding
+grep -q '^nnoremap <space> za' /root/.vimrc || echo 'nnoremap <space> za' >> /root/.vimrc                  # Space toggle folds
+grep -q '^set hlsearch' /root/.vimrc || echo 'set hlsearch' >> /root/.vimrc                                # Highlight search results
 grep -q '^set laststatus' /root/.vimrc || echo -e 'set laststatus=2\nset statusline=%F%m%r%h%w\ (%{&ff}){%Y}\ [%l,%v][%p%%]' >> /root/.vimrc   # Status bar
 grep -q '^filetype on' /root/.vimrc || echo -e 'filetype on\nfiletype plugin on\nsyntax enable\nset grepprg=grep\ -nH\ $*' >> /root/.vimrc     # Syntax Highlighting
-grep -q '^set wildmenu' /root/.vimrc || echo -e 'set wildmenu\nset wildmode=list:longest,full' >> /root/.vimrc      # Tab completion
+grep -q '^set wildmenu' /root/.vimrc || echo -e 'set wildmenu\nset wildmode=list:longest,full' >> /root/.vimrc    # Tab completion
 
 
-##### Configure iceweasel & replace bookmarks
+##### Setup iceweasel
+#--- Configure iceweasel
 iceweasel & sleep 15; killall iceweasel   # Start and kill. Files needed for first time run
-if [[ `grep -q "browser.startup.page" /root/.mozilla/firefox/*.default/prefs.js; echo $?` == 1 ]]; then echo 'user_pref("browser.startup.page", 0);' >> /root/.mozilla/firefox/*.default/prefs.js; else sed -i 's/^.*browser.startup.page.*/user_pref("browser.startup.page", 0);' /root/.mozilla/firefox/*.default/prefs.js; fi #Iceweasel -> Edit -> Preferences -> General -> When firefox starts: Show a blank page
-if [[ `grep -q "privacy.donottrackheader.enabled" /root/.mozilla/firefox/*.default/prefs.js; echo $?` == 1 ]]; then echo 'user_pref("privacy.donottrackheader.enabled", true);' >> /root/.mozilla/firefox/*.default/prefs.js; else sed -i 's/^.*privacy.donottrackheader.enabled.*/user_pref("privacy.donottrackheader.enabled", true);' /root/.mozilla/firefox/*.default/prefs.js; fi #Privacy -> Enable: Tell websites I do not want to be tracked
-if [[ `grep -q "browser.showQuitWarning" /root/.mozilla/firefox/*.default/prefs.js; echo $?` == 1 ]]; then echo 'user_pref("browser.showQuitWarning", true);' >> /root/.mozilla/firefox/*.default/prefs.js; else sed -i 's/^.*browser.showQuitWarning.*/user_pref("browser.showQuitWarning", true);' /root/.mozilla/firefox/*.default/prefs.js; fi # Stop Ctrl + Q from quitting without warning
+if [[ `grep -q "browser.startup.page" /root/.mozilla/firefox/*.default/prefs.js; echo $?` == 1 ]]; then echo 'user_pref("browser.startup.page", 0);' >> /root/.mozilla/firefox/*.default/prefs.js; else sed -i 's/^.*browser.startup.page.*/user_pref("browser.startup.page", 0);' /root/.mozilla/firefox/*.default/prefs.js; fi   # Iceweasel -> Edit -> Preferences -> General -> When firefox starts: Show a blank page
+if [[ `grep -q "privacy.donottrackheader.enabled" /root/.mozilla/firefox/*.default/prefs.js; echo $?` == 1 ]]; then echo 'user_pref("privacy.donottrackheader.enabled", true);' >> /root/.mozilla/firefox/*.default/prefs.js; else sed -i 's/^.*privacy.donottrackheader.enabled.*/user_pref("privacy.donottrackheader.enabled", true);' /root/.mozilla/firefox/*.default/prefs.js; fi   # Privacy -> Enable: Tell websites I do not want to be tracked
+if [[ `grep -q "browser.showQuitWarning" /root/.mozilla/firefox/*.default/prefs.js; echo $?` == 1 ]]; then echo 'user_pref("browser.showQuitWarning", true);' >> /root/.mozilla/firefox/*.default/prefs.js; else sed -i 's/^.*browser.showQuitWarning.*/user_pref("browser.showQuitWarning", true);' /root/.mozilla/firefox/*.default/prefs.js; fi   # Stop Ctrl + Q from quitting without warning
+#--- Replace bookmarks
 cd /root/.mozilla/firefox/*.default/
-wget http://pentest-bookmarks.googlecode.com/files/bookmarksv1.5.html  # ****!! hardcoded version! Need to manually check for updates
-awk '!a[$0]++' bookmarksv*.html > bookmarks.html
+wget http://pentest-bookmarks.googlecode.com/files/bookmarksv1.5.html   # ***!!! hardcoded version! Need to manually check for updates
+if [ -e bookmarks.html ]; then cp -n bookmarks.html{,.bkup}; fi
 rm -f /root/.mozilla/firefox/*.default/places.sqlite
 rm -f /root/.mozilla/firefox/*.default/bookmarkbackups/*
+#--- Configure bookmarks
+awk '!a[$0]++' bookmarksv*.html | egrep -v ">(Latest Headlines|Getting Started|Recently Bookmarked|Recent Tags|Mozilla Firefox|Help and Tutorials|Customize Firefox|Get Involved|About Us|Hacker Media|Bookmarks Toolbar|Most Visited)</" | egrep -v "^    </DL><p>" | egrep -v "^<DD>Add" > bookmarks.html
+sed -i 's#^</DL><p>#        </DL><p>\n    </DL><p>\n    <DT><A HREF="https://127.0.0.1:8834">Nessus</A>\n    <DT><A HREF="https://127.0.0.1:3790">Metasploit</A>\n</DL><p>#' bookmarks.html
+sed -i 's#<HR>#<DT><H3 ADD_DATE="1303667175" LAST_MODIFIED="1303667175" PERSONAL_TOOLBAR_FOLDER="true">Bookmarks Toolbar</H3>\n<DD>Add bookmarks to this folder to see them displayed on the Bookmarks Toolbar#' bookmarks.html
+#--- Install addons
 cd /root/.mozilla/firefox/*.default/
 mkdir -p extensions/
 cd /root/.mozilla/firefox/*.default/extensions/
-wget https://addons.mozilla.org/firefox/downloads/latest/1865/addon-1865-latest.xpi?src=dp-btn-primary -O {d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d}.xpi #Adblock Plus
-wget https://addons.mozilla.org/firefox/downloads/latest/1843/addon-1843-latest.xpi?src=dp-btn-primary -O firebug@software.joehewitt.com.xpi #Firebug
-wget https://addons.mozilla.org/firefox/downloads/file/150692/foxyproxy_basic-2.6.2-fx+tb+sm.xpi?src=search -O FoxyProxyBasic.zip && unzip FoxyProxyBasic.zip -d foxyproxy-basic@eric.h.jung/ && rm FoxyProxyBasic.zip #FoxyProxy Basic
-wget https://addons.mozilla.org/firefox/downloads/latest/284030/addon-284030-latest.xpi?src=dp-btn-primary -O {6bdc61ae-7b80-44a3-9476-e1d121ec2238}.xpi #HTTPS Finder
-wget https://addons.mozilla.org/firefox/downloads/latest/3829/addon-3829-latest.xpi?src=dp-btn-primary -O {8f8fe09b-0bd3-4470-bc1b-8cad42b8203a}.xpi #Live HTTP Headers
-wget https://addons.mozilla.org/firefox/downloads/latest/92079/addon-92079-latest.xpi?src=dp-btn-primary  -O {bb6bc1bb-f824-4702-90cd-35e2fb24f25d}.xpi # Cookies Manager+
-wget https://addons.mozilla.org/firefox/downloads/file/79565/tamper_data-11.0.1-fx.xpi?src=dp-btn-primary -O {9c51bd27-6ed8-4000-a2bf-36cb95c0c947}.xpi # Tamper Data  - not working 100%
-iceweasel #<--- Doesn't automate
-#--- Configure foxproxy
-sed -i 's/<proxies><proxy name="Default"/<proxies><proxy name="Localhost" id="315347393" notes="Localhost" enabled="true" mode="manual" selectedTabIndex="1" lastresort="false" animatedIcons="true" includeInCycle="true" color="#FF051A" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="false" clearCookiesBeforeUse="false" rejectCookies="false"><matches\/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"\/><autoconf url="http:\/\/wpad\/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"\/><manualconf host="localhost" port="8080" socksversion="5" isSocks="false"\/><\/proxy><proxy name="Default"/' /root/.mozilla/firefox/*.default/foxyproxy.xml
+wget https://addons.mozilla.org/firefox/downloads/latest/1865/addon-1865-latest.xpi?src=dp-btn-primary -O {d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d}.xpi       # Adblock Plus
+wget https://addons.mozilla.org/firefox/downloads/latest/1843/addon-1843-latest.xpi?src=dp-btn-primary -O firebug@software.joehewitt.com.xpi               # Firebug
+wget https://addons.mozilla.org/firefox/downloads/file/150692/foxyproxy_basic-2.6.2-fx+tb+sm.xpi?src=search -O FoxyProxyBasic.zip && unzip -o FoxyProxyBasic.zip -d foxyproxy-basic@eric.h.jung/ && rm -f FoxyProxyBasic.zip   # FoxyProxy Basic
+wget https://addons.mozilla.org/firefox/downloads/latest/284030/addon-284030-latest.xpi?src=dp-btn-primary -O {6bdc61ae-7b80-44a3-9476-e1d121ec2238}.xpi   # HTTPS Finder
+wget https://addons.mozilla.org/firefox/downloads/latest/3829/addon-3829-latest.xpi?src=dp-btn-primary -O {8f8fe09b-0bd3-4470-bc1b-8cad42b8203a}.xpi       # Live HTTP Headers
+wget https://addons.mozilla.org/firefox/downloads/latest/92079/addon-92079-latest.xpi?src=dp-btn-primary  -O {bb6bc1bb-f824-4702-90cd-35e2fb24f25d}.xpi    # Cookies Manager+
+wget https://addons.mozilla.org/firefox/downloads/file/79565/tamper_data-11.0.1-fx.xpi?src=dp-btn-primary -O {9c51bd27-6ed8-4000-a2bf-36cb95c0c947}.xpi    # Tamper Data  - not working 100%
 #for z in *.xpi; do
 # d=`basename $z .xpi`
-# mkdir $d && unzip $z -d $d
+# mkdir $d && unzip -o $z -d $d
 #done
+iceweasel   #<--- Doesn't automate
+#--- Configure foxyproxy
+sed -i 's/<proxies><proxy name="Default"/<proxies><proxy name="Localhost" id="315347393" notes="Localhost" enabled="true" mode="manual" selectedTabIndex="1" lastresort="false" animatedIcons="true" includeInCycle="true" color="#FF051A" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="false" clearCookiesBeforeUse="false" rejectCookies="false"><matches\/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"\/><autoconf url="http:\/\/wpad\/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"\/><manualconf host="localhost" port="8080" socksversion="5" isSocks="false"\/><\/proxy><proxy name="Default"/' /root/.mozilla/firefox/*.default/foxyproxy.xml
 cd ~/
 
 
@@ -289,13 +300,15 @@ service postgresql start
 service metasploit start
 echo exit > /tmp/msf.rc
 msfconsole -r /tmp/msf.rc
-rm /tmp/msf.rc
+rm -f /tmp/msf.rc
 
 
 ##### Setup SSH
-rm -rf /etc/ssh/ssh_host_*
-rm -rf /root/.ssh/*
+rm -f /etc/ssh/ssh_host_*
+rm -f /root/.ssh/*
+ssh-keygen -A
 ssh-keygen -b 4096 -t rsa -f /root/.ssh/id_rsa -P ""
+#update-rc.d -f ssh remove; update-rc.d ssh defaults    # Enable SSH at startup
 
 
 ##### Install bash-completion
@@ -305,10 +318,10 @@ apt-get -y install bash-completion
 
 ##### Install conky
 apt-get -y install conky
-#- Configure conky
-if [ ! -e /root/.conkyrc.bkup ] && [ -e /root/.conkyrc ]; then cp -f /root/.conkyrc{,.bkup}; fi
+#--- Configure conky
+if [ -e /root/.conkyrc ]; then cp -n /root/.conkyrc{,.bkup}; fi   
 echo -e '#http://forums.opensuse.org/english/get-technical-help-here/how-faq-forums/unreviewed-how-faq/464737-easy-configuring-conky-conkyconf.html\nbackground yes\n\nfont Monospace:size=8:weight=bold\nuse_xft yes\n\nupdate_interval 2.0\n\nown_window yes\nown_window_type normal\nown_window_transparent yes\nown_window_class conky-semi\nown_window_argb_visual no  # YES # KDE\nown_window_colour brown\nown_window_hints undecorated,below,sticky,skip_taskbar,skip_pager\n\ndouble_buffer yes\nmaximum_width 250\n\ndraw_shades yes\ndraw_outline no\ndraw_borders no\n\nstippled_borders 3\nborder_margin 9\nborder_width 10\n\ndefault_color grey\n\nalignment bottom_right\n#gap_x 55 # KDE\n#gap_x 0  # GNOME\ngap_x 5\ngap_y 0\n\nuppercase no\nuse_spacer right\n\nTEXT\n${color dodgerblue3}SYSTEM ${hr 2}$color\n${color white}${time %A},${time %e} ${time %B} ${time %G}${alignr}${time %H:%M:%S}\n${color white}Machine$color: $nodename ${alignr}${color white}Uptime$color: $uptime\n\n${color dodgerblue3}CPU ${hr 2}$color\n#${font Arial:bold:size=8}${execi 99999 grep "model name" -m1 /proc/cpuinfo | cut -d":" -f2 | cut -d" " -f2- | sed "s#Processor ##"}$font$color\n${color white}MHz$color: ${freq}GHz $color${color white}Load$color: ${exec uptime | awk -F "load average: " '"'"'{print $2}'"'"'}\n${color white}Tasks$color: $running_processes/$processes ${alignr}${alignr}${color white}CPU0$color: ${cpu cpu0}% ${color white}CPU1$color: ${cpu cpu1}%\n#${color #c0ff3e}${acpitemp}C\n#${execi 20 sensors |grep "Core0 Temp" | cut -d" " -f4}$font$color$alignr${freq_g 2} ${execi 20 sensors |grep "Core1 Temp" | cut -d" " -f4}\n${cpugraph cpu0 25,120 000000 white} ${cpugraph cpu1 25,120 000000 white}\n${color white}${cpubar cpu1 3,120} ${color white}${cpubar cpu2 3,120}$color\n\n${color dodgerblue3}TOP 5 PROCESSES ${hr 2}$color\n${color white}NAME                PID      CPU      MEM\n${color white}1. ${top name 1}${top pid 1}   ${top cpu 1}   ${top mem 1}$color\n2. ${top name 2}${top pid 2}   ${top cpu 2}   ${top mem 2}\n3. ${top name 3}${top pid 3}   ${top cpu 3}   ${top mem 3}\n4. ${top name 4}${top pid 4}   ${top cpu 4}   ${top mem 4}\n5. ${top name 5}${top pid 5}   ${top cpu 5}   ${top mem 5}\n\n${color dodgerblue3}MEMORY & SWAP ${hr 2}$color\n${color white}RAM$color   $memperc%  ${membar 6}$color\n${color white}Swap$color  $swapperc%  ${swapbar 6}$color\n\n${color dodgerblue3}FILESYSTEM ${hr 2}$color\n${color white}root$color ${fs_free_perc /}% free$alignr${fs_free /}/ ${fs_size /}\n${fs_bar 3 /}$color\n#${color white}home$color ${fs_free_perc /home}% free$alignr${fs_free /home}/ ${fs_size /home}\n#${fs_bar 3 /home}$color\n\n${color dodgerblue3}LAN eth0 (${addr eth0}) ${hr 2}$color\n${color white}Down$color:  ${downspeed eth0} KB/s${alignr}${color white}Up$color: ${upspeed eth0} KB/s\n${color white}Downloaded$color: ${totaldown eth0} ${alignr}${color white}Uploaded$color: ${totalup eth0}\n${downspeedgraph eth0 25,120 000000 00ff00} ${alignr}${upspeedgraph eth0 25,120 000000 ff0000}$color\n${color dodgerblue3}LAN eth1 (${addr eth1}) ${hr 2}$color\n${color white}Down$color:  ${downspeed eth1} KB/s${alignr}${color white}Up$color: ${upspeed eth1} KB/s\n${color white}Downloaded$color: ${totaldown eth1} ${alignr}${color white}Uploaded$color: ${totalup eth1}\n${downspeedgraph eth1 25,120 000000 00ff00} ${alignr}${upspeedgraph eth1 25,120 000000 ff0000}$color\n${color dodgerblue3}WiFi (${addr wlan0}) ${hr 2}$color\n${color white}Down$color:  ${downspeed wlan0} KB/s${alignr}${color white}Up$color: ${upspeed wlan0} KB/s\n${color white}Downloaded$color: ${totaldown wlan0} ${alignr}${color white}Uploaded$color: ${totalup wlan0}\n${downspeedgraph wlan0 25,120 000000 00ff00} ${alignr}${upspeedgraph wlan0 25,120 000000 ff0000}$color\n\n${color dodgerblue3}CONNECTIONS ${hr 2}$color\n${color white}Inbound: $color${tcp_portmon 1 32767 count}${color white}  ${alignc}Outbound: $color${tcp_portmon 32768 61000 count}${alignr} ${color white}ALL: $color${tcp_portmon 1 65535 count}\n${color white}Inbound Connection ${alignr} Local Service/Port$color\n$color ${tcp_portmon 1 32767 rhost 0} ${alignr} ${tcp_portmon 1 32767 lservice 0}\n$color ${tcp_portmon 1 32767 rhost 1} ${alignr} ${tcp_portmon 1 32767 lservice 1}\n$color ${tcp_portmon 1 32767 rhost 2} ${alignr} ${tcp_portmon 1 32767 lservice 2}\n${color white}Outbound Connection ${alignr} Remote Service/Port$color\n$color ${tcp_portmon 32768 61000 rhost 0} ${alignr} ${tcp_portmon 32768 61000 rservice 0}\n$color ${tcp_portmon 32768 61000 rhost 1} ${alignr} ${tcp_portmon 32768 61000 rservice 1}\n$color ${tcp_portmon 32768 61000 rhost 2} ${alignr} ${tcp_portmon 32768 61000 rservice 2}' > /root/.conkyrc
-# Add to startup
+#--- Add to startup
 echo -e '#!/bin/bash\nsleep 25 && conky;' > /root/.conkyscript.sh
 chmod +x /root/.conkyscript.sh
 mkdir -p /root/.config/autostart/
@@ -331,12 +344,12 @@ EOT
 dconf write /org/gnome/gnome-panel/layout/object-id-list "$(dconf read /org/gnome/gnome-panel/layout/object-id-list | sed "s/]/, 'geany']/")"
 #--- Configure geany
 geany & sleep 5; killall geany   # Start and kill. Files needed for first time run
-#Geany -> Edit -> Preferences. Editor -> Newline strips trailing spaces: Enable. -> Indentation -> Type: Spaces. -> Files -> Strip trailing spaces and tabs: Enable. Replace tabs by space: Enable. -> Apply -> Ok
+# Geany -> Edit -> Preferences. Editor -> Newline strips trailing spaces: Enable. -> Indentation -> Type: Spaces. -> Files -> Strip trailing spaces and tabs: Enable. Replace tabs by space: Enable. -> Apply -> Ok
 sed -i 's/^.*indent_type.*/indent_type=0/' /root/.config/geany/geany.conf
 sed -i 's/^.*pref_editor_newline_strip.*/pref_editor_newline_strip=true/' /root/.config/geany/geany.conf
 sed -i 's/^.*pref_editor_replace_tabs.*/pref_editor_replace_tabs=true/' /root/.config/geany/geany.conf
 sed -i 's/^.*pref_editor_trail_space.*/pref_editor_trail_space=true/' /root/.config/geany/geany.conf
-#Geany -> Tools -> Plugin Manger -> Save Actions -> HTML Characters: Enabled. Split WIndows: Enabled. Save Actions: Enabled. -> Preferences -> Backup Copy -> Enable -> Directory to save backup files in: /root/backups/geany/. Directory levels to include in the backup destination: 5 -> Apply -> Ok -> Ok
+# Geany -> Tools -> Plugin Manger -> Save Actions -> HTML Characters: Enabled. Split WIndows: Enabled. Save Actions: Enabled. -> Preferences -> Backup Copy -> Enable -> Directory to save backup files in: /root/backups/geany/. Directory levels to include in the backup destination: 5 -> Apply -> Ok -> Ok
 sed -i 's/^.*active_plugins.*/active_plugins=\/usr\/lib\/geany\/htmlchars.so;\/usr\/lib\/geany\/saveactions.so;\/usr\/lib\/geany\/splitwindow.so;/' /root/.config/geany/geany.conf
 mkdir -p /root/backups/geany/
 mkdir -p /root/.config/geany/plugins/saveactions/
@@ -345,17 +358,18 @@ echo -e '\n[saveactions]\nenable_autosave=false\nenable_instantsave=false\nenabl
 
 ##### Install meld
 apt-get -y install meld
+#--- Configure meld
 gconftool-2 --type bool --set /apps/meld/show_line_numbers true
 gconftool-2 --type bool --set /apps/meld/show_whitespace true
 gconftool-2 --type bool --set /apps/meld/use_syntax_highlighting true
 gconftool-2 --type int --set /apps/meld/edit_wrap_lines 2
 
 
-##### Install LibreOffice
+##### Install libreoffice
 #apt-get -y install libreoffice
 
 
-##### Install RecordMyDesktop
+##### Install recordmydesktop
 apt-get -y install gtk-recordmydesktop
 
 
@@ -371,35 +385,38 @@ apt-get -y install axel
 apt-get -y install gparted
 
 
-##### Install DaemonFS
+##### Install daemonfs
 apt-get -y install daemonfs
 
 
-##### Install FileZilla
+##### Install filezilla
 apt-get -y install filezilla
+#--- Configure filezilla
 filezilla & sleep 5; killall filezilla   # Start and kill. Files needed for first time run
 sed -i 's/^.*"Default editor".*/\t<Setting name="Default editor" type="string">2\/usr\/bin\/geany<\/Setting>/' /root/.filezilla/filezilla.xml
 
 
-##### Install TFTP
+##### Install tftp
 apt-get -y install tftp
 
 
-##### Install ZSH
+##### Install zsh
 apt-get -y install zsh
 #--- Setup oh-my-zsh
 curl -L https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh | sh
-#--- Configure ZSH
-grep -q interactivecomments /etc/zsh/zshrc || echo "setopt interactivecomments" >> /etc/zsh/zshrc
-grep -q ignoreeof /etc/zsh/zshrc || echo "setopt ignoreeof" >> /etc/zsh/zshrc
-grep -q correctall /etc/zsh/zshrc || echo "setopt correctall" >> /etc/zsh/zshrc
-grep -q globdots /etc/zsh/zshrc || echo "setopt globdots" >> /etc/zsh/zshrc
+#--- Configure ZSH  
+if [ -e /root/.zshrc ]; then cp -n /root/.zshrc{.bkup}; fi       # /etc/zsh/zshrc
+grep -q interactivecomments /root/.zshrc || echo "setopt interactivecomments" >> /root/.zshrc
+grep -q ignoreeof /root/.zshrc || echo "setopt ignoreeof" >> /root/.zshrc
+grep -q correctall /root/.zshrc || echo "setopt correctall" >> /root/.zshrc
+grep -q globdots /root/.zshrc || echo "setopt globdots" >> /root/.zshrc
+grep -q bash_aliases /root/.zshrc || echo 'source $HOME/.bash_aliases' >> /root/.zshrc 
 #--- Configure ZSH (themes) ~ https://github.com/robbyrussell/oh-my-zsh/wiki/Themes
-sed -i 's/ZSH_THEME=.*/ZSH_THEME="alanpeabody"/' /root/.zshrc   # alanpeabody jreese   mh   candy   terminalparty kardan   nicoulaj sunaku
+sed -i 's/ZSH_THEME=.*/ZSH_THEME="alanpeabody"/' /root/.zshrc   # alanpeabody jreese   mh   candy   terminalparty kardan   nicoulaj sunaku    (Other themes I liked)
 #--- Configure oh-my-zsh
 sed -i 's/.*DISABLE_AUTO_UPDATE="true"/DISABLE_AUTO_UPDATE="true"/' /root/.zshrc
 sed -i 's/plugins=(.*)/plugins=(git screen tmux last-working-dir)/' /root/.zshrc
-#--- Configure ZSH as default and use it now
+#--- set ZSH as default and use it now
 chsh -s `which zsh`
 /usr/bin/env zsh
 source /root/.zshrc
@@ -407,13 +424,17 @@ source /root/.zshrc
 
 ##### Install terminator
 apt-get -y install terminator
+#--- Configure terminator
+if [ -e /root/.config/terminator/config ]; then cp -n /root/.config/terminator/config{.bkup}; fi
+mkdir -p /root/.config/terminator/
+echo -e '[global_config]\n[keybindings]\n[profiles]\n  [[default]]\n    background_darkness = 0.9\n    copy_on_selection = True\n    background_type = transparent\n    scrollback_infinite = True\n[layouts]\n  [[default]]\n    [[[child1]]]\n      type = Terminal\n      parent = window0\n    [[[window0]]]\n      type = Window\n      parent = ""\n[plugins]' > /root/.config/terminator/config
 
 
 ##### Install lynx
 apt-get -y install lynx
 
 
-##### Install PPTP VPN support
+##### Install pptp vpn support
 apt-get -y install network-manager-pptp-gnome network-manager-pptp
 
 
@@ -422,21 +443,26 @@ apt-get -y install network-manager-pptp-gnome network-manager-pptp
 
 
 ##### Install java
-# ???
+# <insert bash fu here>
+
+
+##### Install unicornscan ~ http://bugs.kali.org/view.php?id=388
+apt-get -y install unicornscan
 
 
 ##### Install nessus
 cd /tmp/
 #--- Get download link
 iceweasel http://www.tenable.com/products/nessus/select-your-operating-system
-wget "http://downloads.nessus.org/<file>" -O /tmp/nessus.deb   #***!!! Hardcoded version value
+#wget "http://downloads.nessus.org/<file>" -O /tmp/nessus.deb   # ***!!! Hardcoded version value
 dpkg -i /tmp/nessus.deb
-rm -rf /tmp/nessus.deb
-/opt/nessus/sbin/nessus-adduser #<--- Doesn't automate
+rm -f /tmp/nessus.deb
+/opt/nessus/sbin/nessus-adduser   #<--- Doesn't automate
 iceweasel http://www.tenable.com/products/nessus/nessus-plugins/register-a-homefeed
 #--- Check email
- /opt/nessus/bin/nessus-fetch --register <key> #<--- Doesn't automate
+ /opt/nessus/bin/nessus-fetch --register <key>   #<--- Doesn't automate
 service nessusd start
+cd ~/
 
 
 ##### Install htshells ~ http://bugs.kali.org/view.php?id=422
@@ -447,23 +473,36 @@ git clone git://github.com/wireghoul/htshells.git /usr/share/htshells/
 git clone git://github.com/ChrisTruncer/Veil.git /usr/share/veil/
 
 
-##### Extract hyperion
+##### Install MinGW
+apt-get -y install mingw-w64 binutils-mingw-w64 gcc-mingw-w64 mingw-w64-dev mingw-w64-tools
+
+
+##### Install OP packers
+mkdir -p /usr/share/packers/
+apt-get -y install upx-ucl   #wget http://upx.sourceforge.net/download/upx309w.zip -P /usr/share/packers/ && unzip -o -d /usr/share/packers/ /usr/share/packers/upx309w.zip && rm -f /usr/share/packers/upx309w.zip
+wget "http://www.eskimo.com/~scottlu/win/cexe.exe" -P /usr/share/packers/
+wget "http://www.farbrausch.de/~fg/kkrunchy/kkrunchy_023a2.zip" -P /usr/share/packers/ && unzip -o -d /usr/share/packers/ /usr/share/packers/kkrunchy_023a2.zip && rm -f /usr/share/packers/kkrunchy_023a2.zip
+
+
+##### Setup hyperion
 unzip -o -d /usr/share/windows-binaries/ /usr/share/windows-binaries/Hyperion-1.0.zip 
-#rm -rf /usr/share/windows-binaries/Hyperion-1.0.zip
+#rm -f /usr/share/windows-binaries/Hyperion-1.0.zip
+i686-w64-mingw32-g++ -static-libgcc -static-libstdc++ /usr/share/windows-binaries/Hyperion-1.0/Src/Crypter/*.cpp -o /usr/share/windows-binaries/Hyperion-1.0/Src/Crypter/bin/crypter.exe
+ln -s  /usr/share/windows-binaries/Hyperion-1.0/Src/Crypter/bin/crypter.exe /usr/share/windows-binaries/Hyperion-1.0/crypter.exe
 
 
 ##### Update wordlists
-# Extract RockYou wordlist
-gzip -dc < /usr/share/wordlists/rockyou.txt.gz > /usr/share/wordlists/rockyou.txt  # gunzip rockyou.txt.gz
-#rm -rf /usr/share/wordlists/rockyou.txt.gz
-# Extract sqlmap wordlist
-unzip -d /usr/share/sqlmap/txt/ /usr/share/sqlmap/txt/wordlist.zip
-# Add 10,000 Top/Worst/Common Passwords
+#--- Extract rockyou wordlist
+gzip -dc < /usr/share/wordlists/rockyou.txt.gz > /usr/share/wordlists/rockyou.txt   #gunzip rockyou.txt.gz
+#rm -f /usr/share/wordlists/rockyou.txt.gz
+#--- Extract sqlmap wordlist
+unzip -o -d /usr/share/sqlmap/txt/ /usr/share/sqlmap/txt/wordlist.zip
+#--- Add 10,000 Top/Worst/Common Passwords
 wget http://xato.net/files/10k%20most%20common.zip -O /tmp/10kcommon.zip
-unzip -d /usr/share/wordlists/ /tmp/10kcommon.zip
+unzip -o -d /usr/share/wordlists/ /tmp/10kcommon.zip
 rm -f /tmp/10kcommon.zip
 mv -f /usr/share/wordlists/10k{\ most\ ,_most_}common.txt
-# Linking to more - Folders
+#--- Linking to more - folders
 ln -sf /usr/share/dirb/wordlists /usr/share/wordlists/dirb
 ln -sf /usr/share/dirbuster/wordlists /usr/share/wordlists/dirbuster
 ln -sf /usr/share/fern-wifi-cracker/extras/wordlists /usr/share/wordlists/fern-wifi
@@ -472,8 +511,8 @@ ln -sf /usr/share/metasploit-framework/data/wordlists /usr/share/wordlists/metas
 ln -sf /opt/metasploit/apps/pro/data/wordlists /usr/share/wordlists/metasploit-pro
 ln -sf /usr/share/webslayer/wordlist /usr/share/wordlists/webslayer
 ln -sf /usr/share/wfuzz/wordlist /usr/share/wordlists/wfuzz
-# Linking to more - Files
-unzip -d /usr/share/sqlmap/txt/ /usr/share/sqlmap/txt/wordlist.zip
+#--- Linking to more - files
+unzip -o -d /usr/share/sqlmap/txt/ /usr/share/sqlmap/txt/wordlist.zip
 ln -sf /usr/share/sqlmap/txt/wordlist.txt /usr/share/wordlists/sqlmap.txt
 ln -sf /usr/share/dnsmap/wordlist_TLAs.txt /usr/share/wordlists/dnsmap.txt
 ln -sf /usr/share/golismero/wordlist/wfuzz/Discovery/all.txt /usr/share/wordlists/wfuzz.txt
@@ -485,21 +524,26 @@ ln -sf /usr/share/wpscan/spec/fixtures/wpscan/modules/bruteforce/wordlist.txt /u
 #ln -sf /usr/share/arachni/spec/fixtures/passwords.txt /usr/share/wordlists/arachni
 #ln -sf /usr/share/cisco-auditing-tool/lists/passwords /usr/share/wordlists/cisco-auditing-tool/
 #ln -sf /usr/share/wpscan/spec/fixtures/wpscan/wpscan_options/wordlist.txt /usr/share/wordlists/wpscan-options.txt
-# Not enough? Want more? Check below!
+#--- Not enough? Want more? Check below!
 #apt-cache search wordlist
 #find / \( -iname '*wordlist*' -or -iname '*passwords*' \) #-exec ls -l {} \;
 
 
 ##### Clean the system
+#--- Clean package manager
 apt-get -y clean
 apt-get -y autoremove
 apt-get -y autoclean
+#--- Update slocate database
 updatedb
+#--- Reset folder location
+cd ~/
+#--- Wipe (terminal) 'history' 
 history -c
-rm -f /root/.*_history #/root/.bash_history /root/.zhistory /root/.zsh_history
+rm -f /root/.*_history   #/root/.bash_history /root/.zhistory /root/.zsh_history
 
 
 #### Done!
 reboot
 
-# Don't forget to take a snapshot if you're using a VM!
+# *** Don't forget to take a snapshot if you're using a VM! ***
