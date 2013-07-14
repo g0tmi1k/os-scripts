@@ -280,7 +280,7 @@ rm -f /root/.mozilla/firefox/*.default/places.sqlite
 rm -f /root/.mozilla/firefox/*.default/bookmarkbackups/*
 #--- Configure bookmarks
 awk '!a[$0]++' bookmarksv*.html | egrep -v ">(Latest Headlines|Getting Started|Recently Bookmarked|Recent Tags|Mozilla Firefox|Help and Tutorials|Customize Firefox|Get Involved|About Us|Hacker Media|Bookmarks Toolbar|Most Visited)</" | egrep -v "^    </DL><p>" | egrep -v "^<DD>Add" > bookmarks.html
-sed -i 's#^</DL><p>#        </DL><p>\n    </DL><p>\n    <DT><A HREF="https://127.0.0.1:8834">Nessus</A>\n    <DT><A HREF="https://127.0.0.1:3790">Metasploit</A>\n</DL><p>#' bookmarks.html
+sed -i 's#^</DL><p>#        </DL><p>\n    </DL><p>\n    <DT><A HREF="https://127.0.0.1:8834">Nessus</A>\n    <DT><A HREF="https://127.0.0.1:9392">OpenVAS</A>\n    <DT><A HREF="https://127.0.0.1:3790">MSF Community</A>\n</DL><p>#' bookmarks.html
 sed -i 's#<HR>#<DT><H3 ADD_DATE="1303667175" LAST_MODIFIED="1303667175" PERSONAL_TOOLBAR_FOLDER="true">Bookmarks Toolbar</H3>\n<DD>Add bookmarks to this folder to see them displayed on the Bookmarks Toolbar#' bookmarks.html
 #--- Install addons
 cd /root/.mozilla/firefox/*.default/
@@ -384,7 +384,7 @@ gconftool-2 --type bool --set /apps/meld/use_syntax_highlighting true
 gconftool-2 --type int --set /apps/meld/edit_wrap_lines 2
 
 
-##### Install libreofficea
+##### Install libreoffice
 #apt-get -y install libreoffice
 
 
@@ -488,6 +488,13 @@ iceweasel http://www.tenable.com/products/nessus/nessus-plugins/register-a-homef
 #--- Check email
  /opt/nessus/bin/nessus-fetch --register <key>   #<--- Doesn't automate
 service nessusd start
+
+
+##### Install openvas
+openvas-setup
+#--- Remove 'default' user, and create a new admin user.
+test -e /var/lib/openvas/users/admin && openvasad -c remove_user -n admin
+test -e /var/lib/openvas/users/root || openvasad -c add_user -n root -r Admin
 
 
 ##### Install htshells ~ http://bugs.kali.org/view.php?id=422
