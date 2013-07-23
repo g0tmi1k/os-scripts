@@ -325,7 +325,7 @@ rm -f /etc/ssh/ssh_host_*
 rm -f /root/.ssh/*
 ssh-keygen -A
 ssh-keygen -b 4096 -t rsa -f /root/.ssh/id_rsa -P ""
-#update-rc.d -f ssh remove; update-rc.d ssh defaults    # Enable SSH at startup
+#update-rc.d -f ssh remove; update-rc.d ssh enable    # Enable SSH at startup
 
 
 ##### Install bash-completion
@@ -447,7 +447,7 @@ apt-get -y install terminator
 #--- Configure terminator
 if [ -e /root/.config/terminator/config ]; then cp -n /root/.config/terminator/config{.bkup}; fi
 mkdir -p /root/.config/terminator/
-echo -e '[global_config]\n[keybindings]\n[profiles]\n  [[default]]\n    background_darkness = 0.9\n    copy_on_selection = True\n    background_type = transparent\n    scrollback_infinite = True\n[layouts]\n  [[default]]\n    [[[child1]]]\n      type = Terminal\n      parent = window0\n    [[[window0]]]\n      type = Window\n      parent = ""\n[plugins]' > /root/.config/terminator/config
+echo -e '[global_config]\n  enabled_plugins = TerminalShot, LaunchpadCodeURLHandler, APTURLHandler, LaunchpadBugURLHandler\n[keybindings]\n[profiles]\n  [[default]]\n    background_darkness = 0.9\n    copy_on_selection = True\n    background_type = transparent\n    scrollback_infinite = True\n[layouts]\n  [[default]]\n    [[[child1]]]\n      type = Terminal\n      parent = window0\n    [[[window0]]]\n      type = Window\n      parent = ""\n[plugins]' > /root/.config/terminator/config
 
 
 ##### Install lynx
@@ -491,10 +491,11 @@ service nessusd start
 
 
 ##### Install openvas
-openvas-setup
+apt-get -y install openvas
+openvas-setup   #<--- Doesn't automate
 #--- Remove 'default' user, and create a new admin user.
 test -e /var/lib/openvas/users/admin && openvasad -c remove_user -n admin
-test -e /var/lib/openvas/users/root || openvasad -c add_user -n root -r Admin
+test -e /var/lib/openvas/users/root || openvasad -c add_user -n root -r Admin   #<--- Doesn't automate
 
 
 ##### Install htshells ~ http://bugs.kali.org/view.php?id=422
