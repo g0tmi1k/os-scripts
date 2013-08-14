@@ -1,14 +1,13 @@
 #!/bin/sh
 #Operating System---------------------------------------#
-# Designed for: Kali Linux [1.0.3 x86]                  #
-#   Working on: 2013-07-14                              #
+# Designed for: Kali Linux [1.0.4 x86]                  #
+#   Working on: 2013-08-10                              #
 #Author-------------------------------------------------#
 # g0tmilk ~ http://g0tmi1k.com                          #
 #Note---------------------------------------------------#
 # The script WASN'T designed to be executed!            #
 # Instead copy & paste commands into a terminal window. #
 #-------------------------------------------------------#
-
 
 ##### Remote configuration via SSH (optional)
 services ssh start         # Start SSH to allow for remote config
@@ -19,18 +18,29 @@ export DISPLAY=:0.0        # Allows for remote configuration
 
 
 ##### Configure location (E.g. timezone & keyboard layout)
-#dpkg-reconfigure tzdata   # Timezone <--- Doesn't automate
-#dpkg-reconfigure keyboard-configuration  #dpkg-reconfigure console-setup # Keyboard [DONT USE "English (UK) - English (UK, Macintosh)" FOR UK MPB, USE "US" (Still not perfect)] #<--- Doesn't automate
+#--- Keyboard
+#dpkg-reconfigure keyboard-configuration  #dpkg-reconfigure console-setup   # Keyboard [DONT USE "English (UK) - English (UK, Macintosh)" FOR UK MPB, USE "US" (Still not perfect)] #<--- Doesn't automate
 sed -i 's/XKBLAYOUT=".*"/XKBLAYOUT="us"/' /etc/default/keyboard && dpkg-reconfigure keyboard-configuration -u   # Keyboard #<--- Doesn't automate (need to restart xserver)
+#--- Correct the server time
+#dpkg-reconfigure tzdata   # Timezone <--- Doesn't automate
+rm -f /etc/localtime
+ln -sf /usr/share/zoneinfo/Europe/London /etc/localtime   # London, Europe
+#date
+#--- Install ntp (sync time)
+apt-get -y install ntp
+#--- Start service
+service ntp restart
+#--- Add to start up
+#update-rc.d ntp defaults
 
 
 ##### Fix NetworkManger (optional)
-#--- 'device not managed'
+#--- Fix 'device not managed' issue
 #sed -i 's/managed=.*/managed=true/' /etc/NetworkManager/NetworkManager.conf
 if [ -e /etc/network/interfaces ]; then cp -n /etc/network/interfaces{,.bkup}; fi
 sed -i '/iface lo inet loopback/q' /etc/network/interfaces    #sed '/^#\|'auto\ lo'\|'iface\ lo'/!d' /etc/network/interfaces
 service network-manager restart
-#--- 'network disabled'
+#--- Fix 'network disabled' issue
 service network-manager stop
 rm -f /var/lib/NetworkManager/NetworkManager.state
 service network-manager start
@@ -39,9 +49,10 @@ service network-manager start
 ##### Fix repositories (optional)
 grep -q 'kali main non-free contrib' /etc/apt/sources.list || echo "deb http://http.kali.org/kali kali main non-free contrib" >> /etc/apt/sources.list
 grep -q 'kali/updates main contrib non-free' /etc/apt/sources.list || echo "deb http://security.kali.org/kali-security kali/updates main contrib non-free" >> /etc/apt/sources.list
+apt-get update
 
 
-##### Install 'VMware Tools' (optional)
+##### Install 'Virtualmachines Tools' (optional)
 #--- Install VMware tools ~ http://docs.kali.org/general-use/install-vmware-tools-kali-guest
 grep -q 'cups enabled' /usr/sbin/update-rc.d || echo "cups enabled" >> /usr/sbin/update-rc.d
 grep -q 'vmware-tools enabled' /usr/sbin/update-rc.d || echo "vmware-tools enabled" >> /usr/sbin/update-rc.d
@@ -68,7 +79,7 @@ cd /media/Parallel\ Tools/
 # Mount CD - Use autorun
 
 
-##### Setup static IP address on eth1 - host only (Optional)
+##### Setup static IP address on eth1 - host only (optional)
 ifconfig eth1 192.168.155.175/24
 grep -q 'iface eth1 inet static' /etc/network/interfaces || echo -e '\nauto eth1\niface eth1 inet static\n    address 192.168.155.175\n    netmask 255.255.255.0\n    gateway 192.168.155.1' >> /etc/network/interfaces
 
@@ -76,8 +87,8 @@ grep -q 'iface eth1 inet static' /etc/network/interfaces || echo -e '\nauto eth1
 ##### Update OS
 apt-get update && apt-get -y dist-upgrade --fix-missing
 #--- Enable bleeding edge ~ http://www.kali.org/kali-monday/bleeding-edge-kali-repositories/
-grep -q 'kali-bleeding-edge' /etc/apt/sources.list || echo -e "\n\n## Bleeding edge\ndeb http://repo.kali.org/kali kali-bleeding-edge main" >> /etc/apt/sources.list
-apt-get update && apt-get -y upgrade
+#grep -q 'kali-bleeding-edge' /etc/apt/sources.list || echo -e "\n\n## Bleeding edge\ndeb http://repo.kali.org/kali kali-bleeding-edge main" >> /etc/apt/sources.list
+#apt-get update && apt-get -y upgrade
 
 
 ##### Configure GNOME 3
@@ -143,10 +154,10 @@ apt-get -y install nautilus-open-terminal
 #killall gnome-panel && gnome-panel&   # Still need to logoff!
 
 
-##### Install & configure XFCE
+##### Install & configure XFCE4
 apt-get -y install xfce4 xfce4-places-plugin
 mv /usr/bin/startx{,-gnome}
-ln -sf /usr/bin/startxfce4 /usr/bin/startx   # Old school ;)
+ln -sf /usr/bin/startx{fce4,}  # Old school ;)
 mkdir -p /root/.config/xfce4/{desktop,menu,panel,xfconf,xfwm4}/
 mkdir -p /root/.config/xfce4/panel/launcher-1{5,6,7,9}
 mkdir -p /root/.config/xfce4/xfconf/xfce-perchannel-xml/
@@ -203,7 +214,7 @@ gconftool-2 --type string --set /apps/gnome-terminal/profiles/Default/background
 gconftool-2 --type string --set /apps/gnome-terminal/profiles/Default/background_type transparent
 
 
-##### Enable num lock at start up (Might not be smart if you're using a smaller keyboard (laptop?))
+##### Enable num lock at start up (might not be smart if you're using a smaller keyboard (laptop?))
 apt-get -y install numlockx
 if [ -e /etc/gdm3/Init/Default ]; then cp -n /etc/gdm3/Init/Default{,.bkup}; fi
 grep -q '/usr/bin/numlockx' /etc/gdm3/Init/Default || sed -i 's#exit 0#if [ -x /usr/bin/numlockx ]; then\n/usr/bin/numlockx on\nfi\nexit 0#' /etc/gdm3/Init/Default
@@ -217,22 +228,90 @@ grep -q '/usr/bin/numlockx' /etc/gdm3/Init/Default || sed -i 's#exit 0#if [ -x /
 #grep -q "hostname" /etc/rc.local hostname || sed -i 's#^exit 0#hostname $(cat /dev/urandom | tr -dc "A-Za-z" | head -c8)\nexit 0#' /etc/rc.local
 
 
-##### Configure screen
+##### Configure tmux
+apt-get -y install tmux
+#--- Configure tmux
+file=/root/.tmux.conf; if [ -e $file ]; then cp -n $file{,.bkup}; fi
+echo -e "#--References-------------------------------------------------------------------\n# http://blog.hawkhost.com/2010/07/02/tmux-%E2%80%93-the-terminal-multiple...\n# https://wiki.archlinux.org/index.php/Tmux\n\n\n# Make it like screen (use C-a)\nunbind C-b\nset -g prefix C-a\n\n# Pane switching with Alt+arrow\nbind -n M-Left select-pane -L\nbind -n M-Right select-pane -R\nbind -n M-Up select-pane -U\nbind -n M-Down select-pane -D\n\n#Activity Monitoring\nsetw -g monitor-activity on\nset -g visual-activity on\n\n# Reaload settings\nunbind R\nbind R source-file ~/.tmux.conf\n\n# Load custom sources\n#source ~/.bashrc\n\n# Set defaults\nset -g default-terminal 'screen-256color'\nset -g history-limit 5000\n\n# Defult windows titles\nset -g set-titles on\nset -g set-titles-string '#(whoami)@#H - #I:#W'\n\n# Last window switch\nbind-key C-a last-window\n\n#Use ZSH\nset-option -g default-shell /bin/zsh\n\n#--Theme------------------------------------------------------------------------\n# Default colours\nset -g status-bg black\nset -g status-fg white\n\n# Left hand side\nset -g status-left-length 30\nset -g status-left '#[fg=green,bold]#(whoami)#[gf=green]@#H #[fg=green,dim][#[fg=yellow]#(cut -d \" \" -f 1-3 /proc/loadavg)#[fg=green,dim]]'\n\n# Inactive windows in status bar\nset-window-option -g window-status-format '#[fg=red,dim]#I#[fg=grey,dim]:#[default,dim]#W#[fg=grey,dim]'\n\n# Current or active window in status bar\n#set-window-option -g window-status-current-format '#[bg=white,fg=red]#I#[bg=white,fg=grey]:#[bg=white,fg=black]#W#[fg=dim]#F'\nset-window-option -g window-status-current-format '#[fg=red,bold](#[fg=white,bold]#I#[fg=red,dim]:#[fg=white,bold]#W#[fg=red,bold])'\n\n# Right hand side\nset -g status-right '#[fg=green][#[fg=yellow]%Y-%m-%d #[fg=white]%H:%M#[default]#[fg=green]]'\n\n# Show tmux messages for longer\nset -g display-time 3000\n\n# Set correct term\nset -g default-terminal screen-256color\n\n# ???\nset -g status-interval 60\nunbind l" > /root/.tmux.conf
+#--- Setup alias
+grep -q 'alias tmux="tmux attach || tmux new"' /etc/bashrc || echo 'alias tmux="tmux attach || tmux new"' >> /etc/bashrc   #/root/.bash_aliases
+source /etc/bashrc
+#--- Use tmux
+tmux
+
+
+##### Configure screen (if possible, use tmux instead)
 apt-get -y install screen
+#--- Configure screen
 if [ -e /root/.screenrc ]; then cp -n /root/.screenrc{,.bkup}; fi
 echo -e "# Don't display the copyright page\nstartup_message off\n\n# tab-completion flash in heading bar\nvbell off\n\n# keep scrollback n lines\ndefscrollback 1000\n\n# hardstatus is a bar of text that is visible in all screens\nhardstatus on\nhardstatus alwayslastline\nhardstatus string '%{gk}%{G}%H %{g}[%{Y}%l%{g}] %= %{wk}%?%-w%?%{=b kR}(%{W}%n %t%?(%u)%?%{=b kR})%{= kw}%?%+w%?%?%= %{g} %{Y} %Y-%m-%d %C%a %{W}'\n\n# title bar\ntermcapinfo xterm ti@:te@\n\n# default windows (syntax: screen -t label order command)\nscreen -t bash1 0\nscreen -t bash2 1\n\n# select the default window\nselect 1" > /root/.screenrc
 
 
-##### Configure tmux
-apt-get -y install tmux
-if [ -e /root/.tmux.conf ]; then cp -n /root/.tmux.conf{,.bkup}; fi
-echo -e '# Make it use C-a, similar to screen..\nunbind C-b\nunbind l\nset -g prefix C-a\nbind-key C-a last-window\n \n# Reload key\nbind r source-file ~/.tmux.conf\n \nset -g default-terminal "screen-256color"\nset -g history-limit 1000\n \n \n# THEME\nset -g status-bg black\nset -g status-fg white\nset -g status-interval 60\nset -g status-left-length 30\nset -g status-left '"'"'#[fg=green](#S) #(whoami)@#H#[default]'"'"'\nset -g status-right '"'"'#[fg=yellow]#(cut -d " " -f 1-3 /proc/loadavg)#[default] #[fg=blue]%H:%M#[default]'"'"'\n \n# set correct term\nset -g default-terminal screen-256color' > /root/.tmux.conf
-
-
 ##### Configure aliases
-if [ -e /root/.bash_aliases ]; then cp -n /root/.bash_aliases{,.bkup}; fi   # /etc/bashrc
-echo -e '\n### axel\nalias axel="axel -a"\n\n### Screen\nalias screen="screen -xRR"\n\n### Directory navigation aliases\nalias ..="cd .."\nalias ...="cd ../.."\nalias ....="cd ../../.."\nalias .....="cd ../../../.."\n\n\n### Add more aliases\nalias upd="sudo apt-get update"\nalias upg="sudo apt-get upgrade"\nalias ins="sudo apt-get install"\nalias rem="sudo apt-get purge"\nalias fix="sudo apt-get install -f"\n\n\n### Extract file, example. "ex package.tar.bz2"\nex() {\n    if [[ -f $1 ]]; then\n        case $1 in\n            *.tar.bz2)   tar xjf $1  ;;\n            *.tar.gz)    tar xzf $1  ;;\n            *.bz2)       bunzip2 $1  ;;\n            *.rar)       rar x $1    ;;\n            *.gz)        gunzip $1   ;;\n            *.tar)       tar xf $1   ;;\n            *.tbz2)      tar xjf $1  ;;\n            *.tgz)       tar xzf $1  ;;\n            *.zip)       unzip $1    ;;\n            *.Z)         uncompress $1  ;;\n            *.7z)        7z x $1     ;;\n            *)           echo $1 cannot be extracted ;;\n        esac\n    else\n        echo $1 is not a valid file\n    fi\n}' >> /root/.bash_aliases
-sed -i 's/#alias/alias/g' /root/.bashrc
+if [ -e /etc/bashrc ]; then cp -n /etc/bashrc{,.bkup}; fi   # /root/.bash_aliases
+echo -e '\n### tmux\nalias tmux="tmux attach"\n\n### axel\nalias axel="axel -a"\n\n### Screen\nalias screen="screen -xRR"\n\n### Directory navigation aliases\nalias ..="cd .."\nalias ...="cd ../.."\nalias ....="cd ../../.."\nalias .....="cd ../../../.."\n\n\n### Add more aliases\nalias upd="sudo apt-get update"\nalias upg="sudo apt-get upgrade"\nalias ins="sudo apt-get install"\nalias rem="sudo apt-get purge"\nalias fix="sudo apt-get install -f"\n\n\n### Extract file, example. "ex package.tar.bz2"\nex() {\n    if [[ -f $1 ]]; then\n        case $1 in\n            *.tar.bz2)   tar xjf $1  ;;\n            *.tar.gz)    tar xzf $1  ;;\n            *.bz2)       bunzip2 $1  ;;\n            *.rar)       rar x $1    ;;\n            *.gz)        gunzip $1   ;;\n            *.tar)       tar xf $1   ;;\n            *.tbz2)      tar xjf $1  ;;\n            *.tgz)       tar xzf $1  ;;\n            *.zip)       unzip $1    ;;\n            *.Z)         uncompress $1  ;;\n            *.7z)        7z x $1     ;;\n            *)           echo $1 cannot be extracted ;;\n        esac\n    else\n        echo $1 is not a valid file\n    fi\n}' >> /etc/bashrc
+sed -i 's/#alias/alias/g' /etc/bashrc
+#--- Apply
+source /etc/bashrc
+
+
+##### Install bash-completion
+apt-get -y install bash-completion
+#sed -i '/# enable bash completion in/,+3{/enable bash completion/!s/^#//}' /etc/bash.bashrc
+
+
+##### Install zsh
+apt-get -y install zsh git
+#--- Setup oh-my-zsh
+curl -s -L https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh | sh
+#--- Configure zsh
+file=/root/.zshrc; if [ -e $file ]; then cp -n $file{,.bkup}; fi   #/etc/zsh/zshrc
+grep -q interactivecomments /root/.zshrc || echo "setopt interactivecomments" >> /root/.zshrc
+grep -q ignoreeof /root/.zshrc || echo "setopt ignoreeof" >> /root/.zshrc
+grep -q correctall /root/.zshrc || echo "setopt correctall" >> /root/.zshrcsudo
+grep -q globdots /root/.zshrc || echo "setopt globdots" >> /root/.zshrc
+grep -q bash_aliases /root/.zshrc || echo 'source $HOME/.bash_aliases' >> /root/.zshrc   #echo 'source /etc/bashrc' >> /root/.zshrc 
+#--- Configure zsh (themes) ~ https://github.com/robbyrussell/oh-my-zsh/wiki/Themes
+sed -i 's/ZSH_THEME=.*/ZSH_THEME="alanpeabody"/' /root/.zshrc   # alanpeabody jreese   mh   candy   terminalparty kardan   nicoulaj sunaku    (Other themes I liked)
+#--- Configure oh-my-zsh
+sed -i 's/.*DISABLE_AUTO_UPDATE="true"/DISABLE_AUTO_UPDATE="true"/' /root/.zshrc
+sed -i 's/plugins=(.*)/plugins=(git screen tmux last-working-dir)/' /root/.zshrc
+#--- Set zsh as default and use it now
+chsh -s `which zsh`
+/usr/bin/env zsh
+source /root/.zshrc
+
+
+##### Install terminator
+apt-get -y install terminator
+#--- Configure terminator
+if [ -e /root/.config/terminator/config ]; then cp -n /root/.config/terminator/config{.bkup}; fi
+mkdir -p /root/.config/terminator/
+echo -e '[global_config]\n  enabled_plugins = TerminalShot, LaunchpadCodeURLHandler, APTURLHandler, LaunchpadBugURLHandler\n[keybindings]\n[profiles]\n  [[default]]\n    background_darkness = 0.9\n    copy_on_selection = True\n    background_type = transparent\n    scrollback_infinite = True\n[layouts]\n  [[default]]\n    [[[child1]]]\n      type = Terminal\n      parent = window0\n    [[[window0]]]\n      type = Window\n      parent = ""\n[plugins]' > /root/.config/terminator/config
+
+
+##### Configure vim
+file=/etc/vim/vimrc; if [ -e $file ]; then cp -n $file{,.bkup}; fi   #cp -f /etc/vim/vimrc /root/.vimrc
+sed -i 's/.*syntax on/syntax on/' $file
+sed -i 's/.*set background=dark/set background=dark/' $file
+sed -i 's/.*set showcmd/set showcmd/' $file
+sed -i 's/.*set showmatch/set showmatch/' $file
+sed -i 's/.*set ignorecase/set ignorecase/' $file
+sed -i 's/.*set smartcase/set smartcase/' $file
+sed -i 's/.*set incsearch/set incsearch/' $file
+sed -i 's/.*set autowrite/set autowrite/' $file
+sed -i 's/.*set hidden/set hidden/' $file
+sed -i 's/.*set mouse=.*/"set mouse=a/' $file
+grep -q '^set number' $file || echo 'set number' >> $file                                          # Add line numbers
+grep -q '^set autoindent' $file || echo 'set autoindent' >> $file                                  # Set auto indent
+grep -q '^set expandtab' $file || echo -e 'set expandtab\nset smarttab' >> $file                   # Set use spaces instead of tabs
+grep -q '^set softtabstop' $file || echo -e 'set softtabstop=4\nset shiftwidth=4' >> $file         # Set 4 spaces as a 'tab'
+grep -q '^set foldmethod=marker' $file || echo 'set foldmethod=marker' >> $file                    # Folding
+grep -q '^nnoremap <space> za' $file || echo 'nnoremap <space> za' >> $file                        # Space toggle folds
+grep -q '^set hlsearch' $file || echo 'set hlsearch' >> $file                                      # Highlight search results
+grep -q '^set laststatus' $file || echo -e 'set laststatus=2\nset statusline=%F%m%r%h%w\ (%{&ff}){%Y}\ [%l,%v][%p%%]' >> $file   # Status bar
+grep -q '^filetype on' $file || echo -e 'filetype on\nfiletype plugin on\nsyntax enable\nset grepprg=grep\ -nH\ $*' >> $file     # Syntax Highlighting
+grep -q '^set wildmenu' $file || echo -e 'set wildmenu\nset wildmode=list:longest,full' >> $file   # Tab completion
 
 
 ##### Configure file browser (need to restart xserver)
@@ -241,30 +320,6 @@ if [ -e /root/.config/gtk-2.0/gtkfilechooser.ini ]; then sed -i 's/^.*ShowHidden
 dconf write /org/gnome/nautilus/preferences/show-hidden-files true
 if [ -e /root/.gtk-bookmarks ]; then cp -n /root/.gtk-bookmarks{,.bkup}; fi    #/etc/bashrc
 echo -e 'file:///var/www www\nfile:///usr/share apps\nfile:///tmp tmp\nfile:///usr/local/src/ src' >> /root/.gtk-bookmarks
-
-
-##### Configure vim
-cp -f /etc/vim/vimrc /root/.vimrc    # /etc/vim/vimrc
-sed -i 's/.*syntax on/syntax on/' /root/.vimrc
-sed -i 's/.*set background=dark/set background=dark/' /root/.vimrc
-sed -i 's/.*set showcmd/set showcmd/' /root/.vimrc
-sed -i 's/.*set showmatch/set showmatch/' /root/.vimrc
-sed -i 's/.*set ignorecase/set ignorecase/' /root/.vimrc
-sed -i 's/.*set smartcase/set smartcase/' /root/.vimrc
-sed -i 's/.*set incsearch/set incsearch/' /root/.vimrc
-sed -i 's/.*set autowrite/set autowrite/' /root/.vimrc
-sed -i 's/.*set hidden/set hidden/' /root/.vimrc
-sed -i 's/.*set mouse=.*/"set mouse=a/' /root/.vimrc
-grep -q '^set number' /root/.vimrc || echo 'set number' >> /root/.vimrc                                    # Add line numbers
-grep -q '^set autoindent' /root/.vimrc || echo 'set autoindent' >> /root/.vimrc                            # Set auto indent
-grep -q '^set expandtab' /root/.vimrc || echo -e 'set expandtab\nset smarttab' >> /root/.vimrc             # Set use spaces instead of tabs
-grep -q '^set softtabstop' /root/.vimrc || echo -e 'set softtabstop=4\nset shiftwidth=4' >> /root/.vimrc   # Set 4 spaces as a 'tab'
-grep -q '^set foldmethod=marker' /root/.vimrc || echo 'set foldmethod=marker' >> /root/.vimrc              # Folding
-grep -q '^nnoremap <space> za' /root/.vimrc || echo 'nnoremap <space> za' >> /root/.vimrc                  # Space toggle folds
-grep -q '^set hlsearch' /root/.vimrc || echo 'set hlsearch' >> /root/.vimrc                                # Highlight search results
-grep -q '^set laststatus' /root/.vimrc || echo -e 'set laststatus=2\nset statusline=%F%m%r%h%w\ (%{&ff}){%Y}\ [%l,%v][%p%%]' >> /root/.vimrc   # Status bar
-grep -q '^filetype on' /root/.vimrc || echo -e 'filetype on\nfiletype plugin on\nsyntax enable\nset grepprg=grep\ -nH\ $*' >> /root/.vimrc     # Syntax Highlighting
-grep -q '^set wildmenu' /root/.vimrc || echo -e 'set wildmenu\nset wildmode=list:longest,full' >> /root/.vimrc    # Tab completion
 
 
 ##### Setup iceweasel
@@ -291,7 +346,7 @@ wget https://addons.mozilla.org/firefox/downloads/latest/1865/addon-1865-latest.
 wget https://addons.mozilla.org/firefox/downloads/latest/92079/addon-92079-latest.xpi?src=dp-btn-primary  -O {bb6bc1bb-f824-4702-90cd-35e2fb24f25d}.xpi    # Cookies Manager+
 wget https://addons.mozilla.org/firefox/downloads/latest/1843/addon-1843-latest.xpi?src=dp-btn-primary -O firebug@software.joehewitt.com.xpi               # Firebug
 wget https://addons.mozilla.org/firefox/downloads/file/150692/foxyproxy_basic-2.6.2-fx+tb+sm.xpi?src=search -O FoxyProxyBasic.zip && unzip -o FoxyProxyBasic.zip -d foxyproxy-basic@eric.h.jung/ && rm -f FoxyProxyBasic.zip   # FoxyProxy Basic
-#wget https://addons.mozilla.org/firefox/downloads/latest/284030/addon-284030-latest.xpi?src=dp-btn-primary -O {6bdc61ae-7b80-44a3-9476-e1d121ec2238}.xpi   # HTTPS Finder
+#wget https://addons.mozilla.org/firefox/downloads/latest/284030/addon-284030-latest.xpi?src=dp-btn-primary -O {6bdc61ae-7b80-44a3-9476-e1d121ec2238}.xpi  # HTTPS Finder
 wget https://www.eff.org/files/https-everywhere-latest.xpi -O https-everywhere@eff.org.xpi                                                                 # HTTPS Everywhere
 wget https://addons.mozilla.org/firefox/downloads/latest/3829/addon-3829-latest.xpi?src=dp-btn-primary -O {8f8fe09b-0bd3-4470-bc1b-8cad42b8203a}.xpi       # Live HTTP Headers
 wget https://addons.mozilla.org/firefox/downloads/file/79565/tamper_data-11.0.1-fx.xpi?src=dp-btn-primary -O {9c51bd27-6ed8-4000-a2bf-36cb95c0c947}.xpi    # Tamper Data  - not working 100%
@@ -310,10 +365,10 @@ cd ~/
 service postgresql start
 service metasploit start
 #--- Misc
-export GOCOW=1   # Always cow logo ;)
+export GOCOW=1   # Always a cow logo ;)
 grep -q GOCOW /root/.bashrc || echo 'GOCOW=1' >> /root/.bashrc
 #--- First time run
-echo 'exit' > /tmp/msf.rc   # echo -e 'go_pro\nexit' > /tmp/msf.rc
+echo 'exit' > /tmp/msf.rc   #echo -e 'go_pro\nexit' > /tmp/msf.rc
 msfconsole -r /tmp/msf.rc
 #--- Sort out metasploiit
 bash /opt/metasploit/scripts/launchui.sh    #<--- Doesn't automate
@@ -327,11 +382,6 @@ rm -f /root/.ssh/*
 ssh-keygen -A
 ssh-keygen -b 4096 -t rsa -f /root/.ssh/id_rsa -P ""
 #update-rc.d -f ssh remove; update-rc.d ssh enable    # Enable SSH at startup
-
-
-##### Install bash-completion
-apt-get -y install bash-completion
-#sed -i '/# enable bash completion in/,+3{/enable bash completion/!s/^#//}' /etc/bash.bashrc
 
 
 ##### Install conky
@@ -399,7 +449,9 @@ apt-get -y install shutter
 
 ##### Install axel
 apt-get -y install axel
-grep -q 'alias axel="axel -a"' /root/.bash_aliases || echo 'alias axel="axel -a"' >> /root/.bash_aliases
+#--- Setup alias
+grep -q 'alias axel="axel -a"' /etc/bashrc || echo 'alias axel="axel -a"' >> /etc/bashrc   #/root/.bash_aliases
+source /etc/bashrc
 
 
 ##### Install gparted
@@ -419,36 +471,6 @@ sed -i 's/^.*"Default editor".*/\t<Setting name="Default editor" type="string">2
 
 ##### Install tftp
 apt-get -y install tftp
-
-
-##### Install zsh
-apt-get -y install zsh
-#--- Setup oh-my-zsh
-curl -L https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh | sh
-#--- Configure zsh
-if [ -e /root/.zshrc ]; then cp -n /root/.zshrc{.bkup}; fi       # /etc/zsh/zshrc
-grep -q interactivecomments /root/.zshrc || echo "setopt interactivecomments" >> /root/.zshrc
-grep -q ignoreeof /root/.zshrc || echo "setopt ignoreeof" >> /root/.zshrc
-grep -q correctall /root/.zshrc || echo "setopt correctall" >> /root/.zshrc
-grep -q globdots /root/.zshrc || echo "setopt globdots" >> /root/.zshrc
-grep -q bash_aliases /root/.zshrc || echo 'source $HOME/.bash_aliases' >> /root/.zshrc
-#--- Configure zsh (themes) ~ https://github.com/robbyrussell/oh-my-zsh/wiki/Themes
-sed -i 's/ZSH_THEME=.*/ZSH_THEME="alanpeabody"/' /root/.zshrc   # alanpeabody jreese   mh   candy   terminalparty kardan   nicoulaj sunaku    (Other themes I liked)
-#--- Configure oh-my-zsh
-sed -i 's/.*DISABLE_AUTO_UPDATE="true"/DISABLE_AUTO_UPDATE="true"/' /root/.zshrc
-sed -i 's/plugins=(.*)/plugins=(git screen tmux last-working-dir)/' /root/.zshrc
-#--- Set zsh as default and use it now
-chsh -s `which zsh`
-/usr/bin/env zsh
-source /root/.zshrc
-
-
-##### Install terminator
-apt-get -y install terminator
-#--- Configure terminator
-if [ -e /root/.config/terminator/config ]; then cp -n /root/.config/terminator/config{.bkup}; fi
-mkdir -p /root/.config/terminator/
-echo -e '[global_config]\n  enabled_plugins = TerminalShot, LaunchpadCodeURLHandler, APTURLHandler, LaunchpadBugURLHandler\n[keybindings]\n[profiles]\n  [[default]]\n    background_darkness = 0.9\n    copy_on_selection = True\n    background_type = transparent\n    scrollback_infinite = True\n[layouts]\n  [[default]]\n    [[[child1]]]\n      type = Terminal\n      parent = window0\n    [[[window0]]]\n      type = Window\n      parent = ""\n[plugins]' > /root/.config/terminator/config
 
 
 ##### Install lynx
@@ -581,19 +603,18 @@ grep -q '\[shared\]' /etc/samba/smb.conf || echo -e '\n[shared]\n   comment = Sh
 
 ##### Clean the system
 #--- Clean package manager
-apt-get -y clean
-apt-get -y autoremove
-apt-get -y autoclean
+for ITEM in clean autoremove autoclean; do apt-get -y $ITEM; done
 #--- Update slocate database
 updatedb
 #--- Reset folder location
 cd ~/
-#--- Wipe 'history' files
-history -c
-rm -f /root/.*_history   #/root/.bash_history /root/.zhistory /root/.zsh_history
+#--- Remove any history (as they could contain sensitive info)
+for i in $(cut -d: -f6 /etc/passwd | sort | uniq); do
+   [[ -f $i/.*_history ]] && rm -rf $i/.*_history
+done
 
 
 #### Done!
 reboot
 
-# *** Don't forget to take a snapshot if you're using a VM! ***
+# *** Don't forget to take a snapshot (if you're using a VM!) ***
