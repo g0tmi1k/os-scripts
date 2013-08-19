@@ -1,10 +1,10 @@
 #!/bin/sh
-#Operating System---------------------------------------#
+#-Operating System--------------------------------------#
 # Designed for: Kali Linux [1.0.4 x86]                  #
-#   Working on: 2013-08-10                              #
-#Author-------------------------------------------------#
+#   Working on: 2013-08-19                              #
+#-Author------------------------------------------------#
 # g0tmilk ~ http://g0tmi1k.com                          #
-#Note---------------------------------------------------#
+#-Note--------------------------------------------------#
 # The script WASN'T designed to be executed!            #
 # Instead copy & paste commands into a terminal window. #
 #-------------------------------------------------------#
@@ -37,7 +37,7 @@ service ntp restart
 ##### Fix NetworkManger (optional)
 #--- Fix 'device not managed' issue
 #sed -i 's/managed=.*/managed=true/' /etc/NetworkManager/NetworkManager.conf
-if [ -e /etc/network/interfaces ]; then cp -n /etc/network/interfaces{,.bkup}; fi
+file=/etc/network/interfaces; if [ -e $file ]; then cp -n $file{,.bkup}; fi
 sed -i '/iface lo inet loopback/q' /etc/network/interfaces    #sed '/^#\|'auto\ lo'\|'iface\ lo'/!d' /etc/network/interfaces
 service network-manager restart
 #--- Fix 'network disabled' issue
@@ -193,16 +193,16 @@ if [ ! -e /root/.config/Thunar/thunarrc ]; then echo -e "[Configuration]\nLastSh
 
 
 ##### Configure (TTY) resolution
-if [ -e /etc/default/grub ]; then cp -n /etc/default/grub{,.bkup}; fi
+file=/etc/default/grub; if [ -e $file ]; then cp -n $file{,.bkup}; fi
 sed -i 's/GRUB_TIMEOUT=.*/GRUB_TIMEOUT=1/' /etc/default/grub
 sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT="vga=0x0318 quiet"/' /etc/default/grub
 update-grub
 
 
 ##### Configure login (console login - non GUI)
-if [ -e /etc/X11/default-display-manager ]; then cp -n /etc/X11/default-display-manager{,.bkup}; fi
+file=/etc/X11/default-display-manager; if [ -e $file ]; then cp -n $file{,.bkup}; fi
 echo > /etc/X11/default-display-manager
-if [ -e /etc/gdm3/daemon.conf ]; then cp -n /etc/gdm3/daemon.conf{,.bkup}; fi
+file=/etc/gdm3/daemon.conf; if [ -e $file ]; then cp -n $file{,.bkup}; fi
 sed -i 's/^.*AutomaticLoginEnable = .*/AutomaticLoginEnable = True/' /etc/gdm3/daemon.conf
 sed -i 's/^.*AutomaticLogin = .*/AutomaticLogin = root/' /etc/gdm3/daemon.conf
 #ln -s /usr/sbin/gdm3 /usr/bin/startx   # Old school ;) <--- We want XFCE over GNOME anyway
@@ -216,7 +216,7 @@ gconftool-2 --type string --set /apps/gnome-terminal/profiles/Default/background
 
 ##### Enable num lock at start up (might not be smart if you're using a smaller keyboard (laptop?))
 apt-get -y install numlockx
-if [ -e /etc/gdm3/Init/Default ]; then cp -n /etc/gdm3/Init/Default{,.bkup}; fi
+file=/etc/gdm3/Init/Default; if [ -e $file ]; then cp -n $file{,.bkup}; fi
 grep -q '/usr/bin/numlockx' /etc/gdm3/Init/Default || sed -i 's#exit 0#if [ -x /usr/bin/numlockx ]; then\n/usr/bin/numlockx on\nfi\nexit 0#' /etc/gdm3/Init/Default
 #xfconf-query -c keyboards -p /Default/Numlock -s true
 
@@ -228,36 +228,12 @@ grep -q '/usr/bin/numlockx' /etc/gdm3/Init/Default || sed -i 's#exit 0#if [ -x /
 #grep -q "hostname" /etc/rc.local hostname || sed -i 's#^exit 0#hostname $(cat /dev/urandom | tr -dc "A-Za-z" | head -c8)\nexit 0#' /etc/rc.local
 
 
-##### Configure tmux
-apt-get -y install tmux
-#--- Configure tmux
-file=/root/.tmux.conf; if [ -e $file ]; then cp -n $file{,.bkup}; fi
-echo -e "#--References-------------------------------------------------------------------\n# http://blog.hawkhost.com/2010/07/02/tmux-%E2%80%93-the-terminal-multiple...\n# https://wiki.archlinux.org/index.php/Tmux\n\n\n# Make it like screen (use C-a)\nunbind C-b\nset -g prefix C-a\n\n# Pane switching with Alt+arrow\nbind -n M-Left select-pane -L\nbind -n M-Right select-pane -R\nbind -n M-Up select-pane -U\nbind -n M-Down select-pane -D\n\n#Activity Monitoring\nsetw -g monitor-activity on\nset -g visual-activity on\n\n# Reaload settings\nunbind R\nbind R source-file ~/.tmux.conf\n\n# Load custom sources\n#source ~/.bashrc\n\n# Set defaults\nset -g default-terminal 'screen-256color'\nset -g history-limit 5000\n\n# Defult windows titles\nset -g set-titles on\nset -g set-titles-string '#(whoami)@#H - #I:#W'\n\n# Last window switch\nbind-key C-a last-window\n\n#Use ZSH\nset-option -g default-shell /bin/zsh\n\n#--Theme------------------------------------------------------------------------\n# Default colours\nset -g status-bg black\nset -g status-fg white\n\n# Left hand side\nset -g status-left-length 30\nset -g status-left '#[fg=green,bold]#(whoami)#[gf=green]@#H #[fg=green,dim][#[fg=yellow]#(cut -d \" \" -f 1-3 /proc/loadavg)#[fg=green,dim]]'\n\n# Inactive windows in status bar\nset-window-option -g window-status-format '#[fg=red,dim]#I#[fg=grey,dim]:#[default,dim]#W#[fg=grey,dim]'\n\n# Current or active window in status bar\n#set-window-option -g window-status-current-format '#[bg=white,fg=red]#I#[bg=white,fg=grey]:#[bg=white,fg=black]#W#[fg=dim]#F'\nset-window-option -g window-status-current-format '#[fg=red,bold](#[fg=white,bold]#I#[fg=red,dim]:#[fg=white,bold]#W#[fg=red,bold])'\n\n# Right hand side\nset -g status-right '#[fg=green][#[fg=yellow]%Y-%m-%d #[fg=white]%H:%M#[default]#[fg=green]]'\n\n# Show tmux messages for longer\nset -g display-time 3000\n\n# Set correct term\nset -g default-terminal screen-256color\n\n# ???\nset -g status-interval 60\nunbind l" > /root/.tmux.conf
-#--- Setup alias
-grep -q 'alias tmux="tmux attach || tmux new"' /etc/bashrc || echo 'alias tmux="tmux attach || tmux new"' >> /etc/bashrc   #/root/.bash_aliases
-source /etc/bashrc
-#--- Use tmux
-tmux
-
-
-##### Configure screen (if possible, use tmux instead)
-apt-get -y install screen
-#--- Configure screen
-if [ -e /root/.screenrc ]; then cp -n /root/.screenrc{,.bkup}; fi
-echo -e "# Don't display the copyright page\nstartup_message off\n\n# tab-completion flash in heading bar\nvbell off\n\n# keep scrollback n lines\ndefscrollback 1000\n\n# hardstatus is a bar of text that is visible in all screens\nhardstatus on\nhardstatus alwayslastline\nhardstatus string '%{gk}%{G}%H %{g}[%{Y}%l%{g}] %= %{wk}%?%-w%?%{=b kR}(%{W}%n %t%?(%u)%?%{=b kR})%{= kw}%?%+w%?%?%= %{g} %{Y} %Y-%m-%d %C%a %{W}'\n\n# title bar\ntermcapinfo xterm ti@:te@\n\n# default windows (syntax: screen -t label order command)\nscreen -t bash1 0\nscreen -t bash2 1\n\n# select the default window\nselect 1" > /root/.screenrc
-
-
-##### Configure aliases
-if [ -e /etc/bashrc ]; then cp -n /etc/bashrc{,.bkup}; fi   # /root/.bash_aliases
-echo -e '\n### tmux\nalias tmux="tmux attach"\n\n### axel\nalias axel="axel -a"\n\n### Screen\nalias screen="screen -xRR"\n\n### Directory navigation aliases\nalias ..="cd .."\nalias ...="cd ../.."\nalias ....="cd ../../.."\nalias .....="cd ../../../.."\n\n\n### Add more aliases\nalias upd="sudo apt-get update"\nalias upg="sudo apt-get upgrade"\nalias ins="sudo apt-get install"\nalias rem="sudo apt-get purge"\nalias fix="sudo apt-get install -f"\n\n\n### Extract file, example. "ex package.tar.bz2"\nex() {\n    if [[ -f $1 ]]; then\n        case $1 in\n            *.tar.bz2)   tar xjf $1  ;;\n            *.tar.gz)    tar xzf $1  ;;\n            *.bz2)       bunzip2 $1  ;;\n            *.rar)       rar x $1    ;;\n            *.gz)        gunzip $1   ;;\n            *.tar)       tar xf $1   ;;\n            *.tbz2)      tar xjf $1  ;;\n            *.tgz)       tar xzf $1  ;;\n            *.zip)       unzip $1    ;;\n            *.Z)         uncompress $1  ;;\n            *.7z)        7z x $1     ;;\n            *)           echo $1 cannot be extracted ;;\n        esac\n    else\n        echo $1 is not a valid file\n    fi\n}' >> /etc/bashrc
-sed -i 's/#alias/alias/g' /etc/bashrc
-#--- Apply
-source /etc/bashrc
-
-
-##### Install bash-completion
-apt-get -y install bash-completion
-#sed -i '/# enable bash completion in/,+3{/enable bash completion/!s/^#//}' /etc/bash.bashrc
+##### Install terminator
+apt-get -y install terminator
+#--- Configure terminator
+if [ -e /root/.config/terminator/config ]; then cp -n /root/.config/terminator/config{.bkup}; fi
+mkdir -p /root/.config/terminator/
+echo -e '[global_config]\n  enabled_plugins = TerminalShot, LaunchpadCodeURLHandler, APTURLHandler, LaunchpadBugURLHandler\n[keybindings]\n[profiles]\n  [[default]]\n    background_darkness = 0.9\n    copy_on_selection = True\n    background_type = transparent\n    scrollback_infinite = True\n[layouts]\n  [[default]]\n    [[[child1]]]\n      type = Terminal\n      parent = window0\n    [[[window0]]]\n      type = Window\n      parent = ""\n[plugins]' > /root/.config/terminator/config
 
 
 ##### Install zsh
@@ -270,7 +246,7 @@ grep -q interactivecomments /root/.zshrc || echo "setopt interactivecomments" >>
 grep -q ignoreeof /root/.zshrc || echo "setopt ignoreeof" >> /root/.zshrc
 grep -q correctall /root/.zshrc || echo "setopt correctall" >> /root/.zshrcsudo
 grep -q globdots /root/.zshrc || echo "setopt globdots" >> /root/.zshrc
-grep -q bash_aliases /root/.zshrc || echo 'source $HOME/.bash_aliases' >> /root/.zshrc   #echo 'source /etc/bashrc' >> /root/.zshrc 
+grep -q bash_aliases /root/.zshrc || echo -e 'source $HOME/.bash_aliases' >> /root/.zshrc   #grep -q bashrc /root/.zshrc || echo -e 'source $HOME/.bashrc' >> /root/.zshrc
 #--- Configure zsh (themes) ~ https://github.com/robbyrussell/oh-my-zsh/wiki/Themes
 sed -i 's/ZSH_THEME=.*/ZSH_THEME="alanpeabody"/' /root/.zshrc   # alanpeabody jreese   mh   candy   terminalparty kardan   nicoulaj sunaku    (Other themes I liked)
 #--- Configure oh-my-zsh
@@ -282,12 +258,49 @@ chsh -s `which zsh`
 source /root/.zshrc
 
 
-##### Install terminator
-apt-get -y install terminator
-#--- Configure terminator
-if [ -e /root/.config/terminator/config ]; then cp -n /root/.config/terminator/config{.bkup}; fi
-mkdir -p /root/.config/terminator/
-echo -e '[global_config]\n  enabled_plugins = TerminalShot, LaunchpadCodeURLHandler, APTURLHandler, LaunchpadBugURLHandler\n[keybindings]\n[profiles]\n  [[default]]\n    background_darkness = 0.9\n    copy_on_selection = True\n    background_type = transparent\n    scrollback_infinite = True\n[layouts]\n  [[default]]\n    [[[child1]]]\n      type = Terminal\n      parent = window0\n    [[[window0]]]\n      type = Window\n      parent = ""\n[plugins]' > /root/.config/terminator/config
+##### Configure tmux
+apt-get -y install tmux
+#--- Configure tmux
+file=/root/.tmux.conf; if [ -e $file ]; then cp -n $file{,.bkup}; fi
+echo -e "#-References-------------------------------------------------------------------\n# http://blog.hawkhost.com/2010/07/02/tmux-%E2%80%93-the-terminal-multiple...\n# https://wiki.archlinux.org/index.php/Tmux\n\n\n#-Settings---------------------------------------------------------------------\n# Make it like screen (use C-a)\nunbind C-b\nset -g prefix C-a\n\n# Pane switching with Alt+arrow\nbind -n M-Left select-pane -L\nbind -n M-Right select-pane -R\nbind -n M-Up select-pane -U\nbind -n M-Down select-pane -D\n\n# Activity Monitoring\nsetw -g monitor-activity on\nset -g visual-activity on\n\n# Reaload settings\nunbind R\nbind R source-file ~/.tmux.conf\n\n# Load custom sources\nsource ~/.bashrc\n\n# Set defaults\nset -g default-terminal screen-256color\nset -g history-limit 5000\n\n# Defult windows titles\nset -g set-titles on\nset -g set-titles-string '#(whoami)@#H - #I:#W'\n\n# Last window switch\nbind-key C-a last-window\n\n# Use ZSH as default shell\nset-option -g default-shell /bin/zsh\n\n# Show tmux messages for longer\nset -g display-time 3000\n\n# Status bar is redrawn every minute\nset -g status-interval 60\n\n\n#-Theme------------------------------------------------------------------------\n# Default colours\nset -g status-bg black\nset -g status-fg white\n\n# Left hand side\nset -g status-left-length 30\nset -g status-left '#[fg=green,bold]#(whoami)#[gf=green]@#H #[fg=green,dim][#[fg=yellow]#(cut -d " " -f 1-3 /proc/loadavg)#[fg=green,dim]]'\n\n# Inactive windows in status bar\nset-window-option -g window-status-format '#[fg=red,dim]#I#[fg=grey,dim]:#[default,dim]#W#[fg=grey,dim]'\n\n# Current or active window in status bar\n#set-window-option -g window-status-current-format '#[bg=white,fg=red]#I#[bg=white,fg=grey]:#[bg=white,fg=black]#W#[fg=dim]#F'\nset-window-option -g window-status-current-format '#[fg=red,bold](#[fg=white,bold]#I#[fg=red,dim]:#[fg=white,bold]#W#[fg=red,bold])'\n\n# Right hand side\nset -g status-right '#[fg=green][#[fg=yellow]%Y-%m-%d #[fg=white]%H:%M#[default]#[fg=green]]'" > /root/.tmux.conf
+#--- Setup alias
+file=/root/.bash_aliases; if [ -e $file ]; then cp -n $file{,.bkup}; fi
+grep -q 'alias tmux="tmux attach || tmux new"' /root/.bash_aliases || echo 'alias tmux="tmux attach || tmux new"' >> /root/.bash_aliases
+source /root/.bash_aliases
+#--- Use tmux
+tmux   # If ZSH isn't installed, it will not start up
+
+
+##### Configure screen (if possible, use tmux instead)
+apt-get -y install screen
+#--- Configure screen
+file=/root/.screenrc; if [ -e $file ]; then cp -n $file{,.bkup}; fi
+echo -e "# Don't display the copyright page\nstartup_message off\n\n# tab-completion flash in heading bar\nvbell off\n\n# keep scrollback n lines\ndefscrollback 1000\n\n# hardstatus is a bar of text that is visible in all screens\nhardstatus on\nhardstatus alwayslastline\nhardstatus string '%{gk}%{G}%H %{g}[%{Y}%l%{g}] %= %{wk}%?%-w%?%{=b kR}(%{W}%n %t%?(%u)%?%{=b kR})%{= kw}%?%+w%?%?%= %{g} %{Y} %Y-%m-%d %C%a %{W}'\n\n# title bar\ntermcapinfo xterm ti@:te@\n\n# default windows (syntax: screen -t label order command)\nscreen -t bash1 0\nscreen -t bash2 1\n\n# select the default window\nselect 1" > /root/.screenrc
+
+
+##### Install bash-completion
+apt-get -y install bash-completion
+#sed -i '/# enable bash completion in/,+3{/enable bash completion/!s/^#//}' /root/.bashrc
+
+
+##### Configure aliases
+#--- Enable defaults
+for file in /root/.bash_aliases /root/.bashrc /etc/bashrc /etc/bash.bashrc; do
+   if [ -e $file ]; then cp -n $file{,.bkup}; fi
+   touch $file
+   sed -i 's/#alias/alias/g' $file
+done
+#--- Add in ours
+grep -q '### tmux' /root/.bash_aliases || echo -e '\n### tmux\nalias tmux="tmux attach || tmux new"\n' >> /root/.bash_aliases
+grep -q '### axel' /root/.bash_aliases || echo -e '\n### axel\nalias axel="axel -a"\n' >> /root/.bash_aliases
+grep -q '### screen' /root/.bash_aliases || echo -e '\n### screen\nalias screen="screen -xRR"\n' >> /root/.bash_aliases
+grep -q '### Directory navigation aliases' /root/.bash_aliases || echo -e '\n### Directory navigation aliases\nalias ..="cd .."\nalias ...="cd ../.."\nalias ....="cd ../../.."\nalias .....="cd ../../../.."\n\n' >> /root/.bash_aliases
+grep -q '### Add more aliases' /root/.bash_aliases || echo -e '\n### Add more aliases\nalias upd="sudo apt-get update"\nalias upg="sudo apt-get upgrade"\nalias ins="sudo apt-get install"\nalias rem="sudo apt-get purge"\nalias fix="sudo apt-get install -f"\n\n' >> /root/.bash_aliases
+grep -q '### Extract file, example' /root/.bash_aliases || echo -e '\n### Extract file, example. "ex package.tar.bz2"\nex() {\n    if [[ -f $1 ]]; then\n        case $1 in\n            *.tar.bz2)   tar xjf $1  ;;\n            *.tar.gz)    tar xzf $1  ;;\n            *.bz2)       bunzip2 $1  ;;\n            *.rar)       rar x $1    ;;\n            *.gz)        gunzip $1   ;;\n            *.tar)       tar xf $1   ;;\n            *.tbz2)      tar xjf $1  ;;\n            *.tgz)       tar xzf $1  ;;\n            *.zip)       unzip $1    ;;\n            *.Z)         uncompress $1  ;;\n            *.7z)        7z x $1     ;;\n            *)           echo $1 cannot be extracted ;;\n        esac\n    else\n        echo $1 is not a valid file\n    fi\n}' >> /root/.bash_aliases
+#--- Apply new aliases
+source /root/.bash_aliases     #source /root/.bashrc    # If using ZSH, will fail 
+#--- Check 
+#alias
 
 
 ##### Configure vim
@@ -318,7 +331,7 @@ grep -q '^set wildmenu' $file || echo -e 'set wildmenu\nset wildmode=list:longes
 mkdir -p /root/.config/gtk-2.0/
 if [ -e /root/.config/gtk-2.0/gtkfilechooser.ini ]; then sed -i 's/^.*ShowHidden.*/ShowHidden=true/' /root/.config/gtk-2.0/gtkfilechooser.ini; else echo -e "\n[Filechooser Settings]\nLocationMode=path-bar\nShowHidden=true\nExpandFolders=false\nShowSizeColumn=true\nGeometryX=66\nGeometryY=39\nGeometryWidth=780\nGeometryHeight=618\nSortColumn=name\nSortOrder=ascending" > /root/.config/gtk-2.0/gtkfilechooser.ini; fi   #Open/save Window -> Right click -> Show Hidden Files: Enabled
 dconf write /org/gnome/nautilus/preferences/show-hidden-files true
-if [ -e /root/.gtk-bookmarks ]; then cp -n /root/.gtk-bookmarks{,.bkup}; fi    #/etc/bashrc
+if [ -e /root/.gtk-bookmarks ]; then cp -n /root/.gtk-bookmarks{,.bkup}; fi
 echo -e 'file:///var/www www\nfile:///usr/share apps\nfile:///tmp tmp\nfile:///usr/local/src/ src' >> /root/.gtk-bookmarks
 
 
@@ -371,7 +384,7 @@ grep -q GOCOW /root/.bashrc || echo 'GOCOW=1' >> /root/.bashrc
 echo 'exit' > /tmp/msf.rc   #echo -e 'go_pro\nexit' > /tmp/msf.rc
 msfconsole -r /tmp/msf.rc
 #--- Sort out metasploiit
-bash /opt/metasploit/scripts/launchui.sh    #<--- Doesn't automate
+bash /opt/metasploit/scripts/launchui.sh    #<--- Doesn't automate. May take a little while to kick in
 #--- Clean up
 rm -f /tmp/msf.rc
 
@@ -387,10 +400,10 @@ ssh-keygen -b 4096 -t rsa -f /root/.ssh/id_rsa -P ""
 ##### Install conky
 apt-get -y install conky
 #--- Configure conky
-if [ -e /root/.conkyrc ]; then cp -n /root/.conkyrc{,.bkup}; fi
+file=/root/.conkyrc; if [ -e $file ]; then cp -n $file{,.bkup}; fi
 echo -e '#http://forums.opensuse.org/english/get-technical-help-here/how-faq-forums/unreviewed-how-faq/464737-easy-configuring-conky-conkyconf.html\nbackground yes\n\nfont Monospace:size=8:weight=bold\nuse_xft yes\n\nupdate_interval 2.0\n\nown_window yes\nown_window_type normal\nown_window_transparent yes\nown_window_class conky-semi\nown_window_argb_visual yes  # GNOME & XFCE yes, KDE no\nown_window_colour brown\nown_window_hints undecorated,below,sticky,skip_taskbar,skip_pager\n\ndouble_buffer yes\nmaximum_width 250\n\ndraw_shades yes\ndraw_outline no\ndraw_borders no\n\nstippled_borders 3\n#border_margin 9   # Old command\nborder_inner_margin 9\nborder_width 10\n\ndefault_color grey\n\nalignment bottom_right\n#gap_x 55 # KDE\n#gap_x 0  # GNOME\ngap_x 5\ngap_y 0\n\nuppercase no\nuse_spacer right\n\nTEXT\n${color dodgerblue3}SYSTEM ${hr 2}$color\n${color white}${time %A},${time %e} ${time %B} ${time %G}${alignr}${time %H:%M:%S}\n${color white}Machine$color: $nodename ${alignr}${color white}Uptime$color: $uptime\n\n${color dodgerblue3}CPU ${hr 2}$color\n#${font Arial:bold:size=8}${execi 99999 grep "model name" -m1 /proc/cpuinfo | cut -d":" -f2 | cut -d" " -f2- | sed "s#Processor ##"}$font$color\n${color white}MHz$color: ${freq}GHz $color${color white}Load$color: ${exec uptime | awk -F "load average: " '{print $2}'}\n${color white}Tasks$color: $running_processes/$processes ${alignr}${alignr}${color white}CPU0$color: ${cpu cpu0}% ${color white}CPU1$color: ${cpu cpu1}%\n#${color #c0ff3e}${acpitemp}C\n#${execi 20 sensors |grep "Core0 Temp" | cut -d" " -f4}$font$color$alignr${freq_g 2} ${execi 20 sensors |grep "Core1 Temp" | cut -d" " -f4}\n${cpugraph cpu0 25,120 000000 white} ${cpugraph cpu1 25,120 000000 white}\n${color white}${cpubar cpu1 3,120} ${color white}${cpubar cpu2 3,120}$color\n\n${color dodgerblue3}TOP 5 PROCESSES ${hr 2}$color\n${color white}NAME                PID      CPU      MEM\n${color white}1. ${top name 1}${top pid 1}   ${top cpu 1}   ${top mem 1}$color\n2. ${top name 2}${top pid 2}   ${top cpu 2}   ${top mem 2}\n3. ${top name 3}${top pid 3}   ${top cpu 3}   ${top mem 3}\n4. ${top name 4}${top pid 4}   ${top cpu 4}   ${top mem 4}\n5. ${top name 5}${top pid 5}   ${top cpu 5}   ${top mem 5}\n\n${color dodgerblue3}MEMORY & SWAP ${hr 2}$color\n${color white}RAM$color   $memperc%  ${membar 6}$color\n${color white}Swap$color  $swapperc%  ${swapbar 6}$color\n\n${color dodgerblue3}FILESYSTEM ${hr 2}$color\n${color white}root$color ${fs_free_perc /}% free$alignr${fs_free /}/ ${fs_size /}\n${fs_bar 3 /}$color\n#${color white}home$color ${fs_free_perc /home}% free$alignr${fs_free /home}/ ${fs_size /home}\n#${fs_bar 3 /home}$color\n\n${color dodgerblue3}LAN eth0 (${addr eth0}) ${hr 2}$color\n${color white}Down$color:  ${downspeed eth0} KB/s${alignr}${color white}Up$color: ${upspeed eth0} KB/s\n${color white}Downloaded$color: ${totaldown eth0} ${alignr}${color white}Uploaded$color: ${totalup eth0}\n${downspeedgraph eth0 25,120 000000 00ff00} ${alignr}${upspeedgraph eth0 25,120 000000 ff0000}$color\n${color dodgerblue3}LAN eth1 (${addr eth1}) ${hr 2}$color\n${color white}Down$color:  ${downspeed eth1} KB/s${alignr}${color white}Up$color: ${upspeed eth1} KB/s\n${color white}Downloaded$color: ${totaldown eth1} ${alignr}${color white}Uploaded$color: ${totalup eth1}\n${downspeedgraph eth1 25,120 000000 00ff00} ${alignr}${upspeedgraph eth1 25,120 000000 ff0000}$color\n${color dodgerblue3}WiFi (${addr wlan0}) ${hr 2}$color\n${color white}Down$color:  ${downspeed wlan0} KB/s${alignr}${color white}Up$color: ${upspeed wlan0} KB/s\n${color white}Downloaded$color: ${totaldown wlan0} ${alignr}${color white}Uploaded$color: ${totalup wlan0}\n${downspeedgraph wlan0 25,120 000000 00ff00} ${alignr}${upspeedgraph wlan0 25,120 000000 ff0000}$color\n\n${color dodgerblue3}CONNECTIONS ${hr 2}$color\n${color white}Inbound: $color${tcp_portmon 1 32767 count}${color white}  ${alignc}Outbound: $color${tcp_portmon 32768 61000 count}${alignr} ${color white}ALL: $color${tcp_portmon 1 65535 count}\n${color white}Inbound Connection ${alignr} Local Service/Port$color\n$color ${tcp_portmon 1 32767 rhost 0} ${alignr} ${tcp_portmon 1 32767 lservice 0}\n$color ${tcp_portmon 1 32767 rhost 1} ${alignr} ${tcp_portmon 1 32767 lservice 1}\n$color ${tcp_portmon 1 32767 rhost 2} ${alignr} ${tcp_portmon 1 32767 lservice 2}\n${color white}Outbound Connection ${alignr} Remote Service/Port$color\n$color ${tcp_portmon 32768 61000 rhost 0} ${alignr} ${tcp_portmon 32768 61000 rservice 0}\n$color ${tcp_portmon 32768 61000 rhost 1} ${alignr} ${tcp_portmon 32768 61000 rservice 1}\n$color ${tcp_portmon 32768 61000 rhost 2} ${alignr} ${tcp_portmon 32768 61000 rservice 2}' > /root/.conkyrc
 #--- Add to startup
-echo -e '#!/bin/bash\nsleep 25 && conky;' > /root/.conkyscript.sh
+echo -e '#!/bin/bash\nsleep 30 && conky;' > /root/.conkyscript.sh
 chmod +x /root/.conkyscript.sh
 mkdir -p /root/.config/autostart/
 echo -e '\n[Desktop Entry]\nType=Application\nExec=/root/.conkyscript.sh\nHidden=false\nNoDisplay=false\nX-GNOME-Autostart-enabled=true\nName[en_US]=conky\nName=conky\nComment[en_US]=\nComment=' > /root/.config/autostart/conkyscript.sh.desktop
@@ -450,8 +463,8 @@ apt-get -y install shutter
 ##### Install axel
 apt-get -y install axel
 #--- Setup alias
-grep -q 'alias axel="axel -a"' /etc/bashrc || echo 'alias axel="axel -a"' >> /etc/bashrc   #/root/.bash_aliases
-source /etc/bashrc
+grep -q 'alias axel="axel -a"' /root/.bash_aliases || echo 'alias axel="axel -a"' >> /root/.bash_aliases
+source /root/.bashrc
 
 
 ##### Install gparted
@@ -507,7 +520,7 @@ xdg-open http://www.tenable.com/products/nessus/select-your-operating-system    
 dpkg -i /usr/local/src/Nessus-*-debian6_i386.deb
 #rm -f /tmp/nessus.deb
 /opt/nessus/sbin/nessus-adduser   #<--- Doesn't automate
-iceweasel http://www.tenable.com/products/nessus/nessus-plugins/register-a-homefeed
+xdg-open http://www.tenable.com/products/nessus/nessus-plugins/register-a-homefeed
 #--- Check email
  /opt/nessus/bin/nessus-fetch --register <key>   #<--- Doesn't automate
 service nessusd start
@@ -516,7 +529,7 @@ service nessusd start
 ##### Install openvas
 apt-get -y install openvas
 openvas-setup   #<--- Doesn't automate
-#--- Remove 'default' user, and create a new admin user.
+#--- Remove 'default' user (admin), and create a new admin user (root).
 test -e /var/lib/openvas/users/admin && openvasad -c remove_user -n admin
 test -e /var/lib/openvas/users/root || openvasad -c add_user -n root -r Admin   #<--- Doesn't automate
 
@@ -526,7 +539,7 @@ git clone git://github.com/wireghoul/htshells.git /usr/share/htshells/
 
 
 ##### Install veil ~ http://bugs.kali.org/view.php?id=421
-git clone git://github.com/ChrisTruncer/Veil.git /usr/share/veil/
+apt-get -y install veil
 
 
 ##### Install mingw
@@ -534,8 +547,8 @@ apt-get -y install mingw-w64 binutils-mingw-w64 gcc-mingw-w64 mingw-w64-dev ming
 
 
 ##### Install OP packers
-mkdir -p /usr/share/packers/
 apt-get -y install upx-ucl   #wget http://upx.sourceforge.net/download/upx309w.zip -P /usr/share/packers/ && unzip -o -d /usr/share/packers/ /usr/share/packers/upx309w.zip && rm -f /usr/share/packers/upx309w.zip
+mkdir -p /usr/share/packers/
 wget "http://www.eskimo.com/~scottlu/win/cexe.exe" -P /usr/share/packers/
 wget "http://www.farbrausch.de/~fg/kkrunchy/kkrunchy_023a2.zip" -P /usr/share/packers/ && unzip -o -d /usr/share/packers/ /usr/share/packers/kkrunchy_023a2.zip && rm -f /usr/share/packers/kkrunchy_023a2.zip
 #--- Setup hyperion
@@ -609,6 +622,7 @@ updatedb
 #--- Reset folder location
 cd ~/
 #--- Remove any history (as they could contain sensitive info)
+history -c    # Will not work in ZSH
 for i in $(cut -d: -f6 /etc/passwd | sort | uniq); do
    [[ -f $i/.*_history ]] && rm -rf $i/.*_history
 done
