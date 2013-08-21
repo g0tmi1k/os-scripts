@@ -46,7 +46,7 @@ rm -f /var/lib/NetworkManager/NetworkManager.state
 service network-manager start
 
 
-##### Fix repositories (optional)
+##### Fix repositories
 grep -q 'kali main non-free contrib' /etc/apt/sources.list || echo "deb http://http.kali.org/kali kali main non-free contrib" >> /etc/apt/sources.list
 grep -q 'kali/updates main contrib non-free' /etc/apt/sources.list || echo "deb http://security.kali.org/kali-security kali/updates main contrib non-free" >> /etc/apt/sources.list
 apt-get update
@@ -65,7 +65,7 @@ cp -f /mnt/cdrom/VMwareTools-*.tar.gz /tmp/
 cd /tmp/
 tar zxvf VMwareTools*
 cd vmware-tools-distrib/
-perl vmware-install.pl #<enter> x ???  #<--- Doesn't automate
+echo -e '\n' | perl vmware-install.pl
 cd ~/
 #--- Install Parallel tools
 grep -q 'cups enabled' /usr/sbin/update-rc.d || echo "cups enabled" >> /usr/sbin/update-rc.d
@@ -151,7 +151,7 @@ dconf write /org/gnome/nautilus/desktop/computer-icon-visible false
 #--- Add "open with terminal" on right click menu
 apt-get -y install nautilus-open-terminal
 #--- Restart GNOME panel to apply/take effect (need to restart xserver)
-#killall gnome-panel && gnome-panel&   # Still need to logoff!
+#killall -w gnome-panel && gnome-panel&   # Still need to logoff!
 
 
 ##### Install & configure XFCE4
@@ -252,10 +252,11 @@ sed -i 's/ZSH_THEME=.*/ZSH_THEME="alanpeabody"/' /root/.zshrc   # alanpeabody jr
 #--- Configure oh-my-zsh
 sed -i 's/.*DISABLE_AUTO_UPDATE="true"/DISABLE_AUTO_UPDATE="true"/' /root/.zshrc
 sed -i 's/plugins=(.*)/plugins=(git screen tmux last-working-dir)/' /root/.zshrc
-#--- Set zsh as default and use it now
+#--- Set zsh as default
 chsh -s `which zsh`
-/usr/bin/env zsh
-source /root/.zshrc
+#--- Use zsh
+#/usr/bin/env zsh
+#source /root/.zshrc
 
 
 ##### Configure tmux
@@ -268,7 +269,7 @@ file=/root/.bash_aliases; if [ -e $file ]; then cp -n $file{,.bkup}; fi
 grep -q 'alias tmux="tmux attach || tmux new"' /root/.bash_aliases || echo 'alias tmux="tmux attach || tmux new"' >> /root/.bash_aliases
 source /root/.bash_aliases
 #--- Use tmux
-tmux   # If ZSH isn't installed, it will not start up
+#tmux   # If ZSH isn't installed, it will not start up
 
 
 ##### Configure screen (if possible, use tmux instead)
@@ -337,7 +338,7 @@ echo -e 'file:///var/www www\nfile:///usr/share apps\nfile:///tmp tmp\nfile:///u
 
 ##### Setup iceweasel
 #--- Configure iceweasel
-iceweasel & sleep 15; killall iceweasel   # Start and kill. Files needed for first time run
+iceweasel & sleep 15; killall -w iceweasel   # Start and kill. Files needed for first time run
 if [[ `grep -q "browser.startup.page" /root/.mozilla/firefox/*.default/prefs.js; echo $?` == 1 ]]; then echo 'user_pref("browser.startup.page", 0);' >> /root/.mozilla/firefox/*.default/prefs.js; else sed -i 's/^.*browser.startup.page.*/user_pref("browser.startup.page", 0);' /root/.mozilla/firefox/*.default/prefs.js; fi   # Iceweasel -> Edit -> Preferences -> General -> When firefox starts: Show a blank page
 if [[ `grep -q "privacy.donottrackheader.enabled" /root/.mozilla/firefox/*.default/prefs.js; echo $?` == 1 ]]; then echo 'user_pref("privacy.donottrackheader.enabled", true);' >> /root/.mozilla/firefox/*.default/prefs.js; else sed -i 's/^.*privacy.donottrackheader.enabled.*/user_pref("privacy.donottrackheader.enabled", true);' /root/.mozilla/firefox/*.default/prefs.js; fi   # Privacy -> Enable: Tell websites I do not want to be tracked
 if [[ `grep -q "browser.showQuitWarning" /root/.mozilla/firefox/*.default/prefs.js; echo $?` == 1 ]]; then echo 'user_pref("browser.showQuitWarning", true);' >> /root/.mozilla/firefox/*.default/prefs.js; else sed -i 's/^.*browser.showQuitWarning.*/user_pref("browser.showQuitWarning", true);' /root/.mozilla/firefox/*.default/prefs.js; fi   # Stop Ctrl + Q from quitting without warning
@@ -424,7 +425,7 @@ toplevel-id='top-panel'
 EOT
 dconf write /org/gnome/gnome-panel/layout/object-id-list "$(dconf read /org/gnome/gnome-panel/layout/object-id-list | sed "s/]/, 'geany']/")"
 #--- Configure geany
-geany & sleep 5; killall geany   # Start and kill. Files needed for first time run
+geany & sleep 5; killall -w geany   # Start and kill. Files needed for first time run
 # Geany -> Edit -> Preferences. Editor -> Newline strips trailing spaces: Enable. -> Indentation -> Type: Spaces. -> Files -> Strip trailing spaces and tabs: Enable. Replace tabs by space: Enable. -> Apply -> Ok
 sed -i 's/^.*indent_type.*/indent_type=0/' /root/.config/geany/geany.conf   # Spaces over tabs
 sed -i 's/^.*pref_editor_newline_strip.*/pref_editor_newline_strip=true/' /root/.config/geany/geany.conf
@@ -464,7 +465,7 @@ apt-get -y install shutter
 apt-get -y install axel
 #--- Setup alias
 grep -q 'alias axel="axel -a"' /root/.bash_aliases || echo 'alias axel="axel -a"' >> /root/.bash_aliases
-source /root/.bashrc
+#source /root/.bashrc
 
 
 ##### Install gparted
@@ -478,7 +479,7 @@ apt-get -y install daemonfs
 ##### Install filezilla
 apt-get -y install filezilla
 #--- Configure filezilla
-filezilla & sleep 5; killall filezilla   # Start and kill. Files needed for first time run
+filezilla & sleep 5; killall -w filezilla   # Start and kill. Files needed for first time run
 sed -i 's/^.*"Default editor".*/\t<Setting name="Default editor" type="string">2\/usr\/bin\/geany<\/Setting>/' /root/.filezilla/filezilla.xml
 
 
