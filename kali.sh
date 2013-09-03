@@ -266,7 +266,7 @@ file=/root/.tmux.conf; if [ -e $file ]; then cp -n $file{,.bkup}; fi
 echo -e "#-References-------------------------------------------------------------------\n# http://blog.hawkhost.com/2010/07/02/tmux-%E2%80%93-the-terminal-multiple...\n# https://wiki.archlinux.org/index.php/Tmux\n\n\n#-Settings---------------------------------------------------------------------\n# Make it like screen (use C-a)\nunbind C-b\nset -g prefix C-a\n\n# Pane switching with Alt+arrow\nbind -n M-Left select-pane -L\nbind -n M-Right select-pane -R\nbind -n M-Up select-pane -U\nbind -n M-Down select-pane -D\n\n# Activity Monitoring\nsetw -g monitor-activity on\nset -g visual-activity on\n\n# Reaload settings\nunbind R\nbind R source-file ~/.tmux.conf\n\n# Load custom sources\nsource ~/.bashrc\n\n# Set defaults\nset -g default-terminal screen-256color\nset -g history-limit 5000\n\n# Defult windows titles\nset -g set-titles on\nset -g set-titles-string '#(whoami)@#H - #I:#W'\n\n# Last window switch\nbind-key C-a last-window\n\n# Use ZSH as default shell\nset-option -g default-shell /bin/zsh\n\n# Show tmux messages for longer\nset -g display-time 3000\n\n# Status bar is redrawn every minute\nset -g status-interval 60\n\n\n#-Theme------------------------------------------------------------------------\n# Default colours\nset -g status-bg black\nset -g status-fg white\n\n# Left hand side\nset -g status-left-length 30\nset -g status-left '#[fg=green,bold]#(whoami)#[gf=green]@#H #[fg=green,dim][#[fg=yellow]#(cut -d \" \" -f 1-3 /proc/loadavg)#[fg=green,dim]]'\n\n# Inactive windows in status bar\nset-window-option -g window-status-format '#[fg=red,dim]#I#[fg=grey,dim]:#[default,dim]#W#[fg=grey,dim]'\n\n# Current or active window in status bar\n#set-window-option -g window-status-current-format '#[bg=white,fg=red]#I#[bg=white,fg=grey]:#[bg=white,fg=black]#W#[fg=dim]#F'\nset-window-option -g window-status-current-format '#[fg=red,bold](#[fg=white,bold]#I#[fg=red,dim]:#[fg=white,bold]#W#[fg=red,bold])'\n\n# Right hand side\nset -g status-right '#[fg=green][#[fg=yellow]%Y-%m-%d #[fg=white]%H:%M#[default]#[fg=green]]'" > /root/.tmux.conf
 #--- Setup alias
 file=/root/.bash_aliases; if [ -e $file ]; then cp -n $file{,.bkup}; fi
-grep -q 'alias tmux="tmux attach || tmux new"' /root/.bash_aliases || echo 'alias tmux="tmux attach || tmux new"' >> /root/.bash_aliases
+grep -q 'alias tmux="tmux attach || tmux new"' /root/.bash_aliases 2>/dev/null || echo 'alias tmux="tmux attach || tmux new"' >> /root/.bash_aliases
 source /root/.bash_aliases
 #--- Use tmux
 #tmux   # If ZSH isn't installed, it will not start up
@@ -299,8 +299,8 @@ grep -q '### Directory navigation aliases' /root/.bash_aliases || echo -e '\n###
 grep -q '### Add more aliases' /root/.bash_aliases || echo -e '\n### Add more aliases\nalias upd="sudo apt-get update"\nalias upg="sudo apt-get upgrade"\nalias ins="sudo apt-get install"\nalias rem="sudo apt-get purge"\nalias fix="sudo apt-get install -f"\n\n' >> /root/.bash_aliases
 grep -q '### Extract file, example' /root/.bash_aliases || echo -e '\n### Extract file, example. "ex package.tar.bz2"\nex() {\n    if [[ -f $1 ]]; then\n        case $1 in\n            *.tar.bz2)   tar xjf $1  ;;\n            *.tar.gz)    tar xzf $1  ;;\n            *.bz2)       bunzip2 $1  ;;\n            *.rar)       rar x $1    ;;\n            *.gz)        gunzip $1   ;;\n            *.tar)       tar xf $1   ;;\n            *.tbz2)      tar xjf $1  ;;\n            *.tgz)       tar xzf $1  ;;\n            *.zip)       unzip $1    ;;\n            *.Z)         uncompress $1  ;;\n            *.7z)        7z x $1     ;;\n            *)           echo $1 cannot be extracted ;;\n        esac\n    else\n        echo $1 is not a valid file\n    fi\n}' >> /root/.bash_aliases
 #--- Apply new aliases
-source /root/.bash_aliases     #source /root/.bashrc    # If using ZSH, will fail 
-#--- Check 
+source /root/.bash_aliases     #source /root/.bashrc    # If using ZSH, will fail
+#--- Check
 #alias
 
 
@@ -356,14 +356,15 @@ sed -i 's#<HR>#<DT><H3 ADD_DATE="1303667175" LAST_MODIFIED="1303667175" PERSONAL
 cd /root/.mozilla/firefox/*.default/
 mkdir -p extensions/
 cd /root/.mozilla/firefox/*.default/extensions/
-wget https://addons.mozilla.org/firefox/downloads/latest/1865/addon-1865-latest.xpi?src=dp-btn-primary -O {d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d}.xpi       # Adblock Plus
-wget https://addons.mozilla.org/firefox/downloads/latest/92079/addon-92079-latest.xpi?src=dp-btn-primary  -O {bb6bc1bb-f824-4702-90cd-35e2fb24f25d}.xpi    # Cookies Manager+
-wget https://addons.mozilla.org/firefox/downloads/latest/1843/addon-1843-latest.xpi?src=dp-btn-primary -O firebug@software.joehewitt.com.xpi               # Firebug
+wget https://addons.mozilla.org/firefox/downloads/latest/1865/addon-1865-latest.xpi?src=dp-btn-primary -O {d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d}.xpi          # Adblock Plus
+wget https://addons.mozilla.org/firefox/downloads/latest/92079/addon-92079-latest.xpi?src=dp-btn-primary  -O {bb6bc1bb-f824-4702-90cd-35e2fb24f25d}.xpi       # Cookies Manager+
+wget https://addons.mozilla.org/firefox/downloads/latest/1843/addon-1843-latest.xpi?src=dp-btn-primary -O firebug@software.joehewitt.com.xpi                  # Firebug - not working 100%
 wget https://addons.mozilla.org/firefox/downloads/file/150692/foxyproxy_basic-2.6.2-fx+tb+sm.xpi?src=search -O FoxyProxyBasic.zip && unzip -o FoxyProxyBasic.zip -d foxyproxy-basic@eric.h.jung/ && rm -f FoxyProxyBasic.zip   # FoxyProxy Basic
-#wget https://addons.mozilla.org/firefox/downloads/latest/284030/addon-284030-latest.xpi?src=dp-btn-primary -O {6bdc61ae-7b80-44a3-9476-e1d121ec2238}.xpi  # HTTPS Finder
-wget https://www.eff.org/files/https-everywhere-latest.xpi -O https-everywhere@eff.org.xpi                                                                 # HTTPS Everywhere
-wget https://addons.mozilla.org/firefox/downloads/latest/3829/addon-3829-latest.xpi?src=dp-btn-primary -O {8f8fe09b-0bd3-4470-bc1b-8cad42b8203a}.xpi       # Live HTTP Headers
-wget https://addons.mozilla.org/firefox/downloads/file/79565/tamper_data-11.0.1-fx.xpi?src=dp-btn-primary -O {9c51bd27-6ed8-4000-a2bf-36cb95c0c947}.xpi    # Tamper Data  - not working 100%
+#wget https://addons.mozilla.org/firefox/downloads/latest/284030/addon-284030-latest.xpi?src=dp-btn-primary -O {6bdc61ae-7b80-44a3-9476-e1d121ec2238}.xpi     # HTTPS Finder
+wget https://www.eff.org/files/https-everywhere-latest.xpi -O https-everywhere@eff.org.xpi                                                                    # HTTPS Everywhere
+wget https://addons.mozilla.org/firefox/downloads/latest/3829/addon-3829-latest.xpi?src=dp-btn-primary -O {8f8fe09b-0bd3-4470-bc1b-8cad42b8203a}.xpi          # Live HTTP Headers
+wget https://addons.mozilla.org/firefox/downloads/file/79565/tamper_data-11.0.1-fx.xpi?src=dp-btn-primary -O {9c51bd27-6ed8-4000-a2bf-36cb95c0c947}.xpi       # Tamper Data  - not working 100%
+wget https://addons.mozilla.org/firefox/downloads/latest/300254/addon-300254-latest.xpi?src=dp-btn-primary -O check-compatibility@dactyl.googlecode.com.xpi   # Disable Add-on Compatibility Checks
 #for z in *.xpi; do
 # d=`basename $z .xpi`
 # mkdir $d && unzip -o $z -d $d
@@ -622,10 +623,10 @@ for ITEM in clean autoremove autoclean; do apt-get -y $ITEM; done
 updatedb
 #--- Reset folder location
 cd ~/
-#--- Remove any history (as they could contain sensitive info)
+#--- Remove any history files (as they could contain sensitive info)
 history -c    # Will not work in ZSH
 for i in $(cut -d: -f6 /etc/passwd | sort | uniq); do
-   [[ -f $i/.*_history ]] && rm -rf $i/.*_history
+   if [[ -f $i/.*_history ]]; then rm -rf $i/.*_history; fi
 done
 
 
