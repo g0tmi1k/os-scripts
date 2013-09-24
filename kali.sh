@@ -187,6 +187,10 @@ xfconf-query -c xsettings -p /Net/ThemeName -s "Shiki-Colors-Light-Menus"
 xfconf-query -c xsettings -p /Net/IconThemeName -s "gnome-brave"
 #--- Enable compositing
 xfconf-query -c xfwm4 -p /general/use_compositing -s true
+#--- Change wallpaper
+wget http://imageshack.us/a/img17/4646/vzex.png -O /usr/share/wallpapers/kali_blue.png
+xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitor0/image-show -s true
+xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitor0/image-path -s /usr/share/wallpapers/kali_blue.png
 #--- Configure file browser (need to re-login for effect)
 mkdir -p /root/.config/Thunar/
 if [ ! -e /root/.config/Thunar/thunarrc ]; then echo -e "[Configuration]\nLastShowHidden=TRUE" > /root/.config/Thunar/thunarrc; else sed -i 's/LastShowHidden=.*/LastShowHidden=TRUE/' /root/.config/Thunar/thunarrc; fi
