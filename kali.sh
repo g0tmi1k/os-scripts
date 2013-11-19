@@ -13,7 +13,12 @@
 #   First run of iceweal will get a ton of pop ups      #
 #                                                       #
 #   Incomplete stuff/buggy search for '***''            #
+#   Replace: /root with $USER                           #
 #-------------------------------------------------------#
+if [ 1 -eq 0 ]; then    # Never true, thus it acts as block comments ;)
+wget -qO- https://raw.github.com/g0tmi1k/OS-Scripts/master/kali.sh | bash     # Pull the latest version, and execute!
+fi
+
 
 ##### Remote configuration via SSH (optional)
 #services ssh start         # Start SSH to allow for remote config
@@ -58,7 +63,7 @@ ln -sf /usr/src/linux-headers-$(uname -r)/include/generated/uapi/linux/version.h
 # VM -> Install VMware Tools.
 mkdir -p /mnt/cdrom/
 mount -o ro /dev/cdrom /mnt/cdrom
-if [[ $? == 0 ]]; then                         # If there is a CD in (hoping its right...)
+if [[ $? == 0 ]]; then                         # If there is a CD in (hoping its right...), install open & close vmware tools
   cp -f /mnt/cdrom/VMwareTools-*.tar.gz /tmp/
   tar -zxf /tmp/VMwareTools* -C /tmp/
   cd /tmp/vmware-tools-distrib/
@@ -281,9 +286,29 @@ sed -i 's/LastShowHidden=.*/LastShowHidden=TRUE/' $file 2>/dev/null || echo -e "
 apt-get -y -qq install numlockx
 file=/etc/xdg/xfce4/xinitrc; [ -e $file ] && cp -n $file{,.bkup}     #/etc/rc.local
 grep -q '/usr/bin/numlockx' $file 2>/dev/null || echo "/usr/bin/numlockx on" >> $file
-#--- XFCE fix for terminator
+#--- XFCE fixes for default applictaions
+mkdir -p /root/.local/share/applications/
+file=/root/.local/share/applications/mimeapps.list; [ -e $file ] && cp -n $file{,.bkup}
+[[ ! -e $file ]] && echo '[Added Associations]' > $file
+for VALUE in file trash; do
+  sed -i 's#x-scheme-handler/'$VALUE'=.*#x-scheme-handler/'$VALUE'=exo-file-manager.desktop#' $file
+  grep -q 'x-scheme-handler/'$VALUE'=' $file 2>/dev/null || echo -e 'x-scheme-handler/'$VALUE'=exo-file-manager.desktop' >> $file
+done
+for VALUE in http https; do
+  sed -i 's#^x-scheme-handler/'$VALUE'=.*#x-scheme-handler/'$VALUE'=exo-web-browser.desktop#' $file
+  grep -q 'x-scheme-handler/'$VALUE'=' $file 2>/dev/null || echo -e 'x-scheme-handler/'$VALUE'=exo-web-browser.desktop' >> $file
+done
+[[ $(tail -n 1 mimeapps.list) != "" ]] && echo >> $file
+file=/root/.config/xfce4/helpers.rc; [ -e $file ] && cp -n $file{,.bkup}    #exo-preferred-applications   #xdg-mime default
+sed -i 's#^FileManager=.*#FileManager=Thunar#' $file
+grep -q '^FileManager=Thunar' $file 2>/dev/null || echo -e 'FileManager=Thunar' >> $file
+#--- XFCE fixes for terminator (We do this later)
+#mkdir -p /root/.local/share/xfce4/helpers/
 #file=/root/.local/share/xfce4/helpers/custom-TerminalEmulator.desktop; [ -e $file ] && cp -n $file{,.bkup}
 #sed -i 's#^X-XFCE-CommandsWithParameter=.*#X-XFCE-CommandsWithParameter=/usr/bin/terminator --command="%s"#' $file 2>/dev/null || echo -e '[Desktop Entry]\nNoDisplay=true\nVersion=1.0\nEncoding=UTF-8\nType=X-XFCE-Helper\nX-XFCE-Category=TerminalEmulator\nX-XFCE-CommandsWithParameter=/usr/bin/terminator --command="%s"\nIcon=terminator\nName=terminator\nX-XFCE-Commands=/usr/bin/terminator' > $file
+#file=/root/.config/xfce4/helpers.rc; [ -e $file ] && cp -n $file{,.bkup}    #exo-preferred-applications   #xdg-mime default
+#sed -i 's#^TerminalEmulator=.*#TerminalEmulator=custom-TerminalEmulator#' $file
+#grep -q '^TerminalEmulator=custom-TerminalEmulator' $file 2>/dev/null || echo -e 'TerminalEmulator=custom-TerminalEmulator' >> $file
 
 
 ##### Configure terminal (need to restart xserver for effect)
@@ -301,8 +326,12 @@ mkdir -p /root/.config/terminator/
 file=/root/.config/terminator/config; [ -e $file ] && cp -n $file{,.bkup}
 echo -e '[global_config]\n  enabled_plugins = TerminalShot, LaunchpadCodeURLHandler, APTURLHandler, LaunchpadBugURLHandler\n[keybindings]\n[profiles]\n  [[default]]\n    background_darkness = 0.9\n    copy_on_selection = True\n    background_type = transparent\n    scrollback_infinite = True\n[layouts]\n  [[default]]\n    [[[child1]]]\n      type = Terminal\n      parent = window0\n    [[[window0]]]\n      type = Window\n      parent = ""\n[plugins]' > $file
 #--- XFCE fix for terminator
+mkdir -p /root/.local/share/xfce4/helpers/
 file=/root/.local/share/xfce4/helpers/custom-TerminalEmulator.desktop; [ -e $file ] && cp -n $file{,.bkup}
 sed -i 's#^X-XFCE-CommandsWithParameter=.*#X-XFCE-CommandsWithParameter=/usr/bin/terminator --command="%s"#' $file 2>/dev/null || echo -e '[Desktop Entry]\nNoDisplay=true\nVersion=1.0\nEncoding=UTF-8\nType=X-XFCE-Helper\nX-XFCE-Category=TerminalEmulator\nX-XFCE-CommandsWithParameter=/usr/bin/terminator --command="%s"\nIcon=terminator\nName=terminator\nX-XFCE-Commands=/usr/bin/terminator' > $file
+file=/root/.config/xfce4/helpers.rc; [ -e $file ] && cp -n $file{,.bkup}    #exo-preferred-applications   #xdg-mime default
+sed -i 's#^TerminalEmulator=.*#TerminalEmulator=custom-TerminalEmulator#' $file
+grep -q '^TerminalEmulator=custom-TerminalEmulator' $file 2>/dev/null || echo -e 'TerminalEmulator=custom-TerminalEmulator' >> $file
 
 
 ##### Install bash-completion
@@ -324,7 +353,7 @@ done
 file=/root/.bash_aliases; [ -e $file ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
 grep -q '^alias tmux' $file 2>/dev/null || echo -e '\n### tmux\nalias tmux="tmux attach || tmux new"\n' >> $file
 grep -q '^alias axel' $file 2>/dev/null || echo -e '\n### axel\nalias axel="axel -a"\n' >> $file
-grep -q 'alias screen' $file 2>/dev/null || echo -e '\n### screen\nalias screen="screen -xRR"\n' >> $file
+grep -q '^alias screen' $file 2>/dev/null || echo -e '\n### screen\nalias screen="screen -xRR"\n' >> $file
 #--- Add in ours (shortcuts)
 grep -q '^### Directory navigation aliases' $file 2>/dev/null || echo -e '\n### Directory navigation aliases\nalias ..="cd .."\nalias ...="cd ../.."\nalias ....="cd ../../.."\nalias .....="cd ../../../.."\n\n' >> $file
 grep -q '^### Add more aliases' $file 2>/dev/null || echo -e '\n### Add more aliases\nalias upd="sudo apt-get update"\nalias upg="sudo apt-get upgrade"\nalias ins="sudo apt-get install"\nalias rem="sudo apt-get purge"\nalias fix="sudo apt-get install -f"\n\n' >> $file
@@ -377,6 +406,7 @@ chsh -s $(which zsh)
 #chsh $username -s $(which zsh)
 #--- Remove any left over programs/files
 #apt-get -y -qq remove git curl
+# *** Note, if you use thurar, 'Open terminal here', will not work
 
 
 ##### Configure tmux
