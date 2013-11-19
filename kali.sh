@@ -1,7 +1,7 @@
 #!/bin/bash
 #-Operating System--------------------------------------#
 #   Designed for: Kali Linux [1.0.5 x86]                #
-#   Last Updated: 2013-11-18                            #
+#   Last Updated: 2013-11-19                            #
 #-Author------------------------------------------------#
 #   g0tmilk ~ http://g0tmi1k.com                        #
 #-Notes-------------------------------------------------#
@@ -33,7 +33,7 @@ echo -e '\e[01;32m[+]\e[00m Fix NetworkManger'
 #--- Fix 'device not managed' issue
 file=/etc/network/interfaces; [ -e $file ] && cp -n $file{,.bkup}
 sed -i '/iface lo inet loopback/q' $file   #sed -i 's/managed=.*/managed=true/' /etc/NetworkManager/NetworkManager.conf
-service network-manager restart
+#service network-manager restart
 #--- Fix 'network disabled' issue
 service network-manager stop
 rm -f /var/lib/NetworkManager/NetworkManager.state
@@ -60,8 +60,9 @@ grep -q 'cups enabled' $file 2>/dev/null || echo "cups enabled" >> $file
 grep -q 'vmware-tools enabled' $file 2>/dev/null || echo "vmware-tools enabled" >> $file
 apt-get -y -qq install gcc make linux-headers-$(uname -r)
 ln -sf /usr/src/linux-headers-$(uname -r)/include/generated/uapi/linux/version.h /usr/src/linux-headers-$(uname -r)/include/linux/
-# VM -> Install VMware Tools.
+#--- VM -> Install VMware Tools.
 mkdir -p /mnt/cdrom/
+umount /mnt/cdrom 2>/dev/null
 mount -o ro /dev/cdrom /mnt/cdrom
 if [[ $? == 0 ]]; then                         # If there is a CD in (hoping its right...), install open & close vmware tools
   cp -f /mnt/cdrom/VMwareTools-*.tar.gz /tmp/
@@ -71,6 +72,7 @@ if [[ $? == 0 ]]; then                         # If there is a CD in (hoping its
   cd - >/dev/null
   umount /mnt/cdrom
 else                                           # Fall back is open vmware tools
+  echo -e "\e[01;31m[!]\e[00m VMware CD isn't mounted. Skipping 'Closed' VMware tools, using Open Virtual Machine Tools instead."
   apt-get -y -qq install open-vm-tools
 fi
 #--- Install Parallel tools
@@ -234,7 +236,7 @@ apt-get -y -qq install numlockx
 file=/etc/gdm3/Init/Default; [ -e $file ] && cp -n $file{,.bkup}     #/etc/rc.local
 grep -q '/usr/bin/numlockx' $file 2>/dev/null || sed -i 's#exit 0#if [ -x /usr/bin/numlockx ]; then\n /usr/bin/numlockx on\nfi\nexit 0#' $file   # GNOME
 #--- Restart GNOME panel to apply/take effect (need to restart xserver for effect)
-#killall -w gnome-panel && gnome-panel&   # Still need to logoff!
+#killall -q -w gnome-panel >/dev/null && gnome-panel&   # Still need to logoff!
 
 
 ##### Install & configure XFCE4
@@ -298,9 +300,9 @@ for VALUE in http https; do
   sed -i 's#^x-scheme-handler/'$VALUE'=.*#x-scheme-handler/'$VALUE'=exo-web-browser.desktop#' $file
   grep -q 'x-scheme-handler/'$VALUE'=' $file 2>/dev/null || echo -e 'x-scheme-handler/'$VALUE'=exo-web-browser.desktop' >> $file
 done
-[[ $(tail -n 1 mimeapps.list) != "" ]] && echo >> $file
+[[ $(tail -n 1 $file) != "" ]] && echo >> $file
 file=/root/.config/xfce4/helpers.rc; [ -e $file ] && cp -n $file{,.bkup}    #exo-preferred-applications   #xdg-mime default
-sed -i 's#^FileManager=.*#FileManager=Thunar#' $file
+sed -i 's#^FileManager=.*#FileManager=Thunar#' $file 2>/dev/null
 grep -q '^FileManager=Thunar' $file 2>/dev/null || echo -e 'FileManager=Thunar' >> $file
 #--- XFCE fixes for terminator (We do this later)
 #mkdir -p /root/.local/share/xfce4/helpers/
@@ -476,7 +478,7 @@ grep -q 'file:///var/www www' $file 2>/dev/null || echo -e 'file:///var/www www\
 echo -e '\e[01;32m[+]\e[00m Setup iceweasel'
 apt-get install -y -qq unzip
 #--- Configure iceweasel
-iceweasel & sleep 15; killall -w iceweasel   # Start and kill. Files needed for first time run
+iceweasel & sleep 15; killall -q -w iceweasel >/dev/null   # Start and kill. Files needed for first time run
 file=$(echo /root/.mozilla/firefox/*.default/prefs.js); [ -e $file ] && cp -n $file{,.bkup}
 sed -i 's/^.*browser.startup.page.*/user_pref("browser.startup.page", 0);' $file 2>/dev/null || echo 'user_pref("browser.startup.page", 0);' >> $file                                              # Iceweasel -> Edit -> Preferences -> General -> When firefox starts: Show a blank page
 sed -i 's/^.*privacy.donottrackheader.enabled.*/user_pref("privacy.donottrackheader.enabled", true);' $file 2>/dev/null || echo 'user_pref("privacy.donottrackheader.enabled", true);' >> $file    # Privacy -> Enable: Tell websites I do not want to be tracked
@@ -510,7 +512,7 @@ wget https://addons.mozilla.org/firefox/downloads/latest/300254/addon-300254-lat
 #iceweasel   #<--- Doesn't automate
 #--- Configure foxyproxy
 file=$(echo /root/.mozilla/firefox/*.default/foxyproxy.xml); [ -e $file ] && cp -n $file{,.bkup}
-sed -i 's/<proxies><proxy name="Default"/<proxies><proxy name="Localhost:8080" id="315347393" notes="Localhost:8080" enabled="true" mode="manual" selectedTabIndex="1" lastresort="false" animatedIcons="true" includeInCycle="true" color="#FF051A" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="false" clearCookiesBeforeUse="false" rejectCookies="false"><matches\/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"\/><autoconf url="http:\/\/wpad\/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"\/><manualconf host="localhost" port="8080" socksversion="5" isSocks="false"\/><\/proxy><proxy name="Default"/' $file
+sed -i 's#<proxies><proxy name="Default"#<proxies><proxy name="Localhost:8080" id="315347393" notes="Localhost:8080" enabled="true" mode="manual" selectedTabIndex="1" lastresort="false" animatedIcons="true" includeInCycle="true" color="#FF051A" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="false" clearCookiesBeforeUse="false" rejectCookies="false"><matches/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="localhost" port="8080" socksversion="5" isSocks="false"/></proxy><proxy name="Default"#' $file 2>/dev/null
 cd - >/dev/null
 
 
@@ -571,7 +573,7 @@ toplevel-id='top-panel'
 EOT
 dconf write /org/gnome/gnome-panel/layout/object-id-list "$(dconf read /org/gnome/gnome-panel/layout/object-id-list | sed "s/]/, 'geany']/")"
 #--- Configure geany
-geany & sleep 5; killall -w geany   # Start and kill. Files needed for first time run
+geany & sleep 5; killall -q -w geany >/dev/null   # Start and kill. Files needed for first time run
 # Geany -> Edit -> Preferences. Editor -> Newline strips trailing spaces: Enable. -> Indentation -> Type: Spaces. -> Files -> Strip trailing spaces and tabs: Enable. Replace tabs by space: Enable. -> Apply -> Ok
 file=/root/.config/geany/geany.conf; [ -e $file ] && cp -n $file{,.bkup}
 sed -i 's/^.*indent_type.*/indent_type=0/' $file     # Spaces over tabs
@@ -599,12 +601,12 @@ gconftool-2 --type int --set /apps/meld/edit_wrap_lines 2
 
 
 ##### Install libreoffice
-echo -e '\e[01;32m[+]\e[00m Install libreoffice'
+#echo -e '\e[01;32m[+]\e[00m Install libreoffice'
 #apt-get -y -qq install libreoffice
 
 
 ##### Install recordmydesktop
-echo -e '\e[01;32m[+]\e[00m Install recordmydesktop'
+#echo -e '\e[01;32m[+]\e[00m Install recordmydesktop'
 #apt-get -y -qq install gtk-recordmydesktop
 
 
@@ -637,15 +639,18 @@ apt-get -y -qq install daemonfs
 echo -e '\e[01;32m[+]\e[00m Install filezilla'
 apt-get -y -qq install filezilla
 #--- Configure filezilla
-filezilla & sleep 5; killall -w filezilla   # Start and kill. Files needed for first time run
+filezilla & sleep 5; killall -q -w filezilla >/dev/null     # Start and kill. Files needed for first time run
 sed -i 's/^.*"Default editor".*/\t<Setting name="Default editor" type="string">2\/usr\/bin\/geany<\/Setting>/' /root/.filezilla/filezilla.xml
 
 
-##### Install tftp
-echo -e '\e[01;32m[+]\e[00m Install tftp'
-#--- Client
-apt-get -y -qq install tftp
-#--- Server
+##### Setup tftp
+echo -e '\e[01;32m[+]\e[00m Setup tftp'
+apt-get -y -qq install tftp      # TFTP client
+apt-get -y -qq install atftpd    # TFTP Server
+
+
+##### Install atftpd
+echo -e '\e[01;32m[+]\e[00m Install atftpd'
 apt-get -y -qq install atftpd
 
 
@@ -659,13 +664,14 @@ echo -e '\e[01;32m[+]\e[00m Install p7zip'
 apt-get -y -qq install p7zip
 
 
-##### Install zip & unzip
-echo -e '\e[01;32m[+]\e[00m Install zip & unzip'
-apt-get -y -qq install zip unzip
+##### Install zip/unzip
+echo -e '\e[01;32m[+]\e[00m Install zip/unzip'
+apt-get -y -qq install zip      # Compress
+apt-get -y -qq install unzip    # Decompress
 
 
-##### Install Midnight Commander
-echo -e '\e[01;32m[+]\e[00m Install Midnight Commander'
+##### Install midnight commander
+echo -e '\e[01;32m[+]\e[00m Install midnight commander'
 apt-get -y -qq install mc
 
 
@@ -674,8 +680,8 @@ echo -e '\e[01;32m[+]\e[00m Install htop'
 apt-get -y -qq install mc
 
 
-##### Install VNStat
-echo -e '\e[01;32m[+]\e[00m Install VNStat'
+##### Install vnstat
+#echo -e '\e[01;32m[+]\e[00m Install vnstat'
 #apt-get -y -qq install vnstat
 
 
@@ -839,7 +845,7 @@ done
 
 ##### Done!
 echo -e '\e[01;32m[+]\e[00m Done!'
-reboot
+#reboot
 
 
 # *** Don't forget to take a snapshot (if you're using a VM!) ***
