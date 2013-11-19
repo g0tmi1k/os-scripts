@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #-Operating System--------------------------------------#
 #   Designed for: Kali Linux [1.0.5 x86]                #
 #   Last Updated: 2013-11-18                            #
@@ -33,6 +33,8 @@ service network-manager restart
 service network-manager stop
 rm -f /var/lib/NetworkManager/NetworkManager.state
 service network-manager start
+#--- Wait a little while before trying to connect out again, just to make sure
+sleep 10
 
 
 ##### Fix repositories
@@ -45,8 +47,9 @@ apt-get update
 
 ##### Install VirtualMachines Tools (optional)
 echo -e '\e[01;32m[+]\e[00m Install VirtualMachines Tools (optional)'
+#--- Install VMware tools (Only open)
+#apt-get -y -qq install open-vm-tools    # Has less features than open & close vmware tools
 #--- Install VMware tools ~ http://docs.kali.org/general-use/install-vmware-tools-kali-guest
-#apt-get -y -qq install open-vm-tools
 file=/usr/sbin/update-rc.d; [ -e $file ] && cp -n $file{,.bkup}
 grep -q 'cups enabled' $file 2>/dev/null || echo "cups enabled" >> $file
 grep -q 'vmware-tools enabled' $file 2>/dev/null || echo "vmware-tools enabled" >> $file
@@ -55,11 +58,16 @@ ln -sf /usr/src/linux-headers-$(uname -r)/include/generated/uapi/linux/version.h
 # VM -> Install VMware Tools.
 mkdir -p /mnt/cdrom/
 mount -o ro /dev/cdrom /mnt/cdrom
-cp -f /mnt/cdrom/VMwareTools-*.tar.gz /tmp/
-tar -zxf /tmp/VMwareTools* -C /tmp/
-cd /tmp/vmware-tools-distrib/
-echo -e '\n' | perl vmware-install.pl
-cd - >/dev/null
+if [[ $? == 0 ]]; then                         # If there is a CD in (hoping its right...)
+  cp -f /mnt/cdrom/VMwareTools-*.tar.gz /tmp/
+  tar -zxf /tmp/VMwareTools* -C /tmp/
+  cd /tmp/vmware-tools-distrib/
+  echo -e '\n' | perl vmware-install.pl
+  cd - >/dev/null
+  umount /mnt/cdrom
+else                                           # Fall back is open vmware tools
+  apt-get -y -qq install open-vm-tools
+fi
 #--- Install Parallel tools
 #grep -q 'cups enabled' /usr/sbin/update-rc.d || echo "cups enabled" >> /usr/sbin/update-rc.d
 #grep -q 'vmware-tools enabled' /usr/sbin/update-rc.d || echo "vmware-tools enabled" >> /usr/sbin/update-rc.d
@@ -439,12 +447,12 @@ echo -e '\e[01;32m[+]\e[00m Setup iceweasel'
 apt-get install -y -qq unzip
 #--- Configure iceweasel
 iceweasel & sleep 15; killall -w iceweasel   # Start and kill. Files needed for first time run
-file=/root/.mozilla/firefox/*.default/prefs.js; [ -e $file ] && cp -n $file{,.bkup}
+file=$(echo /root/.mozilla/firefox/*.default/prefs.js); [ -e $file ] && cp -n $file{,.bkup}
 sed -i 's/^.*browser.startup.page.*/user_pref("browser.startup.page", 0);' $file 2>/dev/null || echo 'user_pref("browser.startup.page", 0);' >> $file                                              # Iceweasel -> Edit -> Preferences -> General -> When firefox starts: Show a blank page
 sed -i 's/^.*privacy.donottrackheader.enabled.*/user_pref("privacy.donottrackheader.enabled", true);' $file 2>/dev/null || echo 'user_pref("privacy.donottrackheader.enabled", true);' >> $file    # Privacy -> Enable: Tell websites I do not want to be tracked
 sed -i 's/^.*browser.showQuitWarning.*/user_pref("browser.showQuitWarning", true);' $file 2>/dev/null || echo 'user_pref("browser.showQuitWarning", true);' >> $file                               # Stop Ctrl + Q from quitting without warning
 #--- Replace bookmarks
-file=/root/.mozilla/firefox/*.default/bookmarks.html; [ -e $file ] && cp -n $file{,.bkup}
+file=$(echo /root/.mozilla/firefox/*.default/bookmarks.html); [ -e $file ] && cp -n $file{,.bkup}
 wget http://pentest-bookmarks.googlecode.com/files/bookmarksv1.5.html -O /tmp/bookmarks_new.html    # ***!!! hardcoded version! Need to manually check for updates
 rm -f /root/.mozilla/firefox/*.default/places.sqlite
 rm -f /root/.mozilla/firefox/*.default/bookmarkbackups/*
@@ -453,7 +461,7 @@ awk '!a[$0]++' /tmp/bookmarks_new.html | egrep -v ">(Latest Headlines|Getting St
 sed -i 's#^</DL><p>#        </DL><p>\n    </DL><p>\n    <DT><A HREF="https://127.0.0.1:8834">Nessus</A>\n    <DT><A HREF="https://127.0.0.1:9392">OpenVAS</A>\n    <DT><A HREF="https://127.0.0.1:3790">MSF Community</A>\n</DL><p>#' $file
 sed -i 's#<HR>#<DT><H3 ADD_DATE="1303667175" LAST_MODIFIED="1303667175" PERSONAL_TOOLBAR_FOLDER="true">Bookmarks Toolbar</H3>\n<DD>Add bookmarks to this folder to see them displayed on the Bookmarks Toolbar#' $file
 #--- Download addons
-path=$(echo /root/.mozilla/firefox/*.default/)/extensions/
+path=$(echo /root/.mozilla/firefox/*.default/)extensions/
 mkdir -p $path
 wget https://addons.mozilla.org/firefox/downloads/latest/1865/addon-1865-latest.xpi?src=dp-btn-primary -O $path/{d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d}.xpi          # Adblock Plus
 wget https://addons.mozilla.org/firefox/downloads/latest/92079/addon-92079-latest.xpi?src=dp-btn-primary  -O $path/{bb6bc1bb-f824-4702-90cd-35e2fb24f25d}.xpi       # Cookies Manager+
@@ -471,7 +479,7 @@ wget https://addons.mozilla.org/firefox/downloads/latest/300254/addon-300254-lat
 #done
 #iceweasel   #<--- Doesn't automate
 #--- Configure foxyproxy
-file=/root/.mozilla/firefox/*.default/foxyproxy.xml; [ -e $file ] && cp -n $file{,.bkup}
+file=$(echo /root/.mozilla/firefox/*.default/foxyproxy.xml); [ -e $file ] && cp -n $file{,.bkup}
 sed -i 's/<proxies><proxy name="Default"/<proxies><proxy name="Localhost:8080" id="315347393" notes="Localhost:8080" enabled="true" mode="manual" selectedTabIndex="1" lastresort="false" animatedIcons="true" includeInCycle="true" color="#FF051A" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="false" clearCookiesBeforeUse="false" rejectCookies="false"><matches\/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"\/><autoconf url="http:\/\/wpad\/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"\/><manualconf host="localhost" port="8080" socksversion="5" isSocks="false"\/><\/proxy><proxy name="Default"/' $file
 cd - >/dev/null
 
@@ -647,12 +655,12 @@ apt-get -y -qq install network-manager-pptp-gnome network-manager-pptp
 
 
 ##### Install flash
-echo -e '\e[01;32m[+]\e[00m Install flash'
+#echo -e '\e[01;32m[+]\e[00m Install flash'
 #apt-get -y -qq install flashplugin-nonfree
 
 
 ##### Install java
-echo -e '\e[01;32m[+]\e[00m Install java'
+#echo -e '\e[01;32m[+]\e[00m Install java'
 # <insert bash fu here>
 
 
@@ -677,7 +685,7 @@ apt-get -y -qq install unicornscan
 
 
 ##### Install nessus  *** Doesn't automate ***
-echo -e '\e[01;32m[+]\e[00m Install nessus'
+#echo -e '\e[01;32m[+]\e[00m Install nessus'
 #--- Get download link
 #xdg-open http://www.tenable.com/products/nessus/select-your-operating-system    *** #wget "http://downloads.nessus.org/<file>" -O /tmp/nessus.deb   # ***!!! Hardcoded version value
 #dpkg -i /usr/local/src/Nessus-*-debian6_i386.deb

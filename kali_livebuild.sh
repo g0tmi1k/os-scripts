@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #-Operating System--------------------------------------#
 #   Designed for: Kali Linux [1.0.5 x86]                #
 #   Last Updated: 2013-11-18                            #
