@@ -24,6 +24,7 @@ export DISPLAY=:0.0         # Allows for remote configuration
 
 
 ##### Fix NetworkManger
+echo -e '\e[01;32m[+]\e[00m Fix NetworkManger'
 #--- Fix 'device not managed' issue
 file=/etc/network/interfaces; [ -e $file ] && cp -n $file{,.bkup}
 sed -i '/iface lo inet loopback/q' $file   #sed -i 's/managed=.*/managed=true/' /etc/NetworkManager/NetworkManager.conf
@@ -35,13 +36,15 @@ service network-manager start
 
 
 ##### Fix repositories
+echo -e '\e[01;32m[+]\e[00m Fix repositories'
 file=/etc/apt/sources.list; [ -e $file ] && cp -n $file{,.bkup}
 grep -q 'kali main non-free contrib' $file 2>/dev/null || echo "deb http://http.kali.org/kali kali main non-free contrib" >> $file
 grep -q 'kali/updates main contrib non-free' $file 2>/dev/null || echo "deb http://security.kali.org/kali-security kali/updates main contrib non-free" >> $file
 apt-get update
 
 
-##### Install 'VirtualMachines Tools' (optional)
+##### Install VirtualMachines Tools (optional)
+echo -e '\e[01;32m[+]\e[00m Install VirtualMachines Tools (optional)'
 #--- Install VMware tools ~ http://docs.kali.org/general-use/install-vmware-tools-kali-guest
 #apt-get -y -qq install open-vm-tools
 file=/usr/sbin/update-rc.d; [ -e $file ] && cp -n $file{,.bkup}
@@ -70,12 +73,15 @@ cd - >/dev/null
 
 
 ##### Setup static IP address on eth1 - host only (optional)
-ifconfig eth1 192.168.155.175/24
-file=/etc/network/interfaces; [ -e $file ] && cp -n $file{,.bkup}
-grep -q 'iface eth1 inet static' $file 2>/dev/null || echo -e '\nauto eth1\niface eth1 inet static\n    address 192.168.155.175\n    netmask 255.255.255.0\n    gateway 192.168.155.1' >> $file
-
+echo -e '\e[01;32m[+]\e[00m Setup static IP address on eth1 - host only (optional)'
+if [[ $(ifconfig eth1 &>/devnull) == 0 ]]; then
+  ifconfig eth1 192.168.155.175/24
+  file=/etc/network/interfaces; [ -e $file ] && cp -n $file{,.bkup}
+  grep -q 'iface eth1 inet static' $file 2>/dev/null || echo -e '\nauto eth1\niface eth1 inet static\n    address 192.168.155.175\n    netmask 255.255.255.0\n    gateway 192.168.155.1' >> $file
+fi
 
 ##### Setup static DNS (optional)
+#echo -e '\e[01;32m[+]\e[00m Setup static DNS (optional)'
 #file=/etc/resolv.conf; [ -e $file ] && cp -n $file{,.bkup}
 #chattr -i /etc/resolv.conf
 #--- Remove duplicate results
@@ -90,6 +96,7 @@ grep -q 'iface eth1 inet static' $file 2>/dev/null || echo -e '\nauto eth1\nifac
 
 
 ##### Update the location
+echo -e '\e[01;32m[+]\e[00m Update the location'
 #--- Change the time now
 ln -sf /usr/share/zoneinfo/Europe/London /etc/localtime   # London, Europe
 #---  Install ntp
@@ -107,7 +114,8 @@ sed -i 's/XKBLAYOUT=".*"/XKBLAYOUT="gb"/' $file #; dpkg-reconfigure keyboard-con
 
 
 ##### Update OS
-apt-get update && apt-get -y -qq dist-upgrade --fix-missing
+echo -e '\e[01;32m[+]\e[00m Update OS'
+apt-get update && apt-get -y -q dist-upgrade --fix-missing
 #--- Enable bleeding edge ~ http://www.kali.org/kali-monday/bleeding-edge-kali-repositories/
 #file=/etc/apt/sources.list; [ -e $file ] && cp -n $file{,.bkup}
 #grep -q 'kali-bleeding-edge' $file 2>/dev/null || echo -e "\n\n## Bleeding edge\ndeb http://repo.kali.org/kali kali-bleeding-edge main" >> $file
@@ -115,13 +123,15 @@ apt-get update && apt-get -y -qq dist-upgrade --fix-missing
 
 
 ##### Configure (TTY) resolution
+echo -e '\e[01;32m[+]\e[00m Configure (TTY) resolution'
 file=/etc/default/grub; [ -e $file ] && cp -n $file{,.bkup}
-sed -i 's/GRUB_TIMEOUT=.*/GRUB_TIMEOUT=1/' $file
-sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT="vga=0x0318 quiet"/' $file
+sed -i 's/GRUB_TIMEOUT=.*/GRUB_TIMEOUT=1/' $file                                                   # Time out
+sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT="vga=0x0318 quiet"/' $file      # TTY resolution
 update-grub
 
 
 ##### Configure login (console login - non GUI)
+echo -e '\e[01;32m[+]\e[00m Configure login (console login - non GUI)'
 file=/etc/X11/default-display-manager; [ -e $file ] && cp -n $file{,.bkup}
 echo > $file
 file=/etc/gdm3/daemon.conf; [ -e $file ] && cp -n $file{,.bkup}
@@ -130,7 +140,8 @@ sed -i 's/^.*AutomaticLogin = .*/AutomaticLogin = root/' $file
 ln -sf /usr/sbin/gdm3 /usr/bin/startx
 
 
-##### Configure startup (randomize the hostname, eth0 & wlan0's MAC address)
+##### Configure startup (randomize the hostname, eth0 & wlan0s MAC address)
+#echo -e '\e[01;32m[+]\e[00m Configure startup (randomize the hostname, eth0 & wlan0s MAC address)'
 #--- Start up
 #file=/etc/rc.local; [ -e $file ] && cp -n $file{,.bkup}
 #grep -q "^macchanger" $file 2>/dev/null || sed -i 's#^exit 0#for INT in eth0 wlan0; do\n\tifconfig $INT down\n\t/usr/bin/macchanger -r $INT \&\& sleep 3\n\tifconfig $INT up\ndone\n\n\nexit 0#' $file
@@ -146,6 +157,7 @@ ln -sf /usr/sbin/gdm3 /usr/bin/startx
 
 
 ##### Configure GNOME 3
+echo -e '\e[01;32m[+]\e[00m Configure GNOME 3'
 #--- Move bottom panel to top panel
 gsettings set org.gnome.gnome-panel.layout toplevel-id-list "['top-panel']"
 dconf write /org/gnome/gnome-panel/layout/objects/workspace-switcher/toplevel-id "'top-panel'"
@@ -207,12 +219,13 @@ apt-get -y -qq install nautilus-open-terminal
 #--- Enable num lock at start up (might not be smart if you're using a smaller keyboard (laptop?))
 apt-get -y -qq install numlockx
 file=/etc/gdm3/Init/Default; [ -e $file ] && cp -n $file{,.bkup}     #/etc/rc.local
-grep -q '/usr/bin/numlockx' $file 2>/dev/null || sed -i 's#exit 0#if [ -x /usr/bin/numlockx ]; then\n/usr/bin/numlockx on\nfi\nexit 0#' $file   # GNOME
+grep -q '/usr/bin/numlockx' $file 2>/dev/null || sed -i 's#exit 0#if [ -x /usr/bin/numlockx ]; then\n /usr/bin/numlockx on\nfi\nexit 0#' $file   # GNOME
 #--- Restart GNOME panel to apply/take effect (need to restart xserver for effect)
 #killall -w gnome-panel && gnome-panel&   # Still need to logoff!
 
 
 ##### Install & configure XFCE4
+echo -e '\e[01;32m[+]\e[00m Install & configure XFCE4'
 apt-get -y -qq install wget
 apt-get -y -qq install xfce4 xfce4-places-plugin
 mv -f /usr/bin/startx{,-gnome}
@@ -266,12 +279,14 @@ grep -q '/usr/bin/numlockx' $file 2>/dev/null || echo "/usr/bin/numlockx on" >> 
 
 
 ##### Configure terminal (need to restart xserver for effect)
+echo -e '\e[01;32m[+]\e[00m Configure terminal (need to restart xserver for effect)'
 gconftool-2 --type bool --set /apps/gnome-terminal/profiles/Default/scrollback_unlimited true                   # Terminal -> Edit -> Profile Preferences -> Scrolling -> Scrollback: Unlimited -> Close
 gconftool-2 --type string --set /apps/gnome-terminal/profiles/Default/background_darkness 0.85611499999999996   # Not working 100%!
 gconftool-2 --type string --set /apps/gnome-terminal/profiles/Default/background_type transparent
 
 
 ##### Install terminator
+echo -e '\e[01;32m[+]\e[00m Install terminator'
 apt-get -y -qq install terminator
 #--- Configure terminator
 mkdir -p /root/.config/terminator/
@@ -283,6 +298,7 @@ sed -i 's#^X-XFCE-CommandsWithParameter=.*#X-XFCE-CommandsWithParameter=/usr/bin
 
 
 ##### Install bash-completion
+echo -e '\e[01;32m[+]\e[00m Install bash-completion'
 apt-get -y -qq install bash-completion
 file=/etc/bash.bashrc; [ -e $file ] && cp -n $file{,.bkup}    #/root/.bashrc
 sed -i '/# enable bash completion in/,+7{/enable bash completion/!s/^#//}' $file
@@ -291,6 +307,7 @@ sed -i '/# enable bash completion in/,+7{/enable bash completion/!s/^#//}' $file
 
 
 ##### Configure aliases
+echo -e '\e[01;32m[+]\e[00m Configure aliases'
 #--- Enable defaults (root user)
 for FILE in /etc/bash.bashrc /root/.bashrc /root/.bash_aliases; do    #/etc/profile /etc/bashrc /etc/bash_aliases /etc/bash.bash_aliases
   file=$FILE; [ -e $file ] && cp -n $file{,.bkup}
@@ -311,6 +328,7 @@ grep -q '^### Extract file, example' $file 2>/dev/null || echo -e '\n### Extract
 
 
 ##### Configure bash colour (all users)
+echo -e '\e[01;32m[+]\e[00m Configure bash colour (all users)'
 file=/etc/bash.bashrc; [ -e $file ] && cp -n $file{,.bkup}   #/root/.bashrc
 sed -i 's/.*force_color_prompt=.*/force_color_prompt=yes/' $file
 grep -q '^force_color_prompt' $file 2>/dev/null || echo 'force_color_prompt=yes' >> $file
@@ -322,7 +340,8 @@ sed -i 's#PS1='"'"'.*'"'"'#PS1='"'"'${debian_chroot:+($debian_chroot)}\\[\\033\[
 #sed -i 's/.*force_color_prompt=.*/force_color_prompt=yes/' $file
 
 
-##### Install zsh
+##### Install ZSH & oh-my-zsh (root user)
+echo -e '\e[01;32m[+]\e[00m Install ZSH & oh-my-zsh (root user)'
 apt-get -y -qq install zsh git curl
 #--- Setup oh-my-zsh
 curl -s -L https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh | sh
@@ -353,6 +372,7 @@ chsh -s $(which zsh)
 
 
 ##### Configure tmux
+echo -e '\e[01;32m[+]\e[00m Configure tmux'
 #apt-get -y -qq remove screen   # Optional: If we're going to have/use tmux, why have screen?
 apt-get -y -qq install tmux
 #--- Configure tmux
@@ -372,13 +392,15 @@ grep -q '^alias tmux' $file 2>/dev/null || echo -e '\n### tmux\nalias tmux="tmux
 
 
 ##### Configure screen (if possible, use tmux instead)
+echo -e '\e[01;32m[+]\e[00m Configure screen (if possible, use tmux instead)'
 #apt-get -y -qq install screen
 #--- Configure screen
 file=/root/.screenrc; [ -e $file ] && cp -n $file{,.bkup}
 echo -e "# Don't display the copyright page\nstartup_message off\n\n# tab-completion flash in heading bar\nvbell off\n\n# keep scrollback n lines\ndefscrollback 1000\n\n# hardstatus is a bar of text that is visible in all screens\nhardstatus on\nhardstatus alwayslastline\nhardstatus string '%{gk}%{G}%H %{g}[%{Y}%l%{g}] %= %{wk}%?%-w%?%{=b kR}(%{W}%n %t%?(%u)%?%{=b kR})%{= kw}%?%+w%?%?%= %{g} %{Y} %Y-%m-%d %C%a %{W}'\n\n# title bar\ntermcapinfo xterm ti@:te@\n\n# default windows (syntax: screen -t label order command)\nscreen -t bash1 0\nscreen -t bash2 1\n\n# select the default window\nselect 1" > $file
 
 
-##### Configure vim
+##### Configure vim (all users)
+echo -e '\e[01;32m[+]\e[00m Configure vim (all users)'
 file=/etc/vim/vimrc; [ -e $file ] && cp -n $file{,.bkup}   #/root/.vimrc
 sed -i 's/.*syntax on/syntax on/' $file
 sed -i 's/.*set background=dark/set background=dark/' $file
@@ -403,6 +425,7 @@ grep -q '^set wildmenu' $file 2>/dev/null || echo -e 'set wildmenu\nset wildmode
 
 
 ##### Configure file browser (need to restart xserver for effect)
+echo -e '\e[01;32m[+]\e[00m Configure file browser (need to restart xserver for effect)'
 mkdir -p /root/.config/gtk-2.0/
 file=/root/.config/gtk-2.0/gtkfilechooser.ini; [ -e $file ] && cp -n $file{,.bkup}
 sed -i 's/^.*ShowHidden.*/ShowHidden=true/' $file 2>/dev/null || echo -e "\n[Filechooser Settings]\nLocationMode=path-bar\nShowHidden=true\nExpandFolders=false\nShowSizeColumn=true\nGeometryX=66\nGeometryY=39\nGeometryWidth=780\nGeometryHeight=618\nSortColumn=name\nSortOrder=ascending" > $file    #Open/save Window -> Right click -> Show Hidden Files: Enabled
@@ -412,6 +435,7 @@ grep -q 'file:///var/www www' $file 2>/dev/null || echo -e 'file:///var/www www\
 
 
 ##### Setup iceweasel
+echo -e '\e[01;32m[+]\e[00m Setup iceweasel'
 apt-get install -y -qq unzip
 #--- Configure iceweasel
 iceweasel & sleep 15; killall -w iceweasel   # Start and kill. Files needed for first time run
@@ -429,7 +453,7 @@ awk '!a[$0]++' /tmp/bookmarks_new.html | egrep -v ">(Latest Headlines|Getting St
 sed -i 's#^</DL><p>#        </DL><p>\n    </DL><p>\n    <DT><A HREF="https://127.0.0.1:8834">Nessus</A>\n    <DT><A HREF="https://127.0.0.1:9392">OpenVAS</A>\n    <DT><A HREF="https://127.0.0.1:3790">MSF Community</A>\n</DL><p>#' $file
 sed -i 's#<HR>#<DT><H3 ADD_DATE="1303667175" LAST_MODIFIED="1303667175" PERSONAL_TOOLBAR_FOLDER="true">Bookmarks Toolbar</H3>\n<DD>Add bookmarks to this folder to see them displayed on the Bookmarks Toolbar#' $file
 #--- Download addons
-paht=$(echo /root/.mozilla/firefox/*.default/)/extensions/
+path=$(echo /root/.mozilla/firefox/*.default/)/extensions/
 mkdir -p $path
 wget https://addons.mozilla.org/firefox/downloads/latest/1865/addon-1865-latest.xpi?src=dp-btn-primary -O $path/{d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d}.xpi          # Adblock Plus
 wget https://addons.mozilla.org/firefox/downloads/latest/92079/addon-92079-latest.xpi?src=dp-btn-primary  -O $path/{bb6bc1bb-f824-4702-90cd-35e2fb24f25d}.xpi       # Cookies Manager+
@@ -453,6 +477,7 @@ cd - >/dev/null
 
 
 ##### Install conky
+echo -e '\e[01;32m[+]\e[00m Install conky'
 apt-get -y -qq install conky
 #--- Configure conky
 file=/root/.conkyrc; [ -e $file ] && cp -n $file{,.bkup}
@@ -467,6 +492,7 @@ echo -e '\n[Desktop Entry]\nType=Application\nExec=/root/.conkyscript.sh\nHidden
 
 
 ##### Configure metasploit ~ http://docs.kali.org/general-use/starting-metasploit-framework-in-kali
+echo -e '\e[01;32m[+]\e[00m Configure metasploit'
 #--- Start services
 service postgresql start
 service metasploit start
@@ -477,14 +503,6 @@ grep -q GOCOW $file 2>/dev/null || echo 'GOCOW=1' >> $file
 #--- First time run
 echo 'exit' > /tmp/msf.rc   #echo -e 'go_pro\nexit' > /tmp/msf.rc
 msfconsole -r /tmp/msf.rc
-#--- Sort out metasploiit
-timeout=180
-while [ $timeout -gt 0 ]; do
-  sleep 1
-  timeout=$(($timeout-1))
-  check=$(ps aux | grep ruby | grep -v grep)
-  [[ $? != 0 ]] && timeout=0
-done
 #--- Setup GUI
 #bash /opt/metasploit/scripts/launchui.sh    #*** #<--- Doesn't automate. May take a little while to kick in
 #--- Clean up
@@ -492,14 +510,15 @@ rm -f /tmp/msf.rc
 
 
 ##### Setup ssh
+echo -e '\e[01;32m[+]\e[00m Setup ssh'
 rm -f /etc/ssh/ssh_host_*
 rm -f /root/.ssh/*
-ssh-keygen -A
-ssh-keygen -b 4096 -t rsa -f /root/.ssh/id_rsa -P ""
+ssh-keygen -b 4096 -t rsa -f /root/.ssh/id_rsa -P ""    #ssh-keygen -A
 #update-rc.d -f ssh defaults   # Enable SSH at startup
 
 
 ##### Install geany
+echo -e '\e[01;32m[+]\e[00m Install geany'
 apt-get -y -qq install geany
 #--- Add to panel
 dconf load /org/gnome/gnome-panel/layout/objects/geany/ << EOT
@@ -532,6 +551,7 @@ echo -e '\n[saveactions]\nenable_autosave=false\nenable_instantsave=false\nenabl
 
 
 ##### Install meld
+echo -e '\e[01;32m[+]\e[00m Install meld'
 apt-get -y -qq install meld
 #--- Configure meld
 gconftool-2 --type bool --set /apps/meld/show_line_numbers true
@@ -541,18 +561,22 @@ gconftool-2 --type int --set /apps/meld/edit_wrap_lines 2
 
 
 ##### Install libreoffice
+echo -e '\e[01;32m[+]\e[00m Install libreoffice'
 #apt-get -y -qq install libreoffice
 
 
 ##### Install recordmydesktop
+echo -e '\e[01;32m[+]\e[00m Install recordmydesktop'
 #apt-get -y -qq install gtk-recordmydesktop
 
 
 ##### Install shutter
+echo -e '\e[01;32m[+]\e[00m Install shutter'
 apt-get -y -qq install shutter
 
 
 ##### Install axel
+echo -e '\e[01;32m[+]\e[00m Install axel'
 apt-get -y -qq install axel
 #--- Setup alias
 file=/root/.bash_aliases; [ -e $file ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
@@ -562,14 +586,17 @@ grep -q '^alias axel' $file 2>/dev/null || echo -e '\n### axel\nalias axel="axel
 
 
 ##### Install gparted
+echo -e '\e[01;32m[+]\e[00m Install gparted'
 apt-get -y -qq install gparted
 
 
 ##### Install daemonfs
+echo -e '\e[01;32m[+]\e[00m Install daemonfs'
 apt-get -y -qq install daemonfs
 
 
 ##### Install filezilla
+echo -e '\e[01;32m[+]\e[00m Install filezilla'
 apt-get -y -qq install filezilla
 #--- Configure filezilla
 filezilla & sleep 5; killall -w filezilla   # Start and kill. Files needed for first time run
@@ -577,6 +604,7 @@ sed -i 's/^.*"Default editor".*/\t<Setting name="Default editor" type="string">2
 
 
 ##### Install tftp
+echo -e '\e[01;32m[+]\e[00m Install tftp'
 #--- Client
 apt-get -y -qq install tftp
 #--- Server
@@ -584,58 +612,72 @@ apt-get -y -qq install atftpd
 
 
 ##### Install lynx
+echo -e '\e[01;32m[+]\e[00m Install lynx'
 apt-get -y -qq install lynx
 
 
 ##### Install p7zip
+echo -e '\e[01;32m[+]\e[00m Install p7zip'
 apt-get -y -qq install p7zip
 
 
-##### Install zip
-apt-get -y -qq install zip
+##### Install zip & unzip
+echo -e '\e[01;32m[+]\e[00m Install zip & unzip'
+apt-get -y -qq install zip unzip
 
 
 ##### Install Midnight Commander
+echo -e '\e[01;32m[+]\e[00m Install Midnight Commander'
 apt-get -y -qq install mc
 
 
 ##### Install htop
+echo -e '\e[01;32m[+]\e[00m Install htop'
 apt-get -y -qq install mc
 
 
 ##### Install VNStat
+echo -e '\e[01;32m[+]\e[00m Install VNStat'
 #apt-get -y -qq install vnstat
 
 
 ##### Install pptp vpn support
+echo -e '\e[01;32m[+]\e[00m Install pptp vpn support'
 apt-get -y -qq install network-manager-pptp-gnome network-manager-pptp
 
 
 ##### Install flash
+echo -e '\e[01;32m[+]\e[00m Install flash'
 #apt-get -y -qq install flashplugin-nonfree
 
 
 ##### Install java
+echo -e '\e[01;32m[+]\e[00m Install java'
 # <insert bash fu here>
 
 
 ##### Install the backdoor factory
+echo -e '\e[01;32m[+]\e[00m Install backdoor factory'
 apt-get -y -qq install backdoor-factory
 
 
 ##### Install bully
+echo -e '\e[01;32m[+]\e[00m Install bully'
 apt-get -y -qq install bully
 
 
 ##### Install seclist ~ http://bugs.kali.org/view.php?id=648
+echo -e '\e[01;32m[+]\e[00m Install seclist'
 apt-get -y -qq install seclists
 
 
 ##### Install unicornscan ~ http://bugs.kali.org/view.php?id=388
+echo -e '\e[01;32m[+]\e[00m Install unicornscan'
 apt-get -y -qq install unicornscan
 
 
-##### Install nessus (Doesn't automate)
+##### Install nessus  *** Doesn't automate ***
+echo -e '\e[01;32m[+]\e[00m Install nessus'
 #--- Get download link
 #xdg-open http://www.tenable.com/products/nessus/select-your-operating-system    *** #wget "http://downloads.nessus.org/<file>" -O /tmp/nessus.deb   # ***!!! Hardcoded version value
 #dpkg -i /usr/local/src/Nessus-*-debian6_i386.deb
@@ -647,7 +689,8 @@ apt-get -y -qq install unicornscan
 #service nessusd start
 
 
-##### Install openvas
+##### Install openvas *** Doesn't automate ***
+echo -e '\e[01;32m[+]\e[00m Install openvas'
 apt-get -y -qq install openvas
 #openvas-setup   #<--- Doesn't automate ***
 #--- Remove 'default' user (admin), and create a new admin user (root).
@@ -656,18 +699,22 @@ apt-get -y -qq install openvas
 
 
 ##### Install htshells ~ http://bugs.kali.org/view.php?id=422
+echo -e '\e[01;32m[+]\e[00m Install htshells'
 git clone git://github.com/wireghoul/htshells.git /usr/share/htshells/
 
 
 ##### Install veil ~ http://bugs.kali.org/view.php?id=421
+echo -e '\e[01;32m[+]\e[00m Install veil'
 apt-get -y -qq install veil
 
 
 ##### Install mingw
+echo -e '\e[01;32m[+]\e[00m Install mingw'
 apt-get -y -qq install mingw-w64 binutils-mingw-w64 gcc-mingw-w64 mingw-w64-dev mingw-w64-tools
 
 
 ##### Install OP packers
+echo -e '\e[01;32m[+]\e[00m Install OP packers'
 apt-get -y -qq install upx-ucl   #wget http://upx.sourceforge.net/download/upx309w.zip -P /usr/share/packers/ && unzip -o -d /usr/share/packers/ /usr/share/packers/upx309w.zip && rm -f /usr/share/packers/upx309w.zip
 mkdir -p /usr/share/packers/
 wget "http://www.eskimo.com/~scottlu/win/cexe.exe" -P /usr/share/packers/
@@ -680,6 +727,7 @@ ln -sf /usr/share/windows-binaries/Hyperion-1.0/Src/Crypter/bin/crypter.exe /usr
 
 
 ##### Update wordlists ~ http://bugs.kali.org/view.php?id=429
+echo -e '\e[01;32m[+]\e[00m Update wordlists'
 #--- Extract rockyou wordlist
 gzip -dc < /usr/share/wordlists/rockyou.txt.gz > /usr/share/wordlists/rockyou.txt   #gunzip rockyou.txt.gz
 #rm -f /usr/share/wordlists/rockyou.txt.gz
@@ -714,6 +762,7 @@ wget http://xato.net/files/10k%20most%20common.zip -O /tmp/10kcommon.zip && unzi
 
 
 ##### Configure samba
+echo -e '\e[01;32m[+]\e[00m Configure samba'
 #--- Create samba user
 useradd -M -d /nonexistent -s /bin/false samba
 #--- Use samba user
@@ -733,6 +782,7 @@ grep -q '\[shared\]' $file 2>/dev/null || echo -e '\n[shared]\n   comment = Shar
 
 
 ##### Clean the system
+echo -e '\e[01;32m[+]\e[00m Clean the system'
 #--- Clean package manager
 for FILE in clean autoremove autoclean; do apt-get -y -qq $FILE; done
 apt-get -y purge $(dpkg -l | tail -n +6 | grep -v '^ii' | awk '{print $2}')
@@ -749,7 +799,8 @@ for i in $(cut -d: -f6 /etc/passwd | sort | uniq); do
 done
 
 
-#### Done!
+##### Done!
+echo -e '\e[01;32m[+]\e[00m Done!'
 reboot
 
 

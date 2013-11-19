@@ -11,8 +11,8 @@
 
 
 ##### Getting Ready
-apt-get -y install live-build cdebootstrap git kali-archive-keyring
-cd /tmp
+apt-get -y -qq install live-build cdebootstrap git kali-archive-keyring
+cd /tmp/
 git clone git://git.kali.org/live-build-config.git
 cd live-build-config/
 #lb clean --purge
@@ -31,7 +31,7 @@ grep 'xfce4' config/package-lists/kali.list.chroot -B1 | grep -q -v '*** XFCE DE
 #dpkg --add-architecture amd64
 #apt-get update
 #--- Setup caching (Enable if you wish todo a lot of custom ISOs)
-apt-get -y install apt-cacher-ng
+apt-get -y -qq install apt-cacher-ng
 service apt-cacher-ng start
 export http_proxy=http://localhost:3142/
 #--- Remove PAE from kernel
