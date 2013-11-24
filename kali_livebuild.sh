@@ -12,7 +12,7 @@
 
 ##### Getting Ready
 apt-get -y -qq install live-build cdebootstrap git kali-archive-keyring
-cd /tmp/
+cd /var/tmp/
 git clone git://git.kali.org/live-build-config.git
 cd live-build-config/
 #lb clean --purge

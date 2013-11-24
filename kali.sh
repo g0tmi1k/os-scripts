@@ -16,7 +16,7 @@
 #   Replace: /root with $USER                           #
 #-------------------------------------------------------#
 if [ 1 -eq 0 ]; then    # Never true, thus it acts as block comments ;)
-wget -qO- https://raw.github.com/g0tmi1k/OS-Scripts/master/kali.sh | bash     # Pull the latest version, and execute!
+wget -qO- https://raw.github.com/g0tmi1k/OS-Scripts/master/kali.sh | bash     # Pull the latest version and execute!
 fi
 
 
@@ -56,8 +56,8 @@ echo -e '\e[01;32m[+]\e[00m Install VirtualMachines Tools (optional)'
 #apt-get -y -qq install open-vm-tools    # Has less features than open & close vmware tools
 #--- Install VMware tools ~ http://docs.kali.org/general-use/install-vmware-tools-kali-guest
 file=/usr/sbin/update-rc.d; [ -e $file ] && cp -n $file{,.bkup}
-grep -q 'cups enabled' $file 2>/dev/null || echo "cups enabled" >> $file
-grep -q 'vmware-tools enabled' $file 2>/dev/null || echo "vmware-tools enabled" >> $file
+grep -q '^cups enabled' $file 2>/dev/null || echo "cups enabled" >> $file
+grep -q '^vmware-tools enabled' $file 2>/dev/null || echo "vmware-tools enabled" >> $file
 apt-get -y -qq install gcc make linux-headers-$(uname -r)
 ln -sf /usr/src/linux-headers-$(uname -r)/include/generated/uapi/linux/version.h /usr/src/linux-headers-$(uname -r)/include/linux/
 #--- VM -> Install VMware Tools.
@@ -76,8 +76,8 @@ else                                           # Fall back is open vmware tools
   apt-get -y -qq install open-vm-tools
 fi
 #--- Install Parallel tools
-#grep -q 'cups enabled' /usr/sbin/update-rc.d || echo "cups enabled" >> /usr/sbin/update-rc.d
-#grep -q 'vmware-tools enabled' /usr/sbin/update-rc.d || echo "vmware-tools enabled" >> /usr/sbin/update-rc.d
+#grep -q '^cups enabled' /usr/sbin/update-rc.d || echo "cups enabled" >> /usr/sbin/update-rc.d
+#grep -q '^vmware-tools enabled' /usr/sbin/update-rc.d || echo "vmware-tools enabled" >> /usr/sbin/update-rc.d
 #apt-get -y -qq install gcc make linux-headers-$(uname -r)
 #ln -sf /usr/src/linux-headers-$(uname -r)/include/generated/uapi/linux/version.h /usr/src/linux-headers-$(uname -r)/include/linux/
 #Virtual Machine -> Install Parallels Tools
@@ -92,7 +92,7 @@ echo -e '\e[01;32m[+]\e[00m Setup static IP address on eth1 - host only (optiona
 if [[ $(ifconfig eth1 &>/devnull) == 0 ]]; then
   ifconfig eth1 192.168.155.175/24
   file=/etc/network/interfaces; [ -e $file ] && cp -n $file{,.bkup}
-  grep -q 'iface eth1 inet static' $file 2>/dev/null || echo -e '\nauto eth1\niface eth1 inet static\n    address 192.168.155.175\n    netmask 255.255.255.0\n    gateway 192.168.155.1' >> $file
+  grep -q '^iface eth1 inet static' $file 2>/dev/null || echo -e '\nauto eth1\niface eth1 inet static\n    address 192.168.155.175\n    netmask 255.255.255.0\n    gateway 192.168.155.1' >> $file
 fi
 
 ##### Setup static DNS (optional)
@@ -159,16 +159,16 @@ ln -sf /usr/sbin/gdm3 /usr/bin/startx
 #echo -e '\e[01;32m[+]\e[00m Configure startup (randomize the hostname, eth0 & wlan0s MAC address)'
 #--- Start up
 #file=/etc/rc.local; [ -e $file ] && cp -n $file{,.bkup}
-#grep -q "^macchanger" $file 2>/dev/null || sed -i 's#^exit 0#for INT in eth0 wlan0; do\n\tifconfig $INT down\n\t/usr/bin/macchanger -r $INT \&\& sleep 3\n\tifconfig $INT up\ndone\n\n\nexit 0#' $file
-#grep -q "hostname" $file 2>/dev/null || sed -i 's#^exit 0#hostname $(cat /dev/urandom | tr -dc "A-Za-z" | head -c8)\nexit 0#' $file
+#grep -q "macchanger" $file 2>/dev/null || sed -i 's#^exit 0#for INT in eth0 wlan0; do\n  ifconfig $INT down\n  '$(whereis macchanger)' -r $INT \&\& sleep 3\n  ifconfig $INT up\ndone\n\n\nexit 0#' $file
+#grep -q "hostname" $file 2>/dev/null || sed -i 's#^exit 0#'$(whereis hostname)' $(cat /dev/urandom | tr -dc "A-Za-z" | head -c8)\nexit 0#' $file
 #--- On demand (kinda broken)
 ##file=/etc/init.d/macchanger; [ -e $file ] && cp -n $file{,.bkup}
-##echo -e '#!/bin/bash\nfor INT in eth0 wlan0; do\n\techo "Randomizing: $INT"\n\tifconfig $INT down\n\tmacchanger -r $INT\n\tsleep 3\n\tifconfig $INT up\n\techo "--------------------"\ndone\nexit 0' > $file
-##chmod +x $file
+##echo -e '#!/bin/bash\nfor INT in eth0 wlan0; do\n  echo "Randomizing: $INT"\n  ifconfig $INT down\n  macchanger -r $INT\n  sleep 3\n  ifconfig $INT up\n  echo "--------------------"\ndone\nexit 0' > $file
+##chmod 0500 $file
 #--- Auto on interface change state (untested)
 ##file=/etc/network/if-pre-up.d/macchanger; [ -e $file ] && cp -n $file{,.bkup}
 ##echo -e '#!/bin/bash\n[ "$IFACE" == "lo" ] && exit 0\nifconfig $IFACE down\nmacchanger -r $IFACE\nifconfig $IFACE up\nexit 0' > $file
-##chmod +x $file
+##chmod 0500 $file
 
 
 ##### Configure GNOME 3
@@ -234,7 +234,7 @@ apt-get -y -qq install nautilus-open-terminal
 #--- Enable num lock at start up (might not be smart if you're using a smaller keyboard (laptop?))
 apt-get -y -qq install numlockx
 file=/etc/gdm3/Init/Default; [ -e $file ] && cp -n $file{,.bkup}     #/etc/rc.local
-grep -q '/usr/bin/numlockx' $file 2>/dev/null || sed -i 's#exit 0#if [ -x /usr/bin/numlockx ]; then\n /usr/bin/numlockx on\nfi\nexit 0#' $file   # GNOME
+grep -q '^/usr/bin/numlockx' $file 2>/dev/null || sed -i 's#exit 0#if [ -x /usr/bin/numlockx ]; then\n /usr/bin/numlockx on\nfi\nexit 0#' $file   # GNOME
 #--- Restart GNOME panel to apply/take effect (need to restart xserver for effect)
 #killall -q -w gnome-panel >/dev/null && gnome-panel&   # Still need to logoff!
 
@@ -287,18 +287,18 @@ sed -i 's/LastShowHidden=.*/LastShowHidden=TRUE/' $file 2>/dev/null || echo -e "
 #xfconf-query -c keyboards -p /Default/Numlock -s true
 apt-get -y -qq install numlockx
 file=/etc/xdg/xfce4/xinitrc; [ -e $file ] && cp -n $file{,.bkup}     #/etc/rc.local
-grep -q '/usr/bin/numlockx' $file 2>/dev/null || echo "/usr/bin/numlockx on" >> $file
+grep -q '^/usr/bin/numlockx' $file 2>/dev/null || echo "/usr/bin/numlockx on" >> $file
 #--- XFCE fixes for default applictaions
 mkdir -p /root/.local/share/applications/
 file=/root/.local/share/applications/mimeapps.list; [ -e $file ] && cp -n $file{,.bkup}
 [[ ! -e $file ]] && echo '[Added Associations]' > $file
 for VALUE in file trash; do
   sed -i 's#x-scheme-handler/'$VALUE'=.*#x-scheme-handler/'$VALUE'=exo-file-manager.desktop#' $file
-  grep -q 'x-scheme-handler/'$VALUE'=' $file 2>/dev/null || echo -e 'x-scheme-handler/'$VALUE'=exo-file-manager.desktop' >> $file
+  grep -q '^x-scheme-handler/'$VALUE'=' $file 2>/dev/null || echo -e 'x-scheme-handler/'$VALUE'=exo-file-manager.desktop' >> $file
 done
 for VALUE in http https; do
   sed -i 's#^x-scheme-handler/'$VALUE'=.*#x-scheme-handler/'$VALUE'=exo-web-browser.desktop#' $file
-  grep -q 'x-scheme-handler/'$VALUE'=' $file 2>/dev/null || echo -e 'x-scheme-handler/'$VALUE'=exo-web-browser.desktop' >> $file
+  grep -q '^x-scheme-handler/'$VALUE'=' $file 2>/dev/null || echo -e 'x-scheme-handler/'$VALUE'=exo-web-browser.desktop' >> $file
 done
 [[ $(tail -n 1 $file) != "" ]] && echo >> $file
 file=/root/.config/xfce4/helpers.rc; [ -e $file ] && cp -n $file{,.bkup}    #exo-preferred-applications   #xdg-mime default
@@ -367,7 +367,7 @@ grep -q '^### Extract file, example' $file 2>/dev/null || echo -e '\n### Extract
 
 
 ##### Configure bash colour (all users)
-echo -e '\e[01;32m[+]\e[00m Configure bash colour (all users)'
+echo -e '\e[01;32m[+]\e[00m Configure bash colour'
 file=/etc/bash.bashrc; [ -e $file ] && cp -n $file{,.bkup}   #/root/.bashrc
 sed -i 's/.*force_color_prompt=.*/force_color_prompt=yes/' $file
 grep -q '^force_color_prompt' $file 2>/dev/null || echo 'force_color_prompt=yes' >> $file
@@ -380,17 +380,17 @@ sed -i 's#PS1='"'"'.*'"'"'#PS1='"'"'${debian_chroot:+($debian_chroot)}\\[\\033\[
 
 
 ##### Install ZSH & oh-my-zsh (root user)
-echo -e '\e[01;32m[+]\e[00m Install ZSH & oh-my-zsh (root user)'
+echo -e '\e[01;32m[+]\e[00m Install ZSH & oh-my-zsh'
 apt-get -y -qq install zsh git curl
 #--- Setup oh-my-zsh
 curl -s -L https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh | sh
 #--- Configure zsh
 file=/root/.zshrc; [ -e $file ] && cp -n $file{,.bkup}   #/etc/zsh/zshrc
-grep -q interactivecomments $file 2>/dev/null || echo "setopt interactivecomments" >> $file
-grep -q ignoreeof $file 2>/dev/null || echo "setopt ignoreeof" >> $file
-grep -q correctall $file 2>/dev/null || echo "setopt correctall" >> $file
-grep -q globdots $file 2>/dev/null || echo "setopt globdots" >> $file
-grep -q bash_aliases $file 2>/dev/null || echo -e 'source $HOME/.bash_aliases' >> $file
+grep -q 'interactivecomments' $file 2>/dev/null || echo "setopt interactivecomments" >> $file
+grep -q 'ignoreeof' $file 2>/dev/null || echo "setopt ignoreeof" >> $file
+grep -q 'correctall' $file 2>/dev/null || echo "setopt correctall" >> $file
+grep -q 'globdots' $file 2>/dev/null || echo "setopt globdots" >> $file
+grep -q 'bash_aliases' $file 2>/dev/null || echo -e 'source $HOME/.bash_aliases' >> $file
 #--- Configure zsh (themes) ~ https://github.com/robbyrussell/oh-my-zsh/wiki/Themes
 sed -i 's/ZSH_THEME=.*/ZSH_THEME="alanpeabody"/' $file   # Other themes: alanpeabody, jreese,   mh,   candy,   terminalparty, kardan,   nicoulaj, sunaku
 #--- Configure oh-my-zsh
@@ -440,7 +440,7 @@ echo -e "# Don't display the copyright page\nstartup_message off\n\n# tab-comple
 
 
 ##### Configure vim (all users)
-echo -e '\e[01;32m[+]\e[00m Configure vim (all users)'
+echo -e '\e[01;32m[+]\e[00m Configure vim'
 file=/etc/vim/vimrc; [ -e $file ] && cp -n $file{,.bkup}   #/root/.vimrc
 sed -i 's/.*syntax on/syntax on/' $file
 sed -i 's/.*set background=dark/set background=dark/' $file
@@ -462,6 +462,10 @@ grep -q '^set hlsearch' $file 2>/dev/null || echo 'set hlsearch' >> $file       
 grep -q '^set laststatus' $file 2>/dev/null || echo -e 'set laststatus=2\nset statusline=%F%m%r%h%w\ (%{&ff}){%Y}\ [%l,%v][%p%%]' >> $file   # Status bar
 grep -q '^filetype on' $file 2>/dev/null || echo -e 'filetype on\nfiletype plugin on\nsyntax enable\nset grepprg=grep\ -nH\ $*' >> $file     # Syntax Highlighting
 grep -q '^set wildmenu' $file 2>/dev/null || echo -e 'set wildmenu\nset wildmode=list:longest,full' >> $file   # Tab completion
+#--- Set as default editor
+export EDITOR="vim"    #update-alternatives --config editor
+file=/etc/bash.bashrc; [ -e $file ] && cp -n $file{,.bkup}
+grep -q '^EDITOR' $file 2>/dev/null || echo 'EDITOR="vim"' >> $file
 
 
 ##### Configure file browser (need to restart xserver for effect)
@@ -471,7 +475,7 @@ file=/root/.config/gtk-2.0/gtkfilechooser.ini; [ -e $file ] && cp -n $file{,.bku
 sed -i 's/^.*ShowHidden.*/ShowHidden=true/' $file 2>/dev/null || echo -e "\n[Filechooser Settings]\nLocationMode=path-bar\nShowHidden=true\nExpandFolders=false\nShowSizeColumn=true\nGeometryX=66\nGeometryY=39\nGeometryWidth=780\nGeometryHeight=618\nSortColumn=name\nSortOrder=ascending" > $file    #Open/save Window -> Right click -> Show Hidden Files: Enabled
 dconf write /org/gnome/nautilus/preferences/show-hidden-files true
 file=/root/.gtk-bookmarks; [ -e $file ] && cp -n $file{,.bkup}
-grep -q 'file:///var/www www' $file 2>/dev/null || echo -e 'file:///var/www www\nfile:///usr/share apps\nfile:///tmp tmp\nfile:///usr/local/src/ src' >> $file
+grep -q '^file:///var/www www' $file 2>/dev/null || echo -e 'file:///var/www www\nfile:///usr/share apps\nfile:///tmp tmp\nfile:///usr/local/src/ src' >> $file
 
 
 ##### Setup iceweasel
@@ -525,7 +529,7 @@ echo -e '#http://forums.opensuse.org/english/get-technical-help-here/how-faq-for
 #--- Add to startup
 file=/root/.conkyscript.sh; [ -e $file ] && cp -n $file{,.bkup}
 echo -e '#!/bin/bash\nsleep 30 && conky;' > $file
-chmod +x $file
+chmod 0500 $file
 mkdir -p /root/.config/autostart/
 file=/root/.config/autostart/conkyscript.sh.desktop; [ -e $file ] && cp -n $file{,.bkup}
 echo -e '\n[Desktop Entry]\nType=Application\nExec=/root/.conkyscript.sh\nHidden=false\nNoDisplay=false\nX-GNOME-Autostart-enabled=true\nName[en_US]=conky\nName=conky\nComment[en_US]=\nComment=' > $file
@@ -539,7 +543,7 @@ service metasploit start
 #--- Misc
 export GOCOW=1   # Always a cow logo ;)
 file=/root/.bashrc; [ -e $file ] && cp -n $file{,.bkup}
-grep -q GOCOW $file 2>/dev/null || echo 'GOCOW=1' >> $file
+grep -q '^GOCOW' $file 2>/dev/null || echo 'GOCOW=1' >> $file
 #--- First time run
 echo 'exit' > /tmp/msf.rc   #echo -e 'go_pro\nexit' > /tmp/msf.rc
 msfconsole -r /tmp/msf.rc
@@ -817,8 +821,8 @@ mkdir -p /var/samba/
 chown -R samba:samba /var/samba/
 chmod -R 0770 /var/samba/
 #--- Setup samba paths
-grep -q '\[shared\]' $file 2>/dev/null || echo -e '\n[shared]\n   comment = Shared\n   path = /var/samba/\n   browseable = yes\n   read only = no\n   guest ok = yes' >> $file
-#grep -q '\[www\]' $file 2>/dev/null || echo -e '\n[www]\n   comment = WWW\n   path = /var/www/\n   browseable = yes\n   read only = yes\n   guest ok = yes' >> $file
+grep -q '^\[shared\]' $file 2>/dev/null || echo -e '\n[shared]\n   comment = Shared\n   path = /var/samba/\n   browseable = yes\n   read only = no\n   guest ok = yes' >> $file
+#grep -q '^\[www\]' $file 2>/dev/null || echo -e '\n[www]\n   comment = WWW\n   path = /var/www/\n   browseable = yes\n   read only = yes\n   guest ok = yes' >> $file
 #--- Check result
 #service samba restart
 #smbclient -L \\127.0.0.1 -N
