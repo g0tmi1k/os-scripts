@@ -681,7 +681,7 @@ apt-get -y -qq install mc
 
 ##### Install htop
 echo -e '\e[01;32m[+]\e[00m Install htop'
-apt-get -y -qq install mc
+apt-get -y -qq install htop
 
 
 ##### Install vnstat
