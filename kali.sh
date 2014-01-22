@@ -1,7 +1,7 @@
 #!/bin/bash
 #-Operating System--------------------------------------#
-#   Designed for: Kali Linux [1.0.5 x86]                #
-#   Last Updated: 2013-11-19                            #
+#   Designed for: Kali Linux [1.0.6 x86]                #
+#   Last Updated: 2014-01-22                            #
 #-Author------------------------------------------------#
 #   g0tmilk ~ http://g0tmi1k.com                        #
 #-Notes-------------------------------------------------#
@@ -52,15 +52,13 @@ apt-get update
 
 ##### Install VirtualMachines Tools (optional)
 echo -e '\e[01;32m[+]\e[00m Install VirtualMachines Tools (optional)'
-#--- Install VMware tools (Only open)
-#apt-get -y -qq install open-vm-tools    # Has less features than open & close vmware tools
-#--- Install VMware tools ~ http://docs.kali.org/general-use/install-vmware-tools-kali-guest
+#--- Install VMware Tools ~ http://docs.kali.org/general-use/install-vmware-tools-kali-guest
 file=/usr/sbin/update-rc.d; [ -e $file ] && cp -n $file{,.bkup}
 grep -q '^cups enabled' $file 2>/dev/null || echo "cups enabled" >> $file
 grep -q '^vmware-tools enabled' $file 2>/dev/null || echo "vmware-tools enabled" >> $file
 apt-get -y -qq install gcc make linux-headers-$(uname -r)
 ln -sf /usr/src/linux-headers-$(uname -r)/include/generated/uapi/linux/version.h /usr/src/linux-headers-$(uname -r)/include/linux/
-#--- VM -> Install VMware Tools.
+#--- VM -> Install VMware Tools.    Note, you may need to apply patch: https://github.com/offensive-security/kali-vmware-tools-patches
 mkdir -p /mnt/cdrom/
 umount /mnt/cdrom 2>/dev/null
 mount -o ro /dev/cdrom /mnt/cdrom
@@ -69,11 +67,11 @@ if [[ $? == 0 ]]; then                         # If there is a CD in (hoping its
   tar -zxf /tmp/VMwareTools* -C /tmp/
   cd /tmp/vmware-tools-distrib/
   echo -e '\n' | perl vmware-install.pl
-  cd - >/dev/null
+  cd - &>/dev/null
   umount /mnt/cdrom
 else                                           # Fall back is open vmware tools
-  echo -e "\e[01;31m[!]\e[00m VMware CD isn't mounted. Skipping 'Closed' VMware tools, using Open Virtual Machine Tools instead."
-  apt-get -y -qq install open-vm-tools
+  echo -e "\e[01;31m[!]\e[00m VMware CD isn't mounted. Skipping 'closed' VMware tools, using 'open' Virtual Machine Tools instead."
+  apt-get -y -qq install open-vm-toolbox   #open-vm-tools
 fi
 #--- Install Parallel tools
 #grep -q '^cups enabled' /usr/sbin/update-rc.d || echo "cups enabled" >> /usr/sbin/update-rc.d
@@ -98,7 +96,7 @@ fi
 ##### Setup static DNS (optional)
 #echo -e '\e[01;32m[+]\e[00m Setup static DNS (optional)'
 #file=/etc/resolv.conf; [ -e $file ] && cp -n $file{,.bkup}
-#chattr -i /etc/resolv.conf
+#chattr -i /etc/resolv.conf 2>/dev/null
 #--- Remove duplicate results
 #uniq $file > $file.new
 #mv $file{.new,}
@@ -107,7 +105,7 @@ fi
 #--- Use Google DNS
 #echo -e 'nameserver 8.8.8.8\nnameserver 8.8.4.4' > $file
 #--- Protect it
-#chattr +i /etc/resolv.conf
+#chattr +i /etc/resolv.conf 2>/dev/null
 
 
 ##### Update the location
@@ -145,14 +143,14 @@ sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT="vga=0x0318 q
 update-grub
 
 
-##### Configure login (console login - non GUI)
-echo -e '\e[01;32m[+]\e[00m Configure login (console login - non GUI)'
-file=/etc/X11/default-display-manager; [ -e $file ] && cp -n $file{,.bkup}
-echo > $file
-file=/etc/gdm3/daemon.conf; [ -e $file ] && cp -n $file{,.bkup}
-sed -i 's/^.*AutomaticLoginEnable = .*/AutomaticLoginEnable = True/' $file
-sed -i 's/^.*AutomaticLogin = .*/AutomaticLogin = root/' $file
-ln -sf /usr/sbin/gdm3 /usr/bin/startx
+##### Configure login manager (console login - non GUI)     # Issues with 1.0.6
+#echo -e '\e[01;32m[+]\e[00m Configure login (console login - non GUI)'
+#file=/etc/X11/default-display-manager; [ -e $file ] && cp -n $file{,.bkup}
+#echo /bin/true > $file
+#file=/etc/gdm3/daemon.conf; [ -e $file ] && cp -n $file{,.bkup}
+#sed -i 's/^.*AutomaticLoginEnable = .*/AutomaticLoginEnable = True/' $file
+#sed -i 's/^.*AutomaticLogin = .*/AutomaticLogin = root/' $file
+#ln -sf /usr/sbin/gdm3 /usr/bin/startx
 
 
 ##### Configure startup (randomize the hostname, eth0 & wlan0s MAC address)
@@ -517,7 +515,7 @@ wget https://addons.mozilla.org/firefox/downloads/latest/300254/addon-300254-lat
 #--- Configure foxyproxy
 file=$(echo /root/.mozilla/firefox/*.default/foxyproxy.xml); [ -e $file ] && cp -n $file{,.bkup}
 sed -i 's#<proxies><proxy name="Default"#<proxies><proxy name="Localhost:8080" id="315347393" notes="Localhost:8080" enabled="true" mode="manual" selectedTabIndex="1" lastresort="false" animatedIcons="true" includeInCycle="true" color="#FF051A" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="false" clearCookiesBeforeUse="false" rejectCookies="false"><matches/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="localhost" port="8080" socksversion="5" isSocks="false"/></proxy><proxy name="Default"#' $file 2>/dev/null
-cd - >/dev/null
+cd - &>/dev/null
 
 
 ##### Install conky
@@ -751,6 +749,11 @@ echo -e '\e[01;32m[+]\e[00m Install htshells'
 git clone git://github.com/wireghoul/htshells.git /usr/share/htshells/
 
 
+##### Install bridge-utils
+echo -e '\e[01;32m[+]\e[00m Install bridge-utils'
+apt-get -y -qq install bridge-utils
+
+
 ##### Install veil ~ http://bugs.kali.org/view.php?id=421
 echo -e '\e[01;32m[+]\e[00m Install veil'
 apt-get -y -qq install veil
@@ -837,7 +840,7 @@ apt-get -y purge $(dpkg -l | tail -n +6 | grep -v '^ii' | awk '{print $2}')
 #--- Update slocate database
 updatedb
 #--- Reset folder location
-cd ~/ >/dev/null
+cd ~/ &>/dev/null
 #--- Remove any history files (as they could contain sensitive info)
 history -c    # Will not work with ZSH
 for i in $(cut -d: -f6 /etc/passwd | sort | uniq); do
