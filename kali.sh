@@ -275,7 +275,7 @@ xfconf-query -c xsettings -p /Net/ThemeName -s "Shiki-Colors-Light-Menus"
 xfconf-query -c xsettings -p /Net/IconThemeName -s "gnome-brave"
 #--- Enable compositing
 xfconf-query -c xfwm4 -p /general/use_compositing -s true
-#--- Change wallpaper
+#--- Change desktop wallpaper
 wget http://imageshack.us/a/img17/4646/vzex.png -O /usr/share/wallpapers/kali_blue.png    #wget http://www.n1tr0g3n.com/wp-content/uploads/2013/03/Kali-Linux-faded-no-Dragon-small-text.png
 xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitor0/image-show -s true
 xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitor0/image-path -s /usr/share/wallpapers/kali_blue.png
@@ -311,6 +311,9 @@ grep -q '^FileManager=Thunar' $file 2>/dev/null || echo -e 'FileManager=Thunar' 
 #file=/root/.config/xfce4/helpers.rc; [ -e $file ] && cp -n $file{,.bkup}    #exo-preferred-applications   #xdg-mime default
 #sed -i 's#^TerminalEmulator=.*#TerminalEmulator=custom-TerminalEmulator#' $file
 #grep -q '^TerminalEmulator=custom-TerminalEmulator' $file 2>/dev/null || echo -e 'TerminalEmulator=custom-TerminalEmulator' >> $file
+#--- Set XFCE as default desktop manager
+file=/root/.xsession; [ -e $file ] && cp -n $file{,.bkup}       #~/.xsession
+echo xfce4-session > $file
 
 
 ##### Configuring terminal (need to restart xserver for effect)
@@ -739,6 +742,26 @@ echo -e '\e[01;32m[+]\e[00m Installing unicornscan'
 apt-get -y -qq install unicornscan
 
 
+##### Installing webhandler ~ https://bugs.kali.org/view.php?id=291
+echo -e '\e[01;32m[+]\e[00m Installing webhandler'
+apt-get -y -qq install webhandler
+
+
+##### Installing azazel ~ http://blackhatlibrary.net/Azazel
+echo -e '\e[01;32m[+]\e[00m Installing azazel'
+git clone git@github.com:chokepoint/azazel.git /usr/share/azazel/
+
+
+##### Installing b374k ~ https://bugs.kali.org/view.php?id=1097
+echo -e '\e[01;32m[+]\e[00m Installing b374k'
+git clone git@github.com:b374k/b374k.git /usr/share/b374k/    #/usr/share/webshells/php ?
+
+
+##### Installing HTTPTunnel ~ https://bugs.kali.org/view.php?id=1090
+echo -e '\e[01;32m[+]\e[00m Installing HTTPTunnel'
+apt-get -y -qq install http-tunnel
+
+
 ##### Installing nessus  *** Doesn't automate ***
 #echo -e '\e[01;32m[+]\e[00m Installing nessus'
 #--- Get download link
@@ -763,7 +786,7 @@ apt-get -y -qq install openvas
 
 ##### Installing htshells ~ http://bugs.kali.org/view.php?id=422
 echo -e '\e[01;32m[+]\e[00m Installing htshells'
-git clone git://github.com/wireghoul/htshells.git /usr/share/htshells/
+apt-get -y -qq install htshells
 
 
 ##### Installing bridge-utils
