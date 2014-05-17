@@ -1,7 +1,7 @@
 #!/bin/bash
 #-Operating System--------------------------------------#
 #   Designed for: Kali-Linux [1.0.6 x86 & x64]          #
-#   Last Updated: 2014-03-28                            #
+#   Last Updated: 2014-05-16                            #
 #-Author------------------------------------------------#
 #   g0tmilk ~ http://blog.g0tmi1k.com                   #
 #-Notes-------------------------------------------------#
@@ -28,8 +28,8 @@ fi
 export DISPLAY=:0.0         # Allows for remote configuration
 
 
-##### Fixing NetworkManger
-echo -e "\e[01;32m[+]\e[00m Fixing NetworkManger"
+##### Fixing network manger
+echo -e "\e[01;32m[+]\e[00m Fixing network manger"
 #--- Fix 'device not managed' issue
 file=/etc/network/interfaces; [ -e $file ] && cp -n $file{,.bkup}
 sed -i '/iface lo inet loopback/q' $file   #sed -i 's/managed=.*/managed=true/' /etc/NetworkManager/NetworkManager.conf
@@ -73,7 +73,7 @@ else                                           # Fall back is open vmware tools
   echo -e "\e[01;31m[!]\e[00m VMware CD isn't mounted. Skipping 'closed' VMware tools, using 'open' Virtual Machine Tools instead."
   apt-get -y -qq install open-vm-toolbox   #open-vm-tools
 fi
-#--- Install Parallel tools
+#--- Install parallel tools
 #grep -q '^cups enabled' /usr/sbin/update-rc.d || echo "cups enabled" >> /usr/sbin/update-rc.d
 #grep -q '^vmware-tools enabled' /usr/sbin/update-rc.d || echo "vmware-tools enabled" >> /usr/sbin/update-rc.d
 #apt-get -y -qq install gcc make linux-headers-$(uname -r)
@@ -92,6 +92,7 @@ if [[ $(ifconfig eth1 &>/devnull) == 0 ]]; then
   file=/etc/network/interfaces; [ -e $file ] && cp -n $file{,.bkup}
   grep -q '^iface eth1 inet static' $file 2>/dev/null || echo -e '\nauto eth1\niface eth1 inet static\n    address 192.168.155.175\n    netmask 255.255.255.0\n    gateway 192.168.155.1' >> $file
 fi
+
 
 ##### Setting up static DNS (optional)
 #echo -e "\e[01;32m[+]\e[00m Setting up static DNS (optional)"
@@ -117,17 +118,20 @@ apt-get -y -qq install ntp
 #--- Start service
 service ntp restart
 #--- Add to start up
-update-rc.d ntp defaults 2>/dev/null
+update-rc.d ntp enable 2>/dev/null
 #--- Check
 #date
 #--- Configure keyboard
 file=/etc/default/keyboard; [ -e $file ] && cp -n $file{,.bkup}
 sed -i 's/XKBLAYOUT=".*"/XKBLAYOUT="gb"/' $file   #; dpkg-reconfigure keyboard-configuration -u       #<--- May automate (need to restart xserver for effect)
 #dpkg-reconfigure keyboard-configuration   #dpkg-reconfigure console-setup                            #<--- Doesn't automate    # [DONT USE "English (UK) - English (UK, Macintosh)" FOR UK MPB, USE "US" (Still not perfect)]
+#--- Only used for stats at the end
+start_time=$(date +%s)
 
 
-##### Updating OS
-echo -e "\e[01;32m[+]\e[00m Updating OS"
+##### Updating software from repositories
+echo -e "\e[01;32m[+]\e[00m Updating OS from repositories"
+for ITEM in clean autoremove autoclean; do apt-get -y -qq $ITEM; done
 apt-get update && apt-get -y -q dist-upgrade --fix-missing
 #--- Enable bleeding edge ~ http://www.kali.org/kali-monday/bleeding-edge-kali-repositories/
 #file=/etc/apt/sources.list; [ -e $file ] && cp -n $file{,.bkup}
@@ -192,7 +196,7 @@ dconf write /org/gnome/gnome-panel/layout/objects/workspace-switcher/pack-index 
 dconf write /org/gnome/gnome-panel/layout/objects/clock/pack-index 2
 dconf write /org/gnome/gnome-panel/layout/objects/user-menu/pack-index 3
 dconf write /org/gnome/gnome-panel/layout/objects/notification-area/pack-index 4
-#--- Enable Auto hide
+#--- Enable auto hide
 #dconf write /org/gnome/gnome-panel/layout/toplevels/top-panel/auto-hide true
 #--- Add top 10 tools to toolbar
 dconf load /org/gnome/gnome-panel/layout/objects/object-10-top/ << EOT
@@ -316,6 +320,16 @@ file=/root/.xsession; [ -e $file ] && cp -n $file{,.bkup}       #~/.xsession
 echo xfce4-session > $file
 
 
+##### Configuring file browser (need to restart xserver for effect)
+echo -e "\e[01;32m[+]\e[00m Configuring file browser (need to restart xserver for effect)"
+mkdir -p /root/.config/gtk-2.0/
+file=/root/.config/gtk-2.0/gtkfilechooser.ini; [ -e $file ] && cp -n $file{,.bkup}
+sed -i 's/^.*ShowHidden.*/ShowHidden=true/' $file 2>/dev/null || echo -e "\n[Filechooser Settings]\nLocationMode=path-bar\nShowHidden=true\nExpandFolders=false\nShowSizeColumn=true\nGeometryX=66\nGeometryY=39\nGeometryWidth=780\nGeometryHeight=618\nSortColumn=name\nSortOrder=ascending" > $file    #Open/save Window -> Right click -> Show Hidden Files: Enabled
+dconf write /org/gnome/nautilus/preferences/show-hidden-files true
+file=/root/.gtk-bookmarks; [ -e $file ] && cp -n $file{,.bkup}
+grep -q '^file:///var/www www' $file 2>/dev/null || echo -e 'file:///var/www www\nfile:///usr/share apps\nfile:///tmp tmp\nfile:///usr/local/src/ src' >> $file
+
+
 ##### Configuring terminal (need to restart xserver for effect)
 echo -e "\e[01;32m[+]\e[00m Configuring terminal (need to restart xserver for effect)"
 gconftool-2 --type bool --set /apps/gnome-terminal/profiles/Default/scrollback_unlimited true                   # Terminal -> Edit -> Profile Preferences -> Scrolling -> Scrollback: Unlimited -> Close
@@ -339,7 +353,7 @@ sed -i 's#^TerminalEmulator=.*#TerminalEmulator=custom-TerminalEmulator#' $file
 grep -q '^TerminalEmulator=custom-TerminalEmulator' $file 2>/dev/null || echo -e 'TerminalEmulator=custom-TerminalEmulator' >> $file
 
 
-##### Installing bash-completion
+##### Installing bash-completion ~ all users
 echo -e "\e[01;32m[+]\e[00m Installing bash-completion"
 apt-get -y -qq install bash-completion
 file=/etc/bash.bashrc; [ -e $file ] && cp -n $file{,.bkup}    #/root/.bashrc
@@ -348,18 +362,20 @@ sed -i '/# enable bash completion in/,+7{/enable bash completion/!s/^#//}' $file
 #source $file   # If using ZSH, will fail
 
 
-##### Configuring aliases
+##### Configuring aliases ~ root user
 echo -e "\e[01;32m[+]\e[00m Configuring aliases"
 #--- Enable defaults (root user)
 for FILE in /etc/bash.bashrc /root/.bashrc /root/.bash_aliases; do    #/etc/profile /etc/bashrc /etc/bash_aliases /etc/bash.bash_aliases
   file=$FILE; [ -e $file ] && cp -n $file{,.bkup}
   [ -e $file ] && sed -i 's/#alias/alias/g' $file
 done
+#--- Add in ours (programs)
 file=/root/.bash_aliases; [ -e $file ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
 grep -q '^alias tmux' $file 2>/dev/null || echo -e '\n### tmux\nalias tmux="tmux attach || tmux new"\n' >> $file
 grep -q '^alias axel' $file 2>/dev/null || echo -e '\n### axel\nalias axel="axel -a"\n' >> $file
 grep -q '^alias screen' $file 2>/dev/null || echo -e '\n### screen\nalias screen="screen -xRR"\n' >> $file
 #--- Add in ours (shortcuts)
+grep -q '^### Grep aliases' $file 2>/dev/null || echo -e '\n### Grep aliases\nalias grep="grep --color=always"\nalias ngrep="grep -n"\n\n' >> $file
 grep -q '^### Directory navigation aliases' $file 2>/dev/null || echo -e '\n### Directory navigation aliases\nalias ..="cd .."\nalias ...="cd ../.."\nalias ....="cd ../../.."\nalias .....="cd ../../../.."\n\n' >> $file
 grep -q '^### Add more aliases' $file 2>/dev/null || echo -e '\n### Add more aliases\nalias upd="sudo apt-get update"\nalias upg="sudo apt-get upgrade"\nalias ins="sudo apt-get install"\nalias rem="sudo apt-get purge"\nalias fix="sudo apt-get install -f"\n\n' >> $file
 grep -q '^### Extract file, example' $file 2>/dev/null || echo -e '\n### Extract file, example. "ex package.tar.bz2"\nex() {\n    if [[ -f $1 ]]; then\n        case $1 in\n            *.tar.bz2)   tar xjf $1  ;;\n            *.tar.gz)    tar xzf $1  ;;\n            *.bz2)       bunzip2 $1  ;;\n            *.rar)       rar x $1    ;;\n            *.gz)        gunzip $1   ;;\n            *.tar)       tar xf $1   ;;\n            *.tbz2)      tar xjf $1  ;;\n            *.tgz)       tar xzf $1  ;;\n            *.zip)       unzip $1    ;;\n            *.Z)         uncompress $1  ;;\n            *.7z)        7z x $1     ;;\n            *)           echo $1 cannot be extracted ;;\n        esac\n    else\n        echo $1 is not a valid file\n    fi\n}' >> $file
@@ -376,10 +392,43 @@ sed -i 's/.*force_color_prompt=.*/force_color_prompt=yes/' $file
 grep -q '^force_color_prompt' $file 2>/dev/null || echo 'force_color_prompt=yes' >> $file
 sed -i 's#PS1='"'"'.*'"'"'#PS1='"'"'${debian_chroot:+($debian_chroot)}\\[\\033\[01;31m\\]\\u@\\h\\\[\\033\[00m\\]:\\[\\033\[01;34m\\]\\w\\[\\033\[00m\\]\\$ '"'"'#' $file
 #--- Apply new aliases
-#source $file
+#source $file   # If using ZSH, will fail
 #--- All other users that are made afterwards
 #file=/etc/skel/.bashrc;   #; [ -e $file ] && cp -n $file{,.bkup}
 #sed -i 's/.*force_color_prompt=.*/force_color_prompt=yes/' $file
+
+
+##### Configuring tmux ~ all users
+echo -e "\e[01;32m[+]\e[00m Configuring tmux"
+group="sudo"
+#apt-get -y -qq remove screen   # Optional: If we're going to have/use tmux, why have screen?
+apt-get -y -qq install tmux
+#--- Configure tmux
+file=/etc/tmux.conf; [ -e $file ] && cp -n $file{,.bkup}   #/root/.tmux.conf
+echo -e "#-Settings---------------------------------------------------------------------\n## Make it like screen (use C-a)\nunbind C-b\nset -g prefix C-a\n\n## Pane switching with Alt+arrow\nbind -n M-Left select-pane -L\nbind -n M-Right select-pane -R\nbind -n M-Up select-pane -U\nbind -n M-Down select-pane -D\n\n## Activity Monitoring\nsetw -g monitor-activity on\nset -g visual-activity on\n\n## Reaload settings\nunbind R\nbind R source-file ~/.tmux.conf\n\n## Load custom sources\nsource ~/.bashrc\n\n## Set defaults\nset -g default-terminal screen-256color\nset -g history-limit 5000\n\n## Defult windows titles\nset -g set-titles on\nset -g set-titles-string '#(whoami)@#H - #I:#W'\n\n## Last window switch\nbind-key C-a last-window\n\n## Use ZSH as default shell\n$( [[ ! -e /bin/zsh ]] && echo "#" )set-option -g default-shell /bin/zsh\n\n## Show tmux messages for longer\nset -g display-time 3000\n\n## Status bar is redrawn every minute\nset -g status-interval 60\n\n\n#-Theme------------------------------------------------------------------------\n## Default colours\nset -g status-bg black\nset -g status-fg white\n\n## Left hand side\nset -g status-left-length '$(($(echo -n $(hostname) | wc -c) + 23))'\nset -g status-left '#[fg=green,bold]#(whoami)#[default]@#[fg=yellow,dim]#H #[fg=green,dim][#[fg=yellow]#(cut -d \" \" -f 1-3 /proc/loadavg)#[fg=green,dim]]'\n\n## Inactive windows in status bar\nset-window-option -g window-status-format '#[fg=red,dim]#I#[fg=grey,dim]:#[default,dim]#W#[fg=grey,dim]'\n\n## Current or active window in status bar\n#set-window-option -g window-status-current-format '#[bg=white,fg=red]#I#[bg=white,fg=grey]:#[bg=white,fg=black]#W#[fg=dim]#F'\nset-window-option -g window-status-current-format '#[fg=red,bold](#[fg=white,bold]#I#[fg=red,dim]:#[fg=white,bold]#W#[fg=red,bold])'\n\n## Right hand side\nset -g status-right '#[fg=green][#[fg=yellow]%Y-%m-%d #[fg=white]%H:%M#[fg=green]]'" > $file
+#--- Setup alias
+file=/root/.bash_aliases; [ -e $file ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
+grep -q '^alias tmux' $file 2>/dev/null || echo -e '\n### tmux\nalias tmux="tmux attach || tmux new"\n' >> $file
+#--- Apply new aliases
+#source $file   # If using ZSH, will fail
+#--- Copy it to other user(s) ~
+#if [[ -e /home/$username/ ]]; then   # Will do this later on again, if there isn't already a user
+#  #cp -f /{root,home/$username}/.tmux.conf
+#  cp -f /{etc/,home/$username/.}tmux.conf
+#  chown $username\:$group /home/$username/.tmux.conf
+#  file=/home/$username/.bash_aliases; [ -e $file ] && cp -n $file{,.bkup}
+#  grep -q '^alias tmux' $file 2>/dev/null || echo -e '\n### tmux\nalias tmux="tmux attach || tmux new"\n' >> $file
+#fi
+#--- Use it ~ bit pointless if used in a postinstall script
+#tmux   # If ZSH isn't installed, it will not start up
+
+
+##### Configuring screen (if possible, use tmux instead)
+echo -e "\e[01;32m[+]\e[00m Configuring screen (if possible, use tmux instead)"
+#apt-get -y -qq install screen
+#--- Configure screen
+file=/root/.screenrc; [ -e $file ] && cp -n $file{,.bkup}
+echo -e "## Don't display the copyright page\nstartup_message off\n\n## tab-completion flash in heading bar\nvbell off\n\n## Keep scrollback n lines\ndefscrollback 1000\n\n## hardstatus is a bar of text that is visible in all screens\nhardstatus on\nhardstatus alwayslastline\nhardstatus string '%{gk}%{G}%H %{g}[%{Y}%l%{g}] %= %{wk}%?%-w%?%{=b kR}(%{W}%n %t%?(%u)%?%{=b kR})%{= kw}%?%+w%?%?%= %{g} %{Y} %Y-%m-%d %C%a %{W}'\n\n## title bar\ntermcapinfo xterm ti@:te@\n\n## default windows (syntax: screen -t label order command)\nscreen -t bash1 0\nscreen -t bash2 1\n\n## select the default window\nselect 1" > $file
 
 
 ##### Installing ZSH & oh-my-zsh ~ root user ~ Note, if you use thurar, 'Open terminal here', will not work
@@ -416,39 +465,6 @@ chsh -s $(which zsh)
 #apt-get -y -qq remove git curl
 
 
-##### Configuring tmux ~ all users
-echo -e "\e[01;32m[+]\e[00m Configuring tmux"
-group="sudo"
-#apt-get -y -qq remove screen   # Optional: If we're going to have/use tmux, why have screen?
-apt-get -y -qq install tmux
-#--- Configure tmux
-file=/etc/tmux.conf; [ -e $file ] && cp -n $file{,.bkup}   #/root/.tmux.conf
-echo -e "#-Settings---------------------------------------------------------------------\n## Make it like screen (use C-a)\nunbind C-b\nset -g prefix C-a\n\n## Pane switching with Alt+arrow\nbind -n M-Left select-pane -L\nbind -n M-Right select-pane -R\nbind -n M-Up select-pane -U\nbind -n M-Down select-pane -D\n\n## Activity Monitoring\nsetw -g monitor-activity on\nset -g visual-activity on\n\n## Reaload settings\nunbind R\nbind R source-file ~/.tmux.conf\n\n## Load custom sources\nsource ~/.bashrc\n\n## Set defaults\nset -g default-terminal screen-256color\nset -g history-limit 5000\n\n## Defult windows titles\nset -g set-titles on\nset -g set-titles-string '#(whoami)@#H - #I:#W'\n\n## Last window switch\nbind-key C-a last-window\n\n## Use ZSH as default shell\nset-option -g default-shell /bin/zsh\n\n## Show tmux messages for longer\nset -g display-time 3000\n\n## Status bar is redrawn every minute\nset -g status-interval 60\n\n\n#-Theme------------------------------------------------------------------------\n## Default colours\nset -g status-bg black\nset -g status-fg white\n\n## Left hand side\nset -g status-left-length '$(($(echo -n $(hostname) | wc -c) + 23))'\nset -g status-left '#[fg=green,bold]#(whoami)#[default]@#[fg=yellow,dim]#H #[fg=green,dim][#[fg=yellow]#(cut -d \" \" -f 1-3 /proc/loadavg)#[fg=green,dim]]'\n\n## Inactive windows in status bar\nset-window-option -g window-status-format '#[fg=red,dim]#I#[fg=grey,dim]:#[default,dim]#W#[fg=grey,dim]'\n\n## Current or active window in status bar\n#set-window-option -g window-status-current-format '#[bg=white,fg=red]#I#[bg=white,fg=grey]:#[bg=white,fg=black]#W#[fg=dim]#F'\nset-window-option -g window-status-current-format '#[fg=red,bold](#[fg=white,bold]#I#[fg=red,dim]:#[fg=white,bold]#W#[fg=red,bold])'\n\n## Right hand side\nset -g status-right '#[fg=green][#[fg=yellow]%Y-%m-%d #[fg=white]%H:%M#[fg=green]]'" > $file
-#--- Setup alias
-file=/root/.bash_aliases; [ -e $file ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
-grep -q '^alias tmux' $file 2>/dev/null || echo -e '\n### tmux\nalias tmux="tmux attach || tmux new"\n' >> $file
-#--- Apply new aliases
-#source $file   # If using ZSH, will fail
-#--- Copy it to other user(s) ~
-#if [[ -e /home/$username/ ]]; then   # Will do this later on again, if there isn't already a user
-#  #cp -f /{root,home/$username}/.tmux.conf
-#  cp -f /{etc/,home/$username/.}tmux.conf
-#  chown $username\:$group /home/$username/.tmux.conf
-#  file=/home/$username/.bash_aliases; [ -e $file ] && cp -n $file{,.bkup}
-#  grep -q '^alias tmux' $file 2>/dev/null || echo -e '\n### tmux\nalias tmux="tmux attach || tmux new"\n' >> $file
-#fi
-#--- Use it ~ bit pointless if used in a postinstall script
-#tmux   # If ZSH isn't installed, it will not start up
-
-
-##### Configuring screen (if possible, use tmux instead)
-echo -e "\e[01;32m[+]\e[00m Configuring screen (if possible, use tmux instead)"
-#apt-get -y -qq install screen
-#--- Configure screen
-file=/root/.screenrc; [ -e $file ] && cp -n $file{,.bkup}
-echo -e "## Don't display the copyright page\nstartup_message off\n\n## tab-completion flash in heading bar\nvbell off\n\n## Keep scrollback n lines\ndefscrollback 1000\n\n## hardstatus is a bar of text that is visible in all screens\nhardstatus on\nhardstatus alwayslastline\nhardstatus string '%{gk}%{G}%H %{g}[%{Y}%l%{g}] %= %{wk}%?%-w%?%{=b kR}(%{W}%n %t%?(%u)%?%{=b kR})%{= kw}%?%+w%?%?%= %{g} %{Y} %Y-%m-%d %C%a %{W}'\n\n## title bar\ntermcapinfo xterm ti@:te@\n\n## default windows (syntax: screen -t label order command)\nscreen -t bash1 0\nscreen -t bash2 1\n\n## select the default window\nselect 1" > $file
-
-
 ##### Configuring vim ~ all users
 echo -e "\e[01;32m[+]\e[00m Configuring vim"
 apt-get -y -qq install vim
@@ -479,16 +495,6 @@ export EDITOR="vim"    #update-alternatives --config editor
 file=/etc/bash.bashrc; [ -e $file ] && cp -n $file{,.bkup}
 grep -q '^EDITOR' $file 2>/dev/null || echo 'EDITOR="vim"' >> $file
 git config --global core.editor "vim"
-
-
-##### Configuring file browser (need to restart xserver for effect)
-echo -e "\e[01;32m[+]\e[00m Configuring file browser (need to restart xserver for effect)"
-mkdir -p /root/.config/gtk-2.0/
-file=/root/.config/gtk-2.0/gtkfilechooser.ini; [ -e $file ] && cp -n $file{,.bkup}
-sed -i 's/^.*ShowHidden.*/ShowHidden=true/' $file 2>/dev/null || echo -e "\n[Filechooser Settings]\nLocationMode=path-bar\nShowHidden=true\nExpandFolders=false\nShowSizeColumn=true\nGeometryX=66\nGeometryY=39\nGeometryWidth=780\nGeometryHeight=618\nSortColumn=name\nSortOrder=ascending" > $file    #Open/save Window -> Right click -> Show Hidden Files: Enabled
-dconf write /org/gnome/nautilus/preferences/show-hidden-files true
-file=/root/.gtk-bookmarks; [ -e $file ] && cp -n $file{,.bkup}
-grep -q '^file:///var/www www' $file 2>/dev/null || echo -e 'file:///var/www www\nfile:///usr/share apps\nfile:///tmp tmp\nfile:///usr/local/src/ src' >> $file
 
 
 ##### Setting up iceweasel
@@ -533,7 +539,7 @@ if [[ -e $file ]]; then
   sed -i 's#<proxies><proxy name="Default"#<proxies><proxy name="localhost:8080" id="1145138293" notes="" fromSubscription="false" enabled="true" mode="manual" selectedTabIndex="0" lastresort="false" animatedIcons="true" includeInCycle="false" color="\#FC0511" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="true" clearCookiesBeforeUse="false" rejectCookies="false"><matches/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="127.0.0.1" port="8080" socksversion="5" isSocks="false" username="" password="" domain=""/></proxy><proxy name="Default"#' $file
 else
   echo -e '<?xml version="1.0" encoding="UTF-8"?>\n<foxyproxy mode="disabled" selectedTabIndex="0" toolbaricon="true" toolsMenu="true" contextMenu="true" advancedMenus="false" previousMode="disabled" resetIconColors="true" useStatusBarPrefix="true" excludePatternsFromCycling="false" excludeDisabledFromCycling="false" ignoreProxyScheme="false" apiDisabled="false" proxyForVersionCheck=""><random includeDirect="false" includeDisabled="false"/><statusbar icon="true" text="false" left="options" middle="cycle" right="contextmenu" width="0"/><toolbar left="options" middle="cycle" right="contextmenu"/><logg enabled="false" maxSize="500" noURLs="false" header="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;\n&lt;!DOCTYPE html PUBLIC &quot;-//W3C//DTD XHTML 1.0 Strict//EN&quot; &quot;http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd&quot;&gt;\n&lt;html xmlns=&quot;http://www.w3.org/1999/xhtml&quot;&gt;&lt;head&gt;&lt;title&gt;&lt;/title&gt;&lt;link rel=&quot;icon&quot; href=&quot;http://getfoxyproxy.org/favicon.ico&quot;/&gt;&lt;link rel=&quot;shortcut icon&quot; href=&quot;http://getfoxyproxy.org/favicon.ico&quot;/&gt;&lt;link rel=&quot;stylesheet&quot; href=&quot;http://getfoxyproxy.org/styles/log.css&quot; type=&quot;text/css&quot;/&gt;&lt;/head&gt;&lt;body&gt;&lt;table class=&quot;log-table&quot;&gt;&lt;thead&gt;&lt;tr&gt;&lt;td class=&quot;heading&quot;&gt;${timestamp-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${url-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${proxy-name-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${proxy-notes-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-name-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-case-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-type-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-color-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pac-result-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${error-msg-heading}&lt;/td&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tfoot&gt;&lt;tr&gt;&lt;td/&gt;&lt;/tr&gt;&lt;/tfoot&gt;&lt;tbody&gt;" row="&lt;tr&gt;&lt;td class=&quot;timestamp&quot;&gt;${timestamp}&lt;/td&gt;&lt;td class=&quot;url&quot;&gt;&lt;a href=&quot;${url}&quot;&gt;${url}&lt;/a&gt;&lt;/td&gt;&lt;td class=&quot;proxy-name&quot;&gt;${proxy-name}&lt;/td&gt;&lt;td class=&quot;proxy-notes&quot;&gt;${proxy-notes}&lt;/td&gt;&lt;td class=&quot;pattern-name&quot;&gt;${pattern-name}&lt;/td&gt;&lt;td class=&quot;pattern&quot;&gt;${pattern}&lt;/td&gt;&lt;td class=&quot;pattern-case&quot;&gt;${pattern-case}&lt;/td&gt;&lt;td class=&quot;pattern-type&quot;&gt;${pattern-type}&lt;/td&gt;&lt;td class=&quot;pattern-color&quot;&gt;${pattern-color}&lt;/td&gt;&lt;td class=&quot;pac-result&quot;&gt;${pac-result}&lt;/td&gt;&lt;td class=&quot;error-msg&quot;&gt;${error-msg}&lt;/td&gt;&lt;/tr&gt;" footer="&lt;/tbody&gt;&lt;/table&gt;&lt;/body&gt;&lt;/html&gt;"/><warnings/><autoadd enabled="false" temp="false" reload="true" notify="true" notifyWhenCanceled="true" prompt="true"><match enabled="true" name="Dynamic AutoAdd Pattern" pattern="*://${3}${6}/*" isRegEx="false" isBlackList="false" isMultiLine="false" caseSensitive="false" fromSubscription="false"/><match enabled="true" name="" pattern="*You are not authorized to view this page*" isRegEx="false" isBlackList="false" isMultiLine="true" caseSensitive="false" fromSubscription="false"/></autoadd><quickadd enabled="false" temp="false" reload="true" notify="true" notifyWhenCanceled="true" prompt="true"><match enabled="true" name="Dynamic QuickAdd Pattern" pattern="*://${3}${6}/*" isRegEx="false" isBlackList="false" isMultiLine="false" caseSensitive="false" fromSubscription="false"/></quickadd><defaultPrefs origPrefetch="null"/><proxies><proxy name="localhost:8080" id="1145138293" notes="" fromSubscription="false" enabled="true" mode="manual" selectedTabIndex="0" lastresort="false" animatedIcons="true" includeInCycle="false" color="#FC0511" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="true" clearCookiesBeforeUse="false" rejectCookies="false"><matches/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="127.0.0.1" port="8080" socksversion="5" isSocks="false" username="" password="" domain=""/></proxy><proxy name="Default" id="3377581719" notes="" fromSubscription="false" enabled="true" mode="direct" selectedTabIndex="0" lastresort="true" animatedIcons="false" includeInCycle="true" color="#0055E5" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="false" disableCache="false" clearCookiesBeforeUse="false" rejectCookies="false"><matches><match enabled="true" name="All" pattern="*" isRegEx="false" isBlackList="false" isMultiLine="false" caseSensitive="false" fromSubscription="false"/></matches><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="" port="" socksversion="5" isSocks="false" username="" password=""/></proxy></proxies></foxyproxy>' > $file
-fi  
+fi
 #--- Restore to folder
 cd - &>/dev/null
 
@@ -569,19 +575,6 @@ msfconsole -r /tmp/msf.rc
 #bash /opt/metasploit/scripts/launchui.sh    #*** #<--- Doesn't automate. May take a little while to kick in
 #--- Clean up
 rm -f /tmp/msf.rc
-
-
-##### Setting up ssh
-echo -e "\e[01;32m[+]\e[00m Setting up ssh"
-rm -f /etc/ssh/ssh_host_*
-rm -f /root/.ssh/*
-#ssh-keygen -A
-ssh-keygen -b 4096 -t rsa1 -f /etc/ssh/ssh_host_key -P ""
-ssh-keygen -b 4096 -t rsa -f /etc/ssh/ssh_host_rsa_key -P ""
-ssh-keygen -b 1024 -t dsa -f /etc/ssh/ssh_host_dsa_key -P ""
-ssh-keygen -b 521 -t ecdsa -f /etc/ssh/ssh_host_ecdsa_key -P ""
-ssh-keygen -b 4096 -t rsa -f /root/.ssh/id_rsa -P ""
-#update-rc.d -f ssh defaults   # Enable SSH at startup
 
 
 ##### Installing geany
@@ -627,6 +620,28 @@ gconftool-2 --type bool --set /apps/meld/use_syntax_highlighting true
 gconftool-2 --type int --set /apps/meld/edit_wrap_lines 2
 
 
+##### Installing nessus   *** Doesn't automate ***
+#echo -e "\e[01;32m[+]\e[00m Installing nessus"
+#--- Get download link
+#xdg-open http://www.tenable.com/products/nessus/select-your-operating-system    *** #wget "http://downloads.nessus.org/<file>" -O /tmp/nessus.deb   # ***!!! Hardcoded version value
+#dpkg -i /usr/local/src/Nessus-*-debian6_i386.deb
+#rm -f /tmp/nessus.deb
+#/opt/nessus/sbin/nessus-adduser   #<--- Doesn't automate
+#xdg-open http://www.tenable.com/products/nessus/nessus-plugins/register-a-homefeed
+#--- Check email
+# /opt/nessus/bin/nessus-fetch --register <key>   #<--- Doesn't automate
+#service nessusd start
+
+
+##### Installing openvas   *** Doesn't automate ***
+echo -e "\e[01;32m[+]\e[00m Installing openvas"
+apt-get -y -qq install openvas
+#openvas-setup   #<--- Doesn't automate ***
+#--- Remove 'default' user (admin), and create a new admin user (root).
+#test -e /var/lib/openvas/users/admin && openvasad -c remove_user -n admin
+#test -e /var/lib/openvas/users/root || openvasad -c add_user -n root -r Admin   #<--- Doesn't automate
+
+
 ##### Installing libreoffice
 #echo -e "\e[01;32m[+]\e[00m Installing libreoffice"
 #apt-get -y -qq install libreoffice
@@ -640,6 +655,32 @@ gconftool-2 --type int --set /apps/meld/edit_wrap_lines 2
 ##### Installing shutter
 echo -e "\e[01;32m[+]\e[00m Installing shutter"
 apt-get -y -qq install shutter
+
+
+##### Installing psmisc ~ allows for 'killall command' to be used
+echo -e "\e[01;32m[+]\e[00m Installing psmisc"
+apt-get -y -qq install psmisc
+
+
+##### Installing midnight commander
+echo -e "\e[01;32m[+]\e[00m Installing midnight commander"
+apt-get -y -qq install mc
+
+
+##### Installing htop
+echo -e "\e[01;32m[+]\e[00m Installing htop"
+apt-get -y -qq install htop
+
+
+##### Installing vnstat
+#echo -e "\e[01;32m[+]\e[00m Installing vnstat"
+#apt-get -y -qq install vnstat
+#--- Add to start up
+#update-rc.d vnstat defaults
+#--- Check
+#vnstat
+#vnstat -h && vnstat -d && vnstat -w && vnstat -m && vnstat -s
+#vnstat -t
 
 
 ##### Installing axel
@@ -670,15 +711,17 @@ filezilla & sleep 5; killall -q -w filezilla >/dev/null     # Start and kill. Fi
 sed -i 's/^.*"Default editor".*/\t<Setting name="Default editor" type="string">2\/usr\/bin\/geany<\/Setting>/' /root/.filezilla/filezilla.xml
 
 
-##### Setting up tftp
-echo -e "\e[01;32m[+]\e[00m Setting up tftp"
-apt-get -y -qq install tftp      # TFTP client
-apt-get -y -qq install atftpd    # TFTP Server
+##### Setting up tftp client/server
+echo -e "\e[01;32m[+]\e[00m Setting up tftp client/server"
+apt-get -y -qq install tftp      # tftp client
+apt-get -y -qq install atftpd    # tftp Server
+update-rc.d -f atftpd remove
 
 
-##### Installing atftpd
-echo -e "\e[01;32m[+]\e[00m Installing atftpd"
-apt-get -y -qq install atftpd
+##### Installing vsftpd
+echo -e "\e[01;32m[+]\e[00m Installing vsftpd"
+apt-get -y -qq install vsftpd
+update-rc.d -f vsftpd remove
 
 
 ##### Installing lynx
@@ -695,27 +738,6 @@ apt-get -y -qq install p7zip
 echo -e "\e[01;32m[+]\e[00m Installing zip/unzip"
 apt-get -y -qq install zip      # Compress
 apt-get -y -qq install unzip    # Decompress
-
-
-##### Installing midnight commander
-echo -e "\e[01;32m[+]\e[00m Installing midnight commander"
-apt-get -y -qq install mc
-
-
-##### Installing htop
-echo -e "\e[01;32m[+]\e[00m Installing htop"
-apt-get -y -qq install htop
-
-
-##### Installing vnstat
-echo -e "\e[01;32m[+]\e[00m Installing vnstat"
-apt-get -y -qq install vnstat
-#--- Add to start up
-update-rc.d vnstat defaults
-#--- Check
-#vnstat
-#vnstat -h && vnstat -d && vnstat -w && vnstat -m && vnstat -s
-#vnstat -t
 
 
 ##### Installing pptp vpn support
@@ -781,28 +803,6 @@ wget https://github.com/b374k/b374k/archive/master.zip -O /tmp/b374k.zip && unzi
 ##### Installing HTTPTunnel ~ https://bugs.kali.org/view.php?id=1090
 echo -e "\e[01;32m[+]\e[00m Installing HTTPTunnel"
 apt-get -y -qq install http-tunnel
-
-
-##### Installing nessus  *** Doesn't automate ***
-#echo -e "\e[01;32m[+]\e[00m Installing nessus"
-#--- Get download link
-#xdg-open http://www.tenable.com/products/nessus/select-your-operating-system    *** #wget "http://downloads.nessus.org/<file>" -O /tmp/nessus.deb   # ***!!! Hardcoded version value
-#dpkg -i /usr/local/src/Nessus-*-debian6_i386.deb
-#rm -f /tmp/nessus.deb
-#/opt/nessus/sbin/nessus-adduser   #<--- Doesn't automate
-#xdg-open http://www.tenable.com/products/nessus/nessus-plugins/register-a-homefeed
-#--- Check email
-# /opt/nessus/bin/nessus-fetch --register <key>   #<--- Doesn't automate
-#service nessusd start
-
-
-##### Installing openvas *** Doesn't automate ***
-echo -e "\e[01;32m[+]\e[00m Installing openvas"
-apt-get -y -qq install openvas
-#openvas-setup   #<--- Doesn't automate ***
-#--- Remove 'default' user (admin), and create a new admin user (root).
-#test -e /var/lib/openvas/users/admin && openvasad -c remove_user -n admin
-#test -e /var/lib/openvas/users/root || openvasad -c add_user -n root -r Admin   #<--- Doesn't automate
 
 
 ##### Installing htshells ~ http://bugs.kali.org/view.php?id=422
@@ -875,6 +875,8 @@ wget http://xato.net/files/10k%20most%20common.zip -O /tmp/10kcommon.zip && unzi
 
 ##### Configuring samba
 echo -e "\e[01;32m[+]\e[00m Configuring samba"
+#--- Install samba
+apt-get -y -qq install samba
 #--- Create samba user
 useradd -M -d /nonexistent -s /bin/false samba
 #--- Use samba user
@@ -893,11 +895,24 @@ grep -q '^\[shared\]' $file 2>/dev/null || echo -e '\n[shared]\n   comment = Sha
 #service samba stop
 
 
+##### Setting up ssh
+echo -e "\e[01;32m[+]\e[00m Setting up ssh"
+rm -f /etc/ssh/ssh_host_*
+rm -f /root/.ssh/*
+#ssh-keygen -A
+ssh-keygen -b 4096 -t rsa1 -f /etc/ssh/ssh_host_key -P ""
+ssh-keygen -b 4096 -t rsa -f /etc/ssh/ssh_host_rsa_key -P ""
+ssh-keygen -b 1024 -t dsa -f /etc/ssh/ssh_host_dsa_key -P ""
+ssh-keygen -b 521 -t ecdsa -f /etc/ssh/ssh_host_ecdsa_key -P ""
+ssh-keygen -b 4096 -t rsa -f /root/.ssh/id_rsa -P ""
+#update-rc.d -f ssh defaults   # Enable SSH at startup
+
+
 ##### Cleanning the system
 echo -e "\e[01;32m[+]\e[00m Cleanning the system"
 #--- Clean package manager
-for FILE in clean autoremove autoclean; do apt-get -y -qq $FILE; done
-apt-get -y purge $(dpkg -l | tail -n +6 | grep -v '^ii' | awk '{print $2}')
+for FILE in clean autoremove autoclean; do apt-get -y -qq $FILE; done                     # Clean up
+apt-get -y purge $(dpkg -l | tail -n +6 | grep -v '^ii' | awk '{print $2}')               # Purged packages
 #--- Update slocate database
 updatedb
 #--- Reset folder location
@@ -909,6 +924,14 @@ for i in $(cut -d: -f6 /etc/passwd | sort | uniq); do
   ls $FILE &> /dev/null && rm -f $FILE
   #[ -f $i/.*_history ] && rm -rf $i/.*_history
 done
+
+
+##### Time elapsed
+finish_time=$(date +%s)
+echo -e "\e[01;33m[i]\e[00m Time taken: $(( $((finish_time - start_time)) /60 )) minutes"
+
+
+#-Done--------------------------------------------------#
 
 
 ##### Done!
