@@ -603,7 +603,7 @@ sed -i 's/^.*pref_editor_trail_space.*/pref_editor_trail_space=true/' $file
 sed -i 's/^check_detect_indent=.*/check_detect_indent=true/' $file
 sed -i 's/^pref_editor_ensure_convert_line_endings=.*/pref_editor_ensure_convert_line_endings=true/' $file
 # Geany -> Tools -> Plugin Manger -> Save Actions -> HTML Characters: Enabled. Split WIndows: Enabled. Save Actions: Enabled. -> Preferences -> Backup Copy -> Enable -> Directory to save backup files in: /root/backups/geany/. Directory levels to include in the backup destination: 5 -> Apply -> Ok -> Ok
-sed -i 's/^.*active_plugins.*/active_plugins=\/usr\/lib\/geany\/htmlchars.so;\/usr\/lib\/geany\/saveactions.so;\/usr\/lib\/geany\/splitwindow.so;/' $file
+sed -i 's#^.*active_plugins.*#active_plugins=/usr/lib/geany/htmlchars.so;/usr/lib/geany/saveactions.so;/usr/lib/geany/splitwindow.so;#' $file
 mkdir -p /root/backups/geany/
 mkdir -p /root/.config/geany/plugins/saveactions/
 file=/root/.config/geany/plugins/saveactions/saveactions.conf; [ -e $file ] && cp -n $file{,.bkup}
@@ -708,13 +708,19 @@ echo -e "\e[01;32m[+]\e[00m Installing filezilla"
 apt-get -y -qq install filezilla
 #--- Configure filezilla
 filezilla & sleep 5; killall -q -w filezilla >/dev/null     # Start and kill. Files needed for first time run
-sed -i 's/^.*"Default editor".*/\t<Setting name="Default editor" type="string">2\/usr\/bin\/geany<\/Setting>/' /root/.filezilla/filezilla.xml
+sed -i 's#^.*"Default editor".*#\t<Setting name="Default editor" type="string">2/usr/bin/geany</Setting>#' /root/.filezilla/filezilla.xml
 
 
 ##### Setting up tftp client/server
 echo -e "\e[01;32m[+]\e[00m Setting up tftp client/server"
 apt-get -y -qq install tftp      # tftp client
 apt-get -y -qq install atftpd    # tftp Server
+#--- Configure atftpd
+file=/etc/default/atftpd; [ -e $file ] && cp -n $file{,.bkup}
+echo -e 'USE_INETD=false\nOPTIONS="--tftpd-timeout 300 --retry-timeout 5 --maxthread 100 --verbose=5 --daemon --port 69 /var/tftp"' > $file
+mkdir -p /var/tftp/
+chown -R nobody\:root /var/tftp/
+chmod -R 0755 /var/tftp/
 update-rc.d -f atftpd remove
 
 
