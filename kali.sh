@@ -1,20 +1,29 @@
 #!/bin/bash
+#-Metadata----------------------------------------------#
+#  Filename: kali.sh         (Last update: 2014-05-24)  #
+#-Info--------------------------------------------------#
+#  Post install script for Kali-Linux.                  #
+#-Author(s)---------------------------------------------#
+#  g0tmilk ~ http://blog.g0tmi1k.com                    #
 #-Operating System--------------------------------------#
-#   Designed for: Kali-Linux [1.0.6 x86 & x64]          #
-#   Last Updated: 2014-05-16                            #
-#-Author------------------------------------------------#
-#   g0tmilk ~ http://blog.g0tmi1k.com                   #
+#  Designed for: Kali-Linux 1.0.6 [x86]                 #
+#  Tested on: Kali-Linux 1.0.0 - 1.0.6 [x86 & x64]      #
 #-Notes-------------------------------------------------#
-#   Set to UK timezone & keyboard                       #
-#   Set to install VMware tools (make sure CD is mount) #
-#   Set to have a second ethernet adapter (host only)   #
-#   Skipping OpenVAS, MSF Community Edition & Nessus    #
-#   Skipping Fix DNS, Random NIC MAC & hostname         #
-#   First run of Iceweal will get a ton of pop ups      #
+#  Set to UK timezone & keyboard                        #
+#  Set to install VMware tools (make sure CD is mount)  #
+#  Set to have a second ethernet adapter (host only)    #
+#  Skipping OpenVAS, MSF Community Edition & Nessus     #
+#  Skipping DNS, random NIC MAC & hostname              #
+#  First run of Iceweal will get a ton of pop ups       #
 #                                                       #
-#   Incomplete stuff/buggy search for '***''            #
-#   Replace: /root with $USER                           #
+#  Incomplete stuff/buggy search for '***''             #
+#  Replace: /root with $USER                            #
+#                                                       #
+#         ** This script is meant for _me_. **          #
+#  ** Wasn't designed with customization in mind. **    #
+#       ** Manual hacking/editing is needed! **         #
 #-------------------------------------------------------#
+
 if [ 1 -eq 0 ]; then    # Never true, thus it acts as block comments ;)
 wget -qO- https://raw.github.com/g0tmi1k/OS-Scripts/master/kali.sh | bash     # Pull the latest version and execute!
 fi
