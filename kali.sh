@@ -1,57 +1,67 @@
 #!/bin/bash
 #-Metadata----------------------------------------------#
-#  Filename: kali.sh         (Last update: 2014-05-24)  #
+#  Filename: kali.sh         (Last update: 2014-05-30)  #
 #-Info--------------------------------------------------#
 #  Post install script for Kali-Linux.                  #
 #-Author(s)---------------------------------------------#
 #  g0tmilk ~ http://blog.g0tmi1k.com                    #
 #-Operating System--------------------------------------#
-#  Designed for: Kali-Linux 1.0.6 [x86]                 #
-#  Tested on: Kali-Linux 1.0.0 - 1.0.6 [x86 & x64]      #
+#  Designed for: Kali-Linux 1.0.7 [x86] (VM - Vmware)   #
+#  Tested on: Kali-Linux 1.0.0 - 1.0.7 [x86 & x64]      #
 #-Notes-------------------------------------------------#
 #  Set to UK timezone & keyboard                        #
-#  Set to install VMware tools (make sure CD is mount)  #
-#  Set to have a second ethernet adapter (host only)    #
-#  Skipping OpenVAS, MSF Community Edition & Nessus     #
-#  Skipping DNS, random NIC MAC & hostname              #
-#  First run of Iceweal will get a ton of pop ups       #
 #                                                       #
-#  Incomplete stuff/buggy search for '***''             #
-#  Replace: /root with $USER                            #
+#  Will install VMware tools                            #
+#                                                       #
+#  Skipping installing OpenVAS, MSF Community & Nessus  #
+#                                                       #
+#  Skipping making the NIC MAC & hostname random        #
+#                                                       #
+#  Need to manually enable all Iceweal plugins.         #
+#  ...and re-configure foxyproxy (re-run commands)      #
+#                                                       #
+#  Run as root, after a fresh/clean install of Kali.    #
+#  ...one day i'll replace: '/root' with '$USER' too.   #
+#                                                       #
+#  Incomplete stuff/buggy search for '***'.             #
 #                                                       #
 #         ** This script is meant for _me_. **          #
 #  ** Wasn't designed with customization in mind. **    #
 #       ** Manual hacking/editing is needed! **         #
 #-------------------------------------------------------#
 
-if [ 1 -eq 0 ]; then    # Never true, thus it acts as block comments ;)
-wget -qO- https://raw.github.com/g0tmi1k/OS-Scripts/master/kali.sh | bash     # Pull the latest version and execute!
+if [ 1 -eq 0 ]; then        # Never true, thus it acts as block comments ;)
+##### One liner - Pull the latest version and execute!
+wget -qO- https://raw.github.com/g0tmi1k/os-scripts/master/kali.sh | bash
 fi
 
 
-##### Remote configuration via SSH (optional)
-#services ssh start         # Start SSH to allow for remote config
-#ifconfig eth0              # Get IP of the interface
-#--- Use a 'remote' computer from here on out!
-#ssh root@<ip>              # Replace <ip> with the value from ifconfig
-export DISPLAY=:0.0         # Allows for remote configuration
+##### (Optional) Setup remote configuration via SSH
+#services ssh start          # Start SSH to allow for remote config
+#ifconfig eth0               # Get IP of the interface
+#--- Use the local computer (non Kali linux) from here on out via SSH (copy/paste the commands into prompt?)
+#ssh root@<ip>               # Replace <ip> with the value from ifconfig
+
+
+##### (Optional) Fixing display output for GUI programs.
+export DISPLAY=:0.0         # Only really required when running via SSH
 
 
 ##### Fixing network manger
 echo -e "\e[01;32m[+]\e[00m Fixing network manger"
 #--- Fix 'device not managed' issue
-file=/etc/network/interfaces; [ -e $file ] && cp -n $file{,.bkup}
-sed -i '/iface lo inet loopback/q' $file   #sed -i 's/managed=.*/managed=true/' /etc/NetworkManager/NetworkManager.conf
+file=/etc/network/interfaces; [ -e $file ] && cp -n $file{,.bkup}      # ...or: /etc/NetworkManager/NetworkManager.conf
+sed  -i '/iface lo inet loopback/q' $file                              # ...or: sed -i 's/managed=.*/managed=true/' $file
 #service network-manager restart
 #--- Fix 'network disabled' issue
 service network-manager stop
 rm -f /var/lib/NetworkManager/NetworkManager.state
 service network-manager start
-#--- Wait a little while before trying to connect out again, just to make sure
+#--- Wait a little while before trying to connect out again (just to make sure)
 sleep 10
 
 
-##### Fixing repositories
+##### Fixing repositories (enable network repositories if it wasn't selected during install).
 echo -e "\e[01;32m[+]\e[00m Fixing repositories"
 file=/etc/apt/sources.list; [ -e $file ] && cp -n $file{,.bkup}
 grep -q 'kali main non-free contrib' $file 2>/dev/null || echo "deb http://http.kali.org/kali kali main non-free contrib" >> $file
@@ -59,29 +69,36 @@ grep -q 'kali/updates main contrib non-free' $file 2>/dev/null || echo "deb http
 apt-get update
 
 
-##### Installing VirtualMachines Tools (optional)
-echo -e "\e[01;32m[+]\e[00m Installing VirtualMachines Tools (optional)"
-#--- Install VMware Tools ~ http://docs.kali.org/general-use/install-vmware-tools-kali-guest
-file=/usr/sbin/update-rc.d; [ -e $file ] && cp -n $file{,.bkup}
-grep -q '^cups enabled' $file 2>/dev/null || echo "cups enabled" >> $file
-grep -q '^vmware-tools enabled' $file 2>/dev/null || echo "vmware-tools enabled" >> $file
+##### (Optional) Installing kernel headers
+echo -e "\e[01;32m[+]\e[00m (Optional) Installing kernel headers"
 apt-get -y -qq install gcc make linux-headers-$(uname -r)
-ln -sf /usr/src/linux-headers-$(uname -r)/include/generated/uapi/linux/version.h /usr/src/linux-headers-$(uname -r)/include/linux/
+
+
+##### (Optional) Installing VirtualMachines Tools ~ http://docs.kali.org/general-use/install-vmware-tools-kali-guest
+echo -e "\e[01;32m[+]\e[00m (Optional) Installing VirtualMachines Tools"
 #--- VM -> Install VMware Tools.    Note, you may need to apply patch: https://github.com/offensive-security/kali-vmware-tools-patches
 mkdir -p /mnt/cdrom/
 umount /mnt/cdrom 2>/dev/null
 mount -o ro /dev/cdrom /mnt/cdrom 2>/dev/null
-if [[ $? == 0 ]]; then                         # If there is a CD in (hoping its right...), install open & close vmware tools
+if [[ $? == 0 ]]; then                         # If there is a CD in (hoping its right - linux vmware tools...), install native vmware tools
+  apt-get -y -qq install gcc make linux-headers-$(uname -r)
+  # kernel 3.14 (currently in 1.0.7) - doesn't need patching
+  #file=/usr/sbin/update-rc.d; [ -e $file ] && cp -n $file{,.bkup}
+  #grep -q '^cups enabled' $file 2>/dev/null || echo "cups enabled" >> $file
+  #grep -q '^vmware-tools enabled' $file 2>/dev/null || echo "vmware-tools enabled" >> $file
+  #ln -sf /usr/src/linux-headers-$(uname -r)/include/generated/uapi/linux/version.h /usr/src/linux-headers-$(uname -r)/include/linux/
   cp -f /mnt/cdrom/VMwareTools-*.tar.gz /tmp/
   tar -zxf /tmp/VMwareTools* -C /tmp/
   cd /tmp/vmware-tools-distrib/
   echo -e '\n' | perl vmware-install.pl
   cd - &>/dev/null
   umount /mnt/cdrom
-else                                           # Fall back is open vmware tools
-  echo -e "\e[01;31m[!]\e[00m VMware CD isn't mounted. Skipping 'closed' VMware tools, using 'open' Virtual Machine Tools instead."
-  apt-get -y -qq install open-vm-toolbox   #open-vm-tools
+else                                           # Fall back is 'open vmware tools'
+  echo -e "\e[01;31m[!]\e[00m VMware CD/ISO isn't mounted. Skipping 'native' VMware tools, using 'open' Virtual Machine Tools instead."
+  apt-get -y -qq install open-vm-toolbox       #apt-get -y -qq install open-vm-tools
 fi
+#--- Slow mouse?
+#apt-get -y -qq install xserver-xorg-input-vmmouse
 #--- Install parallel tools
 #grep -q '^cups enabled' /usr/sbin/update-rc.d || echo "cups enabled" >> /usr/sbin/update-rc.d
 #grep -q '^vmware-tools enabled' /usr/sbin/update-rc.d || echo "vmware-tools enabled" >> /usr/sbin/update-rc.d
@@ -89,33 +106,36 @@ fi
 #ln -sf /usr/src/linux-headers-$(uname -r)/include/generated/uapi/linux/version.h /usr/src/linux-headers-$(uname -r)/include/linux/
 #Virtual Machine -> Install Parallels Tools
 #cd /media/Parallel\ Tools/
-#./install   #<enter>,<enter>,<enter>... #<--- Doesn't automate
+#./install   #<--- Doesn't automate
+# <insert bash fu here>
 #--- Install VirtualBox Guest Additions
 # Mount CD - Use autorun
+# <insert bash fu here>
 
 
-##### Setting up static IP address on eth1 - host only (optional)
-echo -e "\e[01;32m[+]\e[00m Setting up static IP address on eth1 - host only (optional)"
-if [[ $(ifconfig eth1 &>/devnull) == 0 ]]; then
+##### (Optional) Setting up static IP address on eth1 - host only
+echo -e "\e[01;32m[+]\e[00m (Optional) Setting up static IP (192.168.155.175/24) address on eth1."
+ifconfig eth1 &>/devnull
+if [[ $? == 0 ]]; then
   ifconfig eth1 192.168.155.175/24
   file=/etc/network/interfaces; [ -e $file ] && cp -n $file{,.bkup}
   grep -q '^iface eth1 inet static' $file 2>/dev/null || echo -e '\nauto eth1\niface eth1 inet static\n    address 192.168.155.175\n    netmask 255.255.255.0\n    gateway 192.168.155.1' >> $file
 fi
 
 
-##### Setting up static DNS (optional)
-#echo -e "\e[01;32m[+]\e[00m Setting up static DNS (optional)"
-#file=/etc/resolv.conf; [ -e $file ] && cp -n $file{,.bkup}
-#chattr -i /etc/resolv.conf 2>/dev/null
+##### (Optional) Setting up static DNS
+echo -e "\e[01;32m[+]\e[00m (Optional) Setting up static DNS"
+file=/etc/resolv.conf; [ -e $file ] && cp -n $file{,.bkup}
+chattr -i /etc/resolv.conf 2>/dev/null
 #--- Remove duplicate results
 #uniq $file > $file.new
 #mv $file{.new,}
 #--- Use OpenDNS DNS
 #echo -e 'nameserver 208.67.222.222\nnameserver 208.67.220.220' > $file
 #--- Use Google DNS
-#echo -e 'nameserver 8.8.8.8\nnameserver 8.8.4.4' > $file
+echo -e 'nameserver 8.8.8.8\nnameserver 8.8.4.4' > $file
 #--- Protect it
-#chattr +i /etc/resolv.conf 2>/dev/null
+chattr +i /etc/resolv.conf 2>/dev/null
 
 
 ##### Updating the location
@@ -148,24 +168,36 @@ apt-get update && apt-get -y -q dist-upgrade --fix-missing
 #apt-get update && apt-get -y -qq upgrade
 
 
-##### Configuring (TTY) resolution
-echo -e "\e[01;32m[+]\e[00m Configuring (TTY) resolution"
+##### Fixing audio issues
+echo -e "\e[01;32m[+]\e[00m Fixing audio issues"
+#--- PulseAudio warnings
+#file=/etc/default/pulseaudio; [ -e $file ] && cp -n $file{,.bkup}
+#sed -i 's/^PULSEAUDIO_SYSTEM_START=.*/PULSEAUDIO_SYSTEM_START=1/' $file
+#--- Unmute on startup
+apt-get -y -qq install alsa-utils
+amixer set Master unmute >/dev/null
+amixer set Master 50% >/dev/null
+
+
+##### Configuring grub
+echo -e "\e[01;32m[+]\e[00m Configuring grub"
 file=/etc/default/grub; [ -e $file ] && cp -n $file{,.bkup}
-sed -i 's/GRUB_TIMEOUT=.*/GRUB_TIMEOUT=1/' $file                                                   # Time out
-sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT="vga=0x0318 quiet"/' $file      # TTY resolution
+sed -i 's/^GRUB_TIMEOUT=.*/GRUB_TIMEOUT=1/' $file                                # Time out
+sed -i 's/^GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT=""/' $file   # TTY resolution    #GRUB_CMDLINE_LINUX_DEFAULT="vga=0x0318 quiet"   (crashes VM/vmwgfx)
 update-grub
 
 
-##### Configuring login manager (console login - non GUI)     # Issues with 1.0.6
-#echo -e "\e[01;32m[+]\e[00m Configuring login (console login - non GUI)"
-#mv -f /etc/rc2.d/S19gdm3 /etc/rc2.d/K17gdm
-#file=/etc/X11/default-display-manager; [ -e $file ] && cp -n $file{,.bkup}
-#echo /bin/true > $file
-#chkconfig gdm3 remove
-#file=/etc/gdm3/daemon.conf; [ -e $file ] && cp -n $file{,.bkup}
-#sed -i 's/^.*AutomaticLoginEnable = .*/AutomaticLoginEnable = True/' $file
-#sed -i 's/^.*AutomaticLogin = .*/AutomaticLogin = root/' $file
-#ln -sf /usr/sbin/gdm3 /usr/bin/startx
+##### Configuring login manager (console login - non GUI)
+echo -e "\e[01;32m[+]\e[00m Configuring login (console login - non GUI)"
+#--- Disable GUI login screen
+apt-get -y -qq install chkconfig
+chkconfig gdm3 off                                 # ...or: mv -f /etc/rc2.d/S19gdm3 /etc/rc2.d/K17gdm           #file=/etc/X11/default-display-manager; [ -e $file ] && cp -n $file{,.bkup}   #echo /bin/true > $file
+#--- Enable auto login
+file=/etc/gdm3/daemon.conf; [ -e $file ] && cp -n $file{,.bkup}
+sed -i 's/^.*AutomaticLoginEnable = .*/AutomaticLoginEnable = True/' $file
+sed -i 's/^.*AutomaticLogin = .*/AutomaticLogin = root/' $file
+#--- Shortcut for when you want to start GUI
+ln -sf /usr/sbin/gdm3 /usr/bin/startx
 
 
 ##### Configuring startup (randomize the hostname, eth0 & wlan0s MAC address)
@@ -256,6 +288,7 @@ grep -q '^/usr/bin/numlockx' $file 2>/dev/null || sed -i 's#exit 0#if [ -x /usr/
 echo -e "\e[01;32m[+]\e[00m Installing & configuring XFCE4"
 apt-get -y -qq install wget
 apt-get -y -qq install xfce4 xfce4-places-plugin
+#--- Configuring XFCE4
 mv -f /usr/bin/startx{,-gnome}
 ln -sf /usr/bin/startx{fce4,}
 mkdir -p /root/.config/xfce4/{desktop,menu,panel,xfconf,xfwm4}/
@@ -278,8 +311,6 @@ echo -e '<?xml version="1.0" encoding="UTF-8"?>\n\n<channel name="xfce4-settings
 echo -e '<?xml version="1.0" encoding="UTF-8"?>\n\n<channel name="xfwm4" version="1.0">\n  <property name="general" type="empty">\n    <property name="activate_action" type="string" value="bring"/>\n    <property name="borderless_maximize" type="bool" value="true"/>\n    <property name="box_move" type="bool" value="false"/>\n    <property name="box_resize" type="bool" value="false"/>\n    <property name="button_layout" type="string" value="O|SHMC"/>\n    <property name="button_offset" type="int" value="0"/>\n    <property name="button_spacing" type="int" value="0"/>\n    <property name="click_to_focus" type="bool" value="true"/>\n    <property name="focus_delay" type="int" value="250"/>\n    <property name="cycle_apps_only" type="bool" value="false"/>\n    <property name="cycle_draw_frame" type="bool" value="true"/>\n    <property name="cycle_hidden" type="bool" value="true"/>\n    <property name="cycle_minimum" type="bool" value="true"/>\n    <property name="cycle_workspaces" type="bool" value="false"/>\n    <property name="double_click_time" type="int" value="250"/>\n    <property name="double_click_distance" type="int" value="5"/>\n    <property name="double_click_action" type="string" value="maximize"/>\n    <property name="easy_click" type="string" value="Alt"/>\n    <property name="focus_hint" type="bool" value="true"/>\n    <property name="focus_new" type="bool" value="true"/>\n    <property name="frame_opacity" type="int" value="100"/>\n    <property name="full_width_title" type="bool" value="true"/>\n    <property name="inactive_opacity" type="int" value="100"/>\n    <property name="maximized_offset" type="int" value="0"/>\n    <property name="move_opacity" type="int" value="100"/>\n    <property name="placement_ratio" type="int" value="20"/>\n    <property name="placement_mode" type="string" value="center"/>\n    <property name="popup_opacity" type="int" value="100"/>\n    <property name="mousewheel_rollup" type="bool" value="true"/>\n    <property name="prevent_focus_stealing" type="bool" value="false"/>\n    <property name="raise_delay" type="int" value="250"/>\n    <property name="raise_on_click" type="bool" value="true"/>\n    <property name="raise_on_focus" type="bool" value="false"/>\n    <property name="raise_with_any_button" type="bool" value="true"/>\n    <property name="repeat_urgent_blink" type="bool" value="false"/>\n    <property name="resize_opacity" type="int" value="100"/>\n    <property name="restore_on_move" type="bool" value="true"/>\n    <property name="scroll_workspaces" type="bool" value="true"/>\n    <property name="shadow_delta_height" type="int" value="0"/>\n    <property name="shadow_delta_width" type="int" value="0"/>\n    <property name="shadow_delta_x" type="int" value="0"/>\n    <property name="shadow_delta_y" type="int" value="-3"/>\n    <property name="shadow_opacity" type="int" value="50"/>\n    <property name="show_app_icon" type="bool" value="false"/>\n    <property name="show_dock_shadow" type="bool" value="true"/>\n    <property name="show_frame_shadow" type="bool" value="false"/>\n    <property name="show_popup_shadow" type="bool" value="false"/>\n    <property name="snap_resist" type="bool" value="false"/>\n    <property name="snap_to_border" type="bool" value="true"/>\n    <property name="snap_to_windows" type="bool" value="false"/>\n    <property name="snap_width" type="int" value="10"/>\n    <property name="theme" type="string" value="Shiki-Colors-Light-Menus"/>\n    <property name="title_alignment" type="string" value="center"/>\n    <property name="title_font" type="string" value="Sans Bold 9"/>\n    <property name="title_horizontal_offset" type="int" value="0"/>\n    <property name="title_shadow_active" type="string" value="false"/>\n    <property name="title_shadow_inactive" type="string" value="false"/>\n    <property name="title_vertical_offset_active" type="int" value="0"/>\n    <property name="title_vertical_offset_inactive" type="int" value="0"/>\n    <property name="toggle_workspaces" type="bool" value="false"/>\n    <property name="unredirect_overlays" type="bool" value="true"/>\n    <property name="urgent_blink" type="bool" value="false"/>\n    <property name="use_compositing" type="bool" value="true"/>\n    <property name="workspace_count" type="int" value="2"/>\n    <property name="wrap_cycle" type="bool" value="true"/>\n    <property name="wrap_layout" type="bool" value="true"/>\n    <property name="wrap_resistance" type="int" value="10"/>\n    <property name="wrap_windows" type="bool" value="true"/>\n    <property name="wrap_workspaces" type="bool" value="false"/>\n    <property name="workspace_names" type="array">\n      <value type="string" value="Workspace 1"/>\n      <value type="string" value="Workspace 2"/>\n      <value type="string" value="Workspace 3"/>\n      <value type="string" value="Workspace 4"/>\n    </property>\n  </property>\n</channel>' > /root/.config/xfce4/xfconf/xfce-perchannel-xml/xfwm4.xml
 echo -e '<?xml version="1.0" encoding="UTF-8"?>\n\n<channel name="xsettings" version="1.0">\n  <property name="Net" type="empty">\n    <property name="ThemeName" type="empty"/>\n    <property name="IconThemeName" type="empty"/>\n    <property name="DoubleClickTime" type="int" value="250"/>\n    <property name="DoubleClickDistance" type="int" value="5"/>\n    <property name="DndDragThreshold" type="int" value="8"/>\n    <property name="CursorBlink" type="bool" value="true"/>\n    <property name="CursorBlinkTime" type="int" value="1200"/>\n    <property name="SoundThemeName" type="string" value="default"/>\n    <property name="EnableEventSounds" type="bool" value="false"/>\n    <property name="EnableInputFeedbackSounds" type="bool" value="false"/>\n  </property>\n  <property name="Xft" type="empty">\n    <property name="DPI" type="empty"/>\n    <property name="Antialias" type="int" value="-1"/>\n    <property name="Hinting" type="int" value="-1"/>\n    <property name="HintStyle" type="string" value="hintnone"/>\n    <property name="RGBA" type="string" value="none"/>\n  </property>\n  <property name="Gtk" type="empty">\n    <property name="CanChangeAccels" type="bool" value="false"/>\n    <property name="ColorPalette" type="string" value="black:white:gray50:red:purple:blue:light blue:green:yellow:orange:lavender:brown:goldenrod4:dodger blue:pink:light green:gray10:gray30:gray75:gray90"/>\n    <property name="FontName" type="string" value="Sans 10"/>\n    <property name="IconSizes" type="string" value=""/>\n    <property name="KeyThemeName" type="string" value=""/>\n    <property name="ToolbarStyle" type="string" value="icons"/>\n    <property name="ToolbarIconSize" type="int" value="3"/>\n    <property name="IMPreeditStyle" type="string" value=""/>\n    <property name="IMStatusStyle" type="string" value=""/>\n    <property name="MenuImages" type="bool" value="true"/>\n    <property name="ButtonImages" type="bool" value="true"/>\n    <property name="MenuBarAccel" type="string" value="F10"/>\n    <property name="CursorThemeName" type="string" value=""/>\n    <property name="CursorThemeSize" type="int" value="0"/>\n    <property name="IMModule" type="string" value=""/>\n  </property>\n</channel>' > /root/.config/xfce4/xfconf/xfce-perchannel-xml/xsettings.xml
 echo -e '<Menu>\n\t<Name>Top 10</Name>\n\t<DefaultAppDirs/>\n\t<Directory>top10.directory</Directory>\n\t<Include>\n\t\t<Category>top10</Category>\n\t</Include>\n</Menu>' > /root/.config/xfce4/menu/top10.menu
-sed -i 's/^enable=.*/enable=False/' /etc/xdg/user-dirs.conf   #sed -i 's/^XDG_/#XDG_/; s/^#XDG_DESKTOP/XDG_DESKTOP/;' /root/.config/user-dirs.dirs
-rm -rf /root/{Documents,Downloads,Music,Pictures,Public,Templates,Videos}/
 rm -f /root/.cache/sessions/*
 #--- Get Shiki-Colors-Light theme
 wget http://xfce-look.org/CONTENT/content-files/142110-Shiki-Colors-Light-Menus.tar.gz -O /tmp/Shiki-Colors-Light-Menus.tar.gz
@@ -288,8 +319,16 @@ xfconf-query -c xsettings -p /Net/ThemeName -s "Shiki-Colors-Light-Menus"
 xfconf-query -c xsettings -p /Net/IconThemeName -s "gnome-brave"
 #--- Enable compositing
 xfconf-query -c xfwm4 -p /general/use_compositing -s true
+#--- Disable user folders
+apt-get -y -qq install xdg-user-dirs
+xdg-user-dirs-update
+file=/etc/xdg/user-dirs.conf; [ -e $file ] && cp -n $file{,.bkup}
+sed -i 's/^enable=.*/enable=False/' $file   #sed -i 's/^XDG_/#XDG_/; s/^#XDG_DESKTOP/XDG_DESKTOP/;' /root/.config/user-dirs.dirs
+rm -rf /root/{Documents,Downloads,Music,Pictures,Public,Templates,Videos}/
 #--- Change desktop wallpaper
-wget http://imageshack.us/a/img17/4646/vzex.png -O /usr/share/wallpapers/kali_blue.png    #wget http://www.n1tr0g3n.com/wp-content/uploads/2013/03/Kali-Linux-faded-no-Dragon-small-text.png
+wget http://imageshack.us/a/img17/4646/vzex.png -O /usr/share/wallpapers/kali_blue.png
+wget http://www.n1tr0g3n.com/wp-content/uploads/2013/03/Kali-Linux-faded-no-Dragon-small-text.png -O /usr/share/wallpapers/kali_black_clean.png
+wget http://1hdwallpapers.com/wallpapers/kali_linux.jpg -O /usr/share/wallpapers/kali_black_stripes.jpg
 xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitor0/image-show -s true
 xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitor0/image-path -s /usr/share/wallpapers/kali_blue.png
 #--- Configure file browser (need to re-login for effect)
@@ -504,6 +543,10 @@ export EDITOR="vim"    #update-alternatives --config editor
 file=/etc/bash.bashrc; [ -e $file ] && cp -n $file{,.bkup}
 grep -q '^EDITOR' $file 2>/dev/null || echo 'EDITOR="vim"' >> $file
 git config --global core.editor "vim"
+#--- Set as default mergetool
+git config --global merge.tool vimdiff
+git config --global merge.conflictstyle diff3
+git config --global mergetool.prompt false
 
 
 ##### Setting up iceweasel
@@ -542,7 +585,8 @@ wget https://addons.mozilla.org/firefox/downloads/latest/300254/addon-300254-lat
 #  mkdir -p $d && unzip -o $z -d $d
 #done
 #iceweasel   #<--- Doesn't automate
-#--- Configure foxyproxy
+iceweasel & sleep 15; killall -q -w iceweasel >/dev/null
+#--- Configure foxyproxy (need to install foxproxy first... so this will not work.)
 file=$(echo /root/.mozilla/firefox/*.default/foxyproxy.xml); [ -e $file ] && cp -n $file{,.bkup}
 if [[ -e $file ]]; then
   sed -i 's#<proxies><proxy name="Default"#<proxies><proxy name="localhost:8080" id="1145138293" notes="" fromSubscription="false" enabled="true" mode="manual" selectedTabIndex="0" lastresort="false" animatedIcons="true" includeInCycle="false" color="\#FC0511" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="true" clearCookiesBeforeUse="false" rejectCookies="false"><matches/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="127.0.0.1" port="8080" socksversion="5" isSocks="false" username="" password="" domain=""/></proxy><proxy name="Default"#' $file
@@ -658,12 +702,19 @@ apt-get -y -qq install openvas
 
 ##### Installing recordmydesktop
 #echo -e "\e[01;32m[+]\e[00m Installing recordmydesktop"
+#apt-get -y -qq install recordmydesktop
+#--- Installing GUI front end
 #apt-get -y -qq install gtk-recordmydesktop
 
 
 ##### Installing shutter
 echo -e "\e[01;32m[+]\e[00m Installing shutter"
 apt-get -y -qq install shutter
+
+
+##### Installing gdebi
+#echo -e "\e[01;32m[+]\e[00m Installing gdebi"
+#apt-get -y -qq install gdebi
 
 
 ##### Installing psmisc ~ allows for 'killall command' to be used
@@ -679,6 +730,11 @@ apt-get -y -qq install mc
 ##### Installing htop
 echo -e "\e[01;32m[+]\e[00m Installing htop"
 apt-get -y -qq install htop
+
+
+##### Installing nethogs
+echo -e "\e[01;32m[+]\e[00m Installing nethogs"
+apt-get -y -qq install nethogs
 
 
 ##### Installing vnstat
@@ -720,6 +776,11 @@ filezilla & sleep 5; killall -q -w filezilla >/dev/null     # Start and kill. Fi
 sed -i 's#^.*"Default editor".*#\t<Setting name="Default editor" type="string">2/usr/bin/geany</Setting>#' /root/.filezilla/filezilla.xml
 
 
+##### Installing remmina
+echo -e "\e[01;32m[+]\e[00m Installing remmina"
+apt-get -y -qq install remmina
+
+
 ##### Setting up tftp client/server
 echo -e "\e[01;32m[+]\e[00m Setting up tftp client/server"
 apt-get -y -qq install tftp      # tftp client
@@ -733,10 +794,30 @@ chmod -R 0755 /var/tftp/
 update-rc.d -f atftpd remove
 
 
-##### Installing vsftpd
-echo -e "\e[01;32m[+]\e[00m Installing vsftpd"
-apt-get -y -qq install vsftpd
-update-rc.d -f vsftpd remove
+##### Installing pure-ftpd
+echo -e "\e[01;32m[+]\e[00m Installing pure-ftpd"
+apt-get -y -qq install pure-ftpd
+update-rc.d -f pure-ftpd remove
+mkdir -p /var/ftp/
+groupdel ftpgroup 2>/dev/null; groupadd ftpgroup
+userdel ftp 2>/dev/null; useradd -d /var/ftp/ -s /bin/false -c "FTP user" -g ftpgroup ftp
+chown -R ftp\:ftpgroup /var/ftp/
+chmod -R 0755 /var/ftp/
+pure-pw userdel ftp 2>/dev/null; echo -e '\n' | pure-pw useradd ftp -u ftp -d /var/ftp/
+pure-pw mkdb
+echo no > /etc/pure-ftpd/conf/UnixAuthentication
+echo no > /etc/pure-ftpd/conf/PAMAuthentication
+echo yes > /etc/pure-ftpd/conf/NoChmod
+echo yes > /etc/pure-ftpd/conf/ChrootEveryone
+#echo yes > /etc/pure-ftpd/conf/AnonymousOnly
+echo no > /etc/pure-ftpd/conf/NoAnonymous
+echo yes > /etc/pure-ftpd/conf/AnonymousCanCreateDirs
+echo yes > /etc/pure-ftpd/conf/AllowAnonymousFXP
+echo no > /etc/pure-ftpd/conf/AnonymousCantUpload
+#mkdir -p /etc/ssl/private/
+#openssl req -x509 -nodes -newkey rsa:4096 -keyout /etc/ssl/private/pure-ftpd.pem -out /etc/ssl/private/pure-ftpd.pem
+#chmod 0600 /etc/ssl/private/*.pem
+ln -sf /etc/pure-ftpd/conf/PureDB /etc/pure-ftpd/auth/50pure
 
 
 ##### Installing lynx
@@ -755,6 +836,12 @@ apt-get -y -qq install zip      # Compress
 apt-get -y -qq install unzip    # Decompress
 
 
+##### Installing file roller
+echo -e "\e[01;32m[+]\e[00m Installing file roller"
+apt-get -y -qq install file-roller
+apt-get -y -qq unrar unace unzip rar zip p7zip p7zip-full p7zip-rar
+
+
 ##### Installing pptp vpn support
 echo -e "\e[01;32m[+]\e[00m Installing pptp vpn support"
 apt-get -y -qq install network-manager-pptp-gnome network-manager-pptp
@@ -763,6 +850,7 @@ apt-get -y -qq install network-manager-pptp-gnome network-manager-pptp
 ##### Installing flash
 #echo -e "\e[01;32m[+]\e[00m Installing flash"
 #apt-get -y -qq install flashplugin-nonfree
+#update-flashplugin-nonfree --install
 
 
 ##### Installing java
@@ -807,12 +895,19 @@ apt-get -y -qq install webhandler
 
 ##### Installing azazel ~ http://blackhatlibrary.net/Azazel
 echo -e "\e[01;32m[+]\e[00m Installing azazel"
-wget https://github.com/chokepoint/azazel/archive/master.zip -O /tmp/azazel.zip && unzip -o -d /usr/share/azazel/ /tmp/azazel.zip && rm -f /tmp/azazel.zip   #git clone git@github.com:chokepoint/azazel.git /usr/share/azazel/    # Will fail due to our public key not being on github.com
+apt-get -y -qq install git
+git clone git://github.com/chokepoint/azazel.git /usr/share/azazel/
 
 
 ##### Installing b374k ~ https://bugs.kali.org/view.php?id=1097
 echo -e "\e[01;32m[+]\e[00m Installing b374k"
-wget https://github.com/b374k/b374k/archive/master.zip -O /tmp/b374k.zip && unzip -o -d /usr/share/b374k/ /tmp/b374k.zip && rm -f /tmp/b374k.zip    #git clone git@github.com:b374k/b374k.git /usr/share/b374k/    #/usr/share/webshells/php ?
+apt-get -y -qq install git
+git clone git://github.com/b374k/b374k.git /usr/share/b374k/
+
+
+##### Installing jsp file browser ~ https://bugs.kali.org/view.php?id=1247
+echo -e "\e[01;32m[+]\e[00m Installing jsp file browser"
+wget http://www.vonloesch.de/files/browser.zip -O /tmp/jsp.zip && unzip -o -d /usr/share/webshells_jsp/ /tmp/jsp.zip && rm -f /tmp/jsp.zip
 
 
 ##### Installing HTTPTunnel ~ https://bugs.kali.org/view.php?id=1090
