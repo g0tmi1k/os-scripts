@@ -1,33 +1,34 @@
 #!/bin/bash
 #-Metadata----------------------------------------------#
-#  Filename: kali.sh         (Last update: 2014-05-30)  #
+#  Filename: kali.sh         (Last update: 2014-06-09)  #
 #-Info--------------------------------------------------#
 #  Post install script for Kali-Linux.                  #
 #-Author(s)---------------------------------------------#
 #  g0tmilk ~ http://blog.g0tmi1k.com                    #
 #-Operating System--------------------------------------#
-#  Designed for: Kali-Linux 1.0.7 [x86] (VM - Vmware)   #
+#  Designed for: Kali-Linux 1.0.7 [x64] (VM - Vmware)   #
 #  Tested on: Kali-Linux 1.0.0 - 1.0.7 [x86 & x64]      #
 #-Notes-------------------------------------------------#
-#  Set to UK timezone & keyboard                        #
+#  Sets timezone & keyboard layout to UK                #
 #                                                       #
-#  Will install VMware tools                            #
+#  Will install (Open) VMware tools                     #
 #                                                       #
-#  Skipping installing OpenVAS, MSF Community & Nessus  #
+#  Skips installing OpenVAS, MSF Community & Nessus     #
 #                                                       #
-#  Skipping making the NIC MAC & hostname random        #
+#  Skips making the NIC MAC & hostname random           #
 #                                                       #
-#  Need to manually enable all Iceweal plugins.         #
+#  Need to manually enable all Iceweal plugins.  =(     #
 #  ...and re-configure foxyproxy (re-run commands)      #
-#                                                       #
+#                          ---                          #
 #  Run as root, after a fresh/clean install of Kali.    #
+#                          ---                          #
 #  ...one day i'll replace: '/root' with '$USER' too.   #
 #                                                       #
 #  Incomplete stuff/buggy search for '***'.             #
-#                                                       #
+#                          ---                          #
 #         ** This script is meant for _me_. **          #
 #  ** Wasn't designed with customization in mind. **    #
-#       ** Manual hacking/editing is needed! **         #
+#       ** Edit this to meet your requirments! **       #
 #-------------------------------------------------------#
 
 if [ 1 -eq 0 ]; then        # Never true, thus it acts as block comments ;)
@@ -928,6 +929,11 @@ apt-get -y -qq install bridge-utils
 ##### Installing veil ~ http://bugs.kali.org/view.php?id=421
 echo -e "\e[01;32m[+]\e[00m Installing veil"
 apt-get -y -qq install veil
+
+
+##### Installing gcc multilib
+echo -e "\e[01;32m[+]\e[00m Installing gcc multilib"
+apt-get -y -qq install gcc-multilib libc6-dev-i386
 
 
 ##### Installing mingw
