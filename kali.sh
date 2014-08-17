@@ -1,64 +1,65 @@
 #!/bin/bash
 #-Metadata----------------------------------------------#
-#  Filename: kali.sh         (Last update: 2014-06-09)  #
+#  Filename: kali.sh         (Last update: 2014-09-17)  #
 #-Info--------------------------------------------------#
-#  Post install script for Kali-Linux.                  #
+#  Personal post install script for Kali-Linux.         #
 #-Author(s)---------------------------------------------#
 #  g0tmilk ~ http://blog.g0tmi1k.com                    #
 #-Operating System--------------------------------------#
-#  Designed for: Kali-Linux 1.0.7 [x64] (VM - Vmware)   #
-#  Tested on: Kali-Linux 1.0.0 - 1.0.7 [x86 & x64]      #
+#  Designed for: Kali-Linux 1.0.8 [x64] (VM - VMware)   #
+#     Tested on: Kali-Linux 1.0.0 - 1.0.8 [x64 & x84]   #
 #-Notes-------------------------------------------------#
-#  Sets timezone & keyboard layout to UK                #
-#                                                       #
-#  Will install (Open) VMware tools                     #
-#                                                       #
-#  Skips installing OpenVAS, MSF Community & Nessus     #
-#                                                       #
-#  Skips making the NIC MAC & hostname random           #
-#                                                       #
-#  Need to manually enable all Iceweal plugins.  =(     #
-#  ...and re-configure foxyproxy (re-run commands)      #
-#                          ---                          #
 #  Run as root, after a fresh/clean install of Kali.    #
 #                          ---                          #
-#  ...one day i'll replace: '/root' with '$USER' too.   #
+#  Will set time zone & keyboard layout to UK & GB.     #
+#                                                       #
+#  Will install (open) vm tools.                        #
+#                                                       #
+#  Skips installing OpenVAS, MSF Community & Nessus.    #
+#                                                       #
+#  Skips making the NIC MAC & hostname random on boot.  #
+#                                                       #
+#  Need to manually enable all iceweasel plugins  =(    #
+#  ...and re-configure FoxyProxy (can re-run commands). #
+#                          ---                          #
+#  One day I'll replace '/root' with '$USER'.           #
 #                                                       #
 #  Incomplete stuff/buggy search for '***'.             #
 #                          ---                          #
-#         ** This script is meant for _me_. **          #
+#         ** This script is meant for _ME_. **          #
 #  ** Wasn't designed with customization in mind. **    #
-#       ** Edit this to meet your requirments! **       #
+#      ** EDIT this to meet _YOUR_ requirements! **     #
 #-------------------------------------------------------#
 
-if [ 1 -eq 0 ]; then        # Never true, thus it acts as block comments ;)
-##### One liner - Pull the latest version and execute!
+if [ 1 -eq 0 ]; then        # This is never true, thus it acts as block comments ;)
+############ One liner - Pull the latest version and execute! ###########
 wget -qO- https://raw.github.com/g0tmi1k/os-scripts/master/kali.sh | bash
+#########################################################################
 fi
 
 
-##### (Optional) Setup remote configuration via SSH
-#services ssh start          # Start SSH to allow for remote config
-#ifconfig eth0               # Get IP of the interface
-#--- Use the local computer (non Kali linux) from here on out via SSH (copy/paste the commands into prompt?)
-#ssh root@<ip>               # Replace <ip> with the value from ifconfig
+##### (Optional) Setup remote connection via SSH
+#services ssh start          # Start SSH to allow for remote connection
+#ifconfig eth0               # Get the IP of the network interface
+#--- Use the local computer (non Kali Linux) from here on out via SSH (copy/paste selected commands into prompt. Tip: Do only a few lines at once)
+#ssh root@<ip>               # Replace '<ip>' with the value from before (ifconfig)
 
 
 ##### (Optional) Fixing display output for GUI programs.
-export DISPLAY=:0.0         # Only really required when running via SSH
+export DISPLAY=:0.0         # Only required when executing via a SSH session
 
 
-##### Fixing network manger
-echo -e "\e[01;32m[+]\e[00m Fixing network manger"
+##### Fixing network manager
+echo -e "\e[01;32m[+]\e[00m Fixing network manager"
+service network-manager stop
 #--- Fix 'device not managed' issue
 file=/etc/network/interfaces; [ -e $file ] && cp -n $file{,.bkup}      # ...or: /etc/NetworkManager/NetworkManager.conf
 sed  -i '/iface lo inet loopback/q' $file                              # ...or: sed -i 's/managed=.*/managed=true/' $file
 #service network-manager restart
 #--- Fix 'network disabled' issue
-service network-manager stop
 rm -f /var/lib/NetworkManager/NetworkManager.state
-service network-manager start
 #--- Wait a little while before trying to connect out again (just to make sure)
+service network-manager start
 sleep 10
 
 
@@ -75,15 +76,15 @@ echo -e "\e[01;32m[+]\e[00m (Optional) Installing kernel headers"
 apt-get -y -qq install gcc make linux-headers-$(uname -r)
 
 
-##### (Optional) Installing VirtualMachines Tools ~ http://docs.kali.org/general-use/install-vmware-tools-kali-guest
+##### (Optional) Installing Virtual Machines tools ~ http://docs.kali.org/general-use/install-vmware-tools-kali-guest
 echo -e "\e[01;32m[+]\e[00m (Optional) Installing VirtualMachines Tools"
 #--- VM -> Install VMware Tools.    Note, you may need to apply patch: https://github.com/offensive-security/kali-vmware-tools-patches
 mkdir -p /mnt/cdrom/
 umount /mnt/cdrom 2>/dev/null
 mount -o ro /dev/cdrom /mnt/cdrom 2>/dev/null
-if [[ $? == 0 ]]; then                         # If there is a CD in (hoping its right - linux vmware tools...), install native vmware tools
+if [[ $? == 0 ]]; then                         # If there is a CD in (hoping its right - Linux VMware tools...), install native VMware tools
   apt-get -y -qq install gcc make linux-headers-$(uname -r)
-  # kernel 3.14 (currently in 1.0.7) - doesn't need patching
+  # Kernel 3.14  - doesn't need patching
   #file=/usr/sbin/update-rc.d; [ -e $file ] && cp -n $file{,.bkup}
   #grep -q '^cups enabled' $file 2>/dev/null || echo "cups enabled" >> $file
   #grep -q '^vmware-tools enabled' $file 2>/dev/null || echo "vmware-tools enabled" >> $file
@@ -94,8 +95,8 @@ if [[ $? == 0 ]]; then                         # If there is a CD in (hoping its
   echo -e '\n' | perl vmware-install.pl
   cd - &>/dev/null
   umount /mnt/cdrom
-else                                           # Fall back is 'open vmware tools'
-  echo -e "\e[01;31m[!]\e[00m VMware CD/ISO isn't mounted. Skipping 'native' VMware tools, using 'open' Virtual Machine Tools instead."
+else                                           # Fall back is 'open vm tools'
+  echo -e "\e[01;31m[!]\e[00m VMware CD/ISO isn't mounted. Skipping 'native' VMware tools, using 'Open VM Tools' instead."
   apt-get -y -qq install open-vm-toolbox       #apt-get -y -qq install open-vm-tools
 fi
 #--- Slow mouse?
@@ -127,7 +128,7 @@ fi
 ##### (Optional) Setting up static DNS
 echo -e "\e[01;32m[+]\e[00m (Optional) Setting up static DNS"
 file=/etc/resolv.conf; [ -e $file ] && cp -n $file{,.bkup}
-chattr -i /etc/resolv.conf 2>/dev/null
+chattr -i $file 2>/dev/null
 #--- Remove duplicate results
 #uniq $file > $file.new
 #mv $file{.new,}
@@ -136,14 +137,39 @@ chattr -i /etc/resolv.conf 2>/dev/null
 #--- Use Google DNS
 echo -e 'nameserver 8.8.8.8\nnameserver 8.8.4.4' > $file
 #--- Protect it
-chattr +i /etc/resolv.conf 2>/dev/null
+chattr +i $file 2>/dev/null
 
 
-##### Updating the location
-echo -e "\e[01;32m[+]\e[00m Updating the location"
+if [ 1 -eq 0 ]; then        # This is never true, thus it acts as block comments ;)
+##### Updating hostname
+echo -e "\e[01;32m[+]\e[00m Updating hostname"
+hostname="kali"
+#--- Change it now
+hostname "$hostname"
+#--- Set host file
+file=/etc/hosts; [ -e $file ] && cp -n $file{,.bkup}
+echo -e "127.0.0.1  localhost.localdomain localhost\n127.0.0.1  $hostname" > $file    #$hostname.$domainname
+#--- Make sure it sticks after reboot
+file=/etc/hostname; [ -e $file ] && cp -n $file{,.bkup}
+echo "$(hostname)" > $file
+#--- Check
+#hostname; hostname -f
+fi
+
+
+##### Updating location information (keyboard layout & time zone) - set either value to "" to skip.
+echo -e "\e[01;32m[+]\e[00m Updating location information (keyboard layout & time zone)"
+keyboardlayout="gb"         # Great Britain
+timezone="Europe/London"    # London, Europe
+#--- Configure keyboard layout
+if [ ! -z "$keyboardlayout" ]; then
+  file=/etc/default/keyboard; [ -e $file ] && cp -n $file{,.bkup}
+  sed -i 's/XKBLAYOUT=".*"/XKBLAYOUT="'$keyboardlayout'"/' $file   #; dpkg-reconfigure keyboard-configuration -u       #<--- May automate (need to restart xserver for effect)
+  #dpkg-reconfigure keyboard-configuration   #dpkg-reconfigure console-setup                                           #<--- Doesn't automate
+fi
 #--- Change the time zone
-ln -sf /usr/share/zoneinfo/Europe/London /etc/localtime   # London, Europe
-#---  Install ntp
+[[ -z "$timezone" ]] || ln -sf /usr/share/zoneinfo/$timezone /etc/localtime
+#---  Install ntp to help keep time in sync (helpful when resuming VMs)
 apt-get -y -qq install ntp
 #--- Start service
 service ntp restart
@@ -151,10 +177,6 @@ service ntp restart
 update-rc.d ntp enable 2>/dev/null
 #--- Check
 #date
-#--- Configure keyboard
-file=/etc/default/keyboard; [ -e $file ] && cp -n $file{,.bkup}
-sed -i 's/XKBLAYOUT=".*"/XKBLAYOUT="gb"/' $file   #; dpkg-reconfigure keyboard-configuration -u       #<--- May automate (need to restart xserver for effect)
-#dpkg-reconfigure keyboard-configuration   #dpkg-reconfigure console-setup                            #<--- Doesn't automate    # [DONT USE "English (UK) - English (UK, Macintosh)" FOR UK MPB, USE "US" (Still not perfect)]
 #--- Only used for stats at the end
 start_time=$(date +%s)
 
@@ -281,6 +303,10 @@ apt-get -y -qq install nautilus-open-terminal
 apt-get -y -qq install numlockx
 file=/etc/gdm3/Init/Default; [ -e $file ] && cp -n $file{,.bkup}     #/etc/rc.local
 grep -q '^/usr/bin/numlockx' $file 2>/dev/null || sed -i 's#exit 0#if [ -x /usr/bin/numlockx ]; then\n /usr/bin/numlockx on\nfi\nexit 0#' $file   # GNOME
+#--- Change wallpaper & login (happens later)
+#wget http://www.kali.org/images/wallpapers-01/kali-wp-june-2014_1920x1080_A.png -P /usr/share/wallpapers/
+#gsettings set org.gnome.desktop.background picture-uri 'file:///usr/share/wallpapers/kali-wp-june-2014_1920x1080_A.png'
+#cp -f /usr/share/wallpapers/kali-wp-june-2014_1920x1080_A.png /usr/share/images/desktop-base/login-background.png
 #--- Restart GNOME panel to apply/take effect (need to restart xserver for effect)
 #killall -q -w gnome-panel >/dev/null && gnome-panel&   # Still need to logoff!
 
@@ -327,11 +353,18 @@ file=/etc/xdg/user-dirs.conf; [ -e $file ] && cp -n $file{,.bkup}
 sed -i 's/^enable=.*/enable=False/' $file   #sed -i 's/^XDG_/#XDG_/; s/^#XDG_DESKTOP/XDG_DESKTOP/;' /root/.config/user-dirs.dirs
 rm -rf /root/{Documents,Downloads,Music,Pictures,Public,Templates,Videos}/
 #--- Change desktop wallpaper
-wget http://imageshack.us/a/img17/4646/vzex.png -O /usr/share/wallpapers/kali_blue.png
+# More? http://www.kali.org/kali-linux-wallpapers/
+wget http://www.kali.org/images/wallpapers-01/kali-wp-june-2014_1920x1080_A.png -O /usr/share/wallpapers/kali_blue_3d_a.png
+wget http://www.kali.org/images/wallpapers-01/kali-wp-june-2014_1920x1080_B.png -O /usr/share/wallpapers/kali_blue_3d_b.png
+wget http://www.kali.org/images/wallpapers-01/kali-wp-june-2014_1920x1080_G.png -O /usr/share/wallpapers/kali_black_honeycomb.png
+wget http://imageshack.us/a/img17/4646/vzex.png -O /usr/share/wallpapers/kali_blue_splat.png
 wget http://www.n1tr0g3n.com/wp-content/uploads/2013/03/Kali-Linux-faded-no-Dragon-small-text.png -O /usr/share/wallpapers/kali_black_clean.png
 wget http://1hdwallpapers.com/wallpapers/kali_linux.jpg -O /usr/share/wallpapers/kali_black_stripes.jpg
+wallpaper=/usr/share/wallpapers/kali_blue_splat.png
 xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitor0/image-show -s true
-xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitor0/image-path -s /usr/share/wallpapers/kali_blue.png
+xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitor0/image-path -s $wallpaper
+#--- Change login wallpaper (though we are using console, so this shouldn't be seen)
+cp -f $wallpaper /usr/share/images/desktop-base/login-background.png
 #--- Configure file browser (need to re-login for effect)
 mkdir -p /root/.config/Thunar/
 file=/root/.config/Thunar/thunarrc; [ -e $file ] && cp -n $file{,.bkup}
@@ -341,7 +374,7 @@ sed -i 's/LastShowHidden=.*/LastShowHidden=TRUE/' $file 2>/dev/null || echo -e "
 apt-get -y -qq install numlockx
 file=/etc/xdg/xfce4/xinitrc; [ -e $file ] && cp -n $file{,.bkup}     #/etc/rc.local
 grep -q '^/usr/bin/numlockx' $file 2>/dev/null || echo "/usr/bin/numlockx on" >> $file
-#--- XFCE fixes for default applictaions
+#--- XFCE fixes for default applications
 mkdir -p /root/.local/share/applications/
 file=/root/.local/share/applications/mimeapps.list; [ -e $file ] && cp -n $file{,.bkup}
 [[ ! -e $file ]] && echo '[Added Associations]' > $file
@@ -413,7 +446,7 @@ sed -i '/# enable bash completion in/,+7{/enable bash completion/!s/^#//}' $file
 
 ##### Configuring aliases ~ root user
 echo -e "\e[01;32m[+]\e[00m Configuring aliases"
-#--- Enable defaults (root user)
+#--- Enable defaults ~ root user
 for FILE in /etc/bash.bashrc /root/.bashrc /root/.bash_aliases; do    #/etc/profile /etc/bashrc /etc/bash_aliases /etc/bash.bash_aliases
   file=$FILE; [ -e $file ] && cp -n $file{,.bkup}
   [ -e $file ] && sed -i 's/#alias/alias/g' $file
@@ -434,7 +467,7 @@ grep -q '^### Extract file, example' $file 2>/dev/null || echo -e '\n### Extract
 #alias
 
 
-##### Configuring bash colour (all users)
+##### Configuring bash colour ~ all users
 echo -e "\e[01;32m[+]\e[00m Configuring bash colour"
 file=/etc/bash.bashrc; [ -e $file ] && cp -n $file{,.bkup}   #/root/.bashrc
 sed -i 's/.*force_color_prompt=.*/force_color_prompt=yes/' $file
@@ -454,7 +487,7 @@ group="sudo"
 apt-get -y -qq install tmux
 #--- Configure tmux
 file=/etc/tmux.conf; [ -e $file ] && cp -n $file{,.bkup}   #/root/.tmux.conf
-echo -e "#-Settings---------------------------------------------------------------------\n## Make it like screen (use C-a)\nunbind C-b\nset -g prefix C-a\n\n## Pane switching with Alt+arrow\nbind -n M-Left select-pane -L\nbind -n M-Right select-pane -R\nbind -n M-Up select-pane -U\nbind -n M-Down select-pane -D\n\n## Activity Monitoring\nsetw -g monitor-activity on\nset -g visual-activity on\n\n## Reaload settings\nunbind R\nbind R source-file ~/.tmux.conf\n\n## Load custom sources\nsource ~/.bashrc\n\n## Set defaults\nset -g default-terminal screen-256color\nset -g history-limit 5000\n\n## Defult windows titles\nset -g set-titles on\nset -g set-titles-string '#(whoami)@#H - #I:#W'\n\n## Last window switch\nbind-key C-a last-window\n\n## Use ZSH as default shell\n$( [[ ! -e /bin/zsh ]] && echo "#" )set-option -g default-shell /bin/zsh\n\n## Show tmux messages for longer\nset -g display-time 3000\n\n## Status bar is redrawn every minute\nset -g status-interval 60\n\n\n#-Theme------------------------------------------------------------------------\n## Default colours\nset -g status-bg black\nset -g status-fg white\n\n## Left hand side\nset -g status-left-length '$(($(echo -n $(hostname) | wc -c) + 23))'\nset -g status-left '#[fg=green,bold]#(whoami)#[default]@#[fg=yellow,dim]#H #[fg=green,dim][#[fg=yellow]#(cut -d \" \" -f 1-3 /proc/loadavg)#[fg=green,dim]]'\n\n## Inactive windows in status bar\nset-window-option -g window-status-format '#[fg=red,dim]#I#[fg=grey,dim]:#[default,dim]#W#[fg=grey,dim]'\n\n## Current or active window in status bar\n#set-window-option -g window-status-current-format '#[bg=white,fg=red]#I#[bg=white,fg=grey]:#[bg=white,fg=black]#W#[fg=dim]#F'\nset-window-option -g window-status-current-format '#[fg=red,bold](#[fg=white,bold]#I#[fg=red,dim]:#[fg=white,bold]#W#[fg=red,bold])'\n\n## Right hand side\nset -g status-right '#[fg=green][#[fg=yellow]%Y-%m-%d #[fg=white]%H:%M#[fg=green]]'" > $file
+echo -e "#-Settings---------------------------------------------------------------------\n## Make it like screen (use C-a)\nunbind C-b\nset -g prefix C-a\n\n## Pane switching with Alt+arrow\nbind -n M-Left select-pane -L\nbind -n M-Right select-pane -R\nbind -n M-Up select-pane -U\nbind -n M-Down select-pane -D\n\n## Activity Monitoring\nsetw -g monitor-activity on\nset -g visual-activity on\n\n## Reload settings\nunbind R\nbind R source-file ~/.tmux.conf\n\n## Load custom sources\nsource ~/.bashrc\n\n## Set defaults\nset -g default-terminal screen-256color\nset -g history-limit 5000\n\n## Default windows titles\nset -g set-titles on\nset -g set-titles-string '#(whoami)@#H - #I:#W'\n\n## Last window switch\nbind-key C-a last-window\n\n## Use ZSH as default shell\n$( [[ ! -e /bin/zsh ]] && echo "#" )set-option -g default-shell /bin/zsh\n\n## Show tmux messages for longer\nset -g display-time 3000\n\n## Status bar is redrawn every minute\nset -g status-interval 60\n\n\n#-Theme------------------------------------------------------------------------\n## Default colours\nset -g status-bg black\nset -g status-fg white\n\n## Left hand side\nset -g status-left-length '$(($(echo -n $(hostname) | wc -c) + 23))'\nset -g status-left '#[fg=green,bold]#(whoami)#[default]@#[fg=yellow,dim]#H #[fg=green,dim][#[fg=yellow]#(cut -d \" \" -f 1-3 /proc/loadavg)#[fg=green,dim]]'\n\n## Inactive windows in status bar\nset-window-option -g window-status-format '#[fg=red,dim]#I#[fg=grey,dim]:#[default,dim]#W#[fg=grey,dim]'\n\n## Current or active window in status bar\n#set-window-option -g window-status-current-format '#[bg=white,fg=red]#I#[bg=white,fg=grey]:#[bg=white,fg=black]#W#[fg=dim]#F'\nset-window-option -g window-status-current-format '#[fg=red,bold](#[fg=white,bold]#I#[fg=red,dim]:#[fg=white,bold]#W#[fg=red,bold])'\n\n## Right hand side\nset -g status-right '#[fg=green][#[fg=yellow]%Y-%m-%d #[fg=white]%H:%M#[fg=green]]'" > $file
 #--- Setup alias
 file=/root/.bash_aliases; [ -e $file ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
 grep -q '^alias tmux' $file 2>/dev/null || echo -e '\n### tmux\nalias tmux="tmux attach || tmux new"\n' >> $file
@@ -468,7 +501,7 @@ grep -q '^alias tmux' $file 2>/dev/null || echo -e '\n### tmux\nalias tmux="tmux
 #  file=/home/$username/.bash_aliases; [ -e $file ] && cp -n $file{,.bkup}
 #  grep -q '^alias tmux' $file 2>/dev/null || echo -e '\n### tmux\nalias tmux="tmux attach || tmux new"\n' >> $file
 #fi
-#--- Use it ~ bit pointless if used in a postinstall script
+#--- Use it ~ bit pointless if used in a post-install script
 #tmux   # If ZSH isn't installed, it will not start up
 
 
@@ -539,6 +572,7 @@ grep -q '^set hlsearch' $file 2>/dev/null || echo 'set hlsearch' >> $file       
 grep -q '^set laststatus' $file 2>/dev/null || echo -e 'set laststatus=2\nset statusline=%F%m%r%h%w\ (%{&ff}){%Y}\ [%l,%v][%p%%]' >> $file   # Status bar
 grep -q '^filetype on' $file 2>/dev/null || echo -e 'filetype on\nfiletype plugin on\nsyntax enable\nset grepprg=grep\ -nH\ $*' >> $file     # Syntax Highlighting
 grep -q '^set wildmenu' $file 2>/dev/null || echo -e 'set wildmenu\nset wildmode=list:longest,full' >> $file   # Tab completion
+grep -q '^set pastetoggle=<F10>' $file 2>/dev/null || echo -e 'set pastetoggle=<F10>' >> $file                 # Hotkey - Turning off auto indent when pasting
 #--- Set as default editor
 export EDITOR="vim"    #update-alternatives --config editor
 file=/etc/bash.bashrc; [ -e $file ] && cp -n $file{,.bkup}
@@ -587,7 +621,7 @@ wget https://addons.mozilla.org/firefox/downloads/latest/300254/addon-300254-lat
 #done
 #iceweasel   #<--- Doesn't automate
 iceweasel & sleep 15; killall -q -w iceweasel >/dev/null
-#--- Configure foxyproxy (need to install foxproxy first... so this will not work.)
+#--- Configure foxyproxy (need to install foxyproxy first... so this will not work.)
 file=$(echo /root/.mozilla/firefox/*.default/foxyproxy.xml); [ -e $file ] && cp -n $file{,.bkup}
 if [[ -e $file ]]; then
   sed -i 's#<proxies><proxy name="Default"#<proxies><proxy name="localhost:8080" id="1145138293" notes="" fromSubscription="false" enabled="true" mode="manual" selectedTabIndex="0" lastresort="false" animatedIcons="true" includeInCycle="false" color="\#FC0511" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="true" clearCookiesBeforeUse="false" rejectCookies="false"><matches/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="127.0.0.1" port="8080" socksversion="5" isSocks="false" username="" password="" domain=""/></proxy><proxy name="Default"#' $file
@@ -656,7 +690,7 @@ sed -i 's/^.*pref_editor_replace_tabs.*/pref_editor_replace_tabs=true/' $file
 sed -i 's/^.*pref_editor_trail_space.*/pref_editor_trail_space=true/' $file
 sed -i 's/^check_detect_indent=.*/check_detect_indent=true/' $file
 sed -i 's/^pref_editor_ensure_convert_line_endings=.*/pref_editor_ensure_convert_line_endings=true/' $file
-# Geany -> Tools -> Plugin Manger -> Save Actions -> HTML Characters: Enabled. Split WIndows: Enabled. Save Actions: Enabled. -> Preferences -> Backup Copy -> Enable -> Directory to save backup files in: /root/backups/geany/. Directory levels to include in the backup destination: 5 -> Apply -> Ok -> Ok
+# Geany -> Tools -> Plugin Manger -> Save Actions -> HTML Characters: Enabled. Split Windows: Enabled. Save Actions: Enabled. -> Preferences -> Backup Copy -> Enable -> Directory to save backup files in: /root/backups/geany/. Directory levels to include in the backup destination: 5 -> Apply -> Ok -> Ok
 sed -i 's#^.*active_plugins.*#active_plugins=/usr/lib/geany/htmlchars.so;/usr/lib/geany/saveactions.so;/usr/lib/geany/splitwindow.so;#' $file
 mkdir -p /root/backups/geany/
 mkdir -p /root/.config/geany/plugins/saveactions/
@@ -723,22 +757,27 @@ echo -e "\e[01;32m[+]\e[00m Installing psmisc"
 apt-get -y -qq install psmisc
 
 
-##### Installing midnight commander
+##### Installing midnight commander ~ cli file manager
 echo -e "\e[01;32m[+]\e[00m Installing midnight commander"
 apt-get -y -qq install mc
 
 
-##### Installing htop
+##### Installing htop ~ cli process viewer
 echo -e "\e[01;32m[+]\e[00m Installing htop"
 apt-get -y -qq install htop
 
 
-##### Installing nethogs
-echo -e "\e[01;32m[+]\e[00m Installing nethogs"
-apt-get -y -qq install nethogs
+##### Installing nethogs ~ cli network monitor
+#echo -e "\e[01;32m[+]\e[00m Installing nethogs"
+#apt-get -y -qq install nethogs
 
 
-##### Installing vnstat
+##### Installing bmon ~ cli bandwidth monitor
+#echo -e "\e[01;32m[+]\e[00m Installing bmon"
+#apt-get -y -qq install bmon
+
+
+##### Installing vnstat ~ cli bandwidth monitor
 #echo -e "\e[01;32m[+]\e[00m Installing vnstat"
 #apt-get -y -qq install vnstat
 #--- Add to start up
@@ -749,7 +788,12 @@ apt-get -y -qq install nethogs
 #vnstat -t
 
 
-##### Installing axel
+##### Installing slurm ~ cli network monitor
+#echo -e "\e[01;32m[+]\e[00m Installing slurm"
+#apt-get -y -qq install slurm
+
+
+##### Installing axel ~ cli download manager
 echo -e "\e[01;32m[+]\e[00m Installing axel"
 apt-get -y -qq install axel
 #--- Setup alias
@@ -759,17 +803,17 @@ grep -q '^alias axel' $file 2>/dev/null || echo -e '\n### axel\nalias axel="axel
 #source $file   # If using ZSH, will fail
 
 
-##### Installing gparted
+##### Installing gparted ~ gui partition manager
 echo -e "\e[01;32m[+]\e[00m Installing gparted"
 apt-get -y -qq install gparted
 
 
-##### Installing daemonfs
+##### Installing daemonfs ~ gui file monitor
 echo -e "\e[01;32m[+]\e[00m Installing daemonfs"
 apt-get -y -qq install daemonfs
 
 
-##### Installing filezilla
+##### Installing filezilla ~ gui file transfer
 echo -e "\e[01;32m[+]\e[00m Installing filezilla"
 apt-get -y -qq install filezilla
 #--- Configure filezilla
@@ -777,12 +821,12 @@ filezilla & sleep 5; killall -q -w filezilla >/dev/null     # Start and kill. Fi
 sed -i 's#^.*"Default editor".*#\t<Setting name="Default editor" type="string">2/usr/bin/geany</Setting>#' /root/.filezilla/filezilla.xml
 
 
-##### Installing remmina
+##### Installing remmina ~ gui remote desktop
 echo -e "\e[01;32m[+]\e[00m Installing remmina"
 apt-get -y -qq install remmina
 
 
-##### Setting up tftp client/server
+##### Setting up tftp client/server ~ file transfer method
 echo -e "\e[01;32m[+]\e[00m Setting up tftp client/server"
 apt-get -y -qq install tftp      # tftp client
 apt-get -y -qq install atftpd    # tftp Server
@@ -795,7 +839,7 @@ chmod -R 0755 /var/tftp/
 update-rc.d -f atftpd remove
 
 
-##### Installing pure-ftpd
+##### Installing pure-ftpd ~ file transfer method
 echo -e "\e[01;32m[+]\e[00m Installing pure-ftpd"
 apt-get -y -qq install pure-ftpd
 update-rc.d -f pure-ftpd remove
@@ -821,23 +865,23 @@ echo no > /etc/pure-ftpd/conf/AnonymousCantUpload
 ln -sf /etc/pure-ftpd/conf/PureDB /etc/pure-ftpd/auth/50pure
 
 
-##### Installing lynx
+##### Installing lynx ~ cli web browser
 echo -e "\e[01;32m[+]\e[00m Installing lynx"
 apt-get -y -qq install lynx
 
 
-##### Installing p7zip
+##### Installing p7zip ~ cli file extractor
 echo -e "\e[01;32m[+]\e[00m Installing p7zip"
 apt-get -y -qq install p7zip
 
 
-##### Installing zip/unzip
+##### Installing zip/unzip ~ cli file extractor
 echo -e "\e[01;32m[+]\e[00m Installing zip/unzip"
 apt-get -y -qq install zip      # Compress
 apt-get -y -qq install unzip    # Decompress
 
 
-##### Installing file roller
+##### Installing file roller ~ gui file extractor
 echo -e "\e[01;32m[+]\e[00m Installing file roller"
 apt-get -y -qq install file-roller
 apt-get -y -qq unrar unace unzip rar zip p7zip p7zip-full p7zip-rar
@@ -848,28 +892,28 @@ echo -e "\e[01;32m[+]\e[00m Installing pptp vpn support"
 apt-get -y -qq install network-manager-pptp-gnome network-manager-pptp
 
 
-##### Installing flash
+##### Installing flash ~ web plugin
 #echo -e "\e[01;32m[+]\e[00m Installing flash"
 #apt-get -y -qq install flashplugin-nonfree
 #update-flashplugin-nonfree --install
 
 
-##### Installing java
+##### Installing java ~ web plugin
 #echo -e "\e[01;32m[+]\e[00m Installing java"
 # <insert bash fu here>
 
 
-##### Installing the backdoor factory
+##### Installing the backdoor factory ~ anti-virus bypass
 echo -e "\e[01;32m[+]\e[00m Installing backdoor factory"
 apt-get -y -qq install backdoor-factory
 
 
-##### Installing bully
+##### Installing bully ~ wps brute force
 echo -e "\e[01;32m[+]\e[00m Installing bully"
 apt-get -y -qq install bully
 
 
-##### Installing httprint
+##### Installing httprint ~ gui web server fingerprint
 echo -e "\e[01;32m[+]\e[00m Installing httprint"
 apt-get -y -qq install httprint
 
@@ -921,9 +965,14 @@ echo -e "\e[01;32m[+]\e[00m Installing htshells"
 apt-get -y -qq install htshells
 
 
-##### Installing bridge-utils
+##### Installing bridge-utils ~ bridge network interfaces
 echo -e "\e[01;32m[+]\e[00m Installing bridge-utils"
 apt-get -y -qq install bridge-utils
+
+
+##### Installing zerofree ~ cli nulls free blocks
+echo -e "\e[01;32m[+]\e[00m Installing zerofree"
+apt-get -y -qq install zerofree
 
 
 ##### Installing veil ~ http://bugs.kali.org/view.php?id=421
@@ -931,17 +980,17 @@ echo -e "\e[01;32m[+]\e[00m Installing veil"
 apt-get -y -qq install veil
 
 
-##### Installing gcc multilib
-echo -e "\e[01;32m[+]\e[00m Installing gcc multilib"
+##### Installing gcc & multilib ~ compiling
+echo -e "\e[01;32m[+]\e[00m Installing gcc & multilib"
 apt-get -y -qq install gcc-multilib libc6-dev-i386
 
 
-##### Installing mingw
+##### Installing mingw ~ cross compiling
 echo -e "\e[01;32m[+]\e[00m Installing mingw"
 apt-get -y -qq install mingw-w64 binutils-mingw-w64 gcc-mingw-w64 mingw-w64-dev mingw-w64-tools
 
 
-##### Installing OP packers
+##### Installing OP packers ~ anti-virus bypass
 echo -e "\e[01;32m[+]\e[00m Installing OP packers"
 apt-get -y -qq install upx-ucl   #wget http://upx.sourceforge.net/download/upx309w.zip -P /usr/share/packers/ && unzip -o -d /usr/share/packers/ /usr/share/packers/upx309w.zip && rm -f /usr/share/packers/upx309w.zip
 mkdir -p /usr/share/packers/
@@ -989,7 +1038,12 @@ wget http://xato.net/files/10k%20most%20common.zip -O /tmp/10kcommon.zip && unzi
 ##find / \( -iname '*wordlist*' -or -iname '*passwords*' \) #-exec ls -l {} \;
 
 
-##### Configuring samba
+##### Installing fuzzdb - pre defined wordlists (and more)
+echo -e "\e[01;32m[+]\e[00m Installing fuzzdb"
+svn checkout http://fuzzdb.googlecode.com/svn/trunk/ /usr/share/fuzzdb/
+
+
+##### Configuring samba ~ file transfer method
 echo -e "\e[01;32m[+]\e[00m Configuring samba"
 #--- Install samba
 apt-get -y -qq install samba
@@ -1013,19 +1067,22 @@ grep -q '^\[shared\]' $file 2>/dev/null || echo -e '\n[shared]\n   comment = Sha
 
 ##### Setting up ssh
 echo -e "\e[01;32m[+]\e[00m Setting up ssh"
+#--- Wipe current keys
 rm -f /etc/ssh/ssh_host_*
 rm -f /root/.ssh/*
-#ssh-keygen -A
+#--- Generate new keys
+#ssh-keygen -A   # Automatic method - we lose control of amount of bits used
 ssh-keygen -b 4096 -t rsa1 -f /etc/ssh/ssh_host_key -P ""
 ssh-keygen -b 4096 -t rsa -f /etc/ssh/ssh_host_rsa_key -P ""
 ssh-keygen -b 1024 -t dsa -f /etc/ssh/ssh_host_dsa_key -P ""
 ssh-keygen -b 521 -t ecdsa -f /etc/ssh/ssh_host_ecdsa_key -P ""
 ssh-keygen -b 4096 -t rsa -f /root/.ssh/id_rsa -P ""
-#update-rc.d -f ssh defaults   # Enable SSH at startup
+#--- Enable ssh at startup
+#update-rc.d -f ssh defaults
 
 
-##### Cleanning the system
-echo -e "\e[01;32m[+]\e[00m Cleanning the system"
+##### Cleaning the system
+echo -e "\e[01;32m[+]\e[00m Cleaning the system"
 #--- Clean package manager
 for FILE in clean autoremove autoclean; do apt-get -y -qq $FILE; done                     # Clean up
 apt-get -y purge $(dpkg -l | tail -n +6 | grep -v '^ii' | awk '{print $2}')               # Purged packages
@@ -1037,22 +1094,20 @@ cd ~/ &>/dev/null
 history -c    # Will not work with ZSH
 for i in $(cut -d: -f6 /etc/passwd | sort | uniq); do
   FILE="$i/.*_history"
-  ls $FILE &> /dev/null && rm -f $FILE
-  #[ -f $i/.*_history ] && rm -rf $i/.*_history
+  ls $FILE &> /dev/null && rm -f $FILE   #[ -f $i/.*_history ] && rm -rf $i/.*_history
 done
 
 
-##### Time elapsed
+##### Time taken (roughly)
 finish_time=$(date +%s)
-echo -e "\e[01;33m[i]\e[00m Time taken: $(( $((finish_time - start_time)) /60 )) minutes"
+echo -e "\e[01;33m[i]\e[00m Time taken: $(( $(( finish_time - start_time )) / 60 )) minutes"
 
 
 #-Done--------------------------------------------------#
 
 
 ##### Done!
-echo -e "\e[01;32m[+]\e[00m Done!"
+echo -e '\e[01;33m[i]\e[00m Highly suggest rebooting the machine, before checking the above output.'
+echo -e '\e[01;33m[i]\e[00m Do not forget to take a snapshot (...if you are using a VM).'
+echo -e '\n\e[01;32m[+]\e[00m Done!\n'
 #reboot
-
-
-# *** Don't forget to take a snapshot (if you're using a VM!) ***
