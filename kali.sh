@@ -1,6 +1,6 @@
 #!/bin/bash
 #-Metadata----------------------------------------------#
-#  Filename: kali.sh         (Last update: 2014-09-17)  #
+#  Filename: kali.sh         (Last update: 2014-09-24)  #
 #-Info--------------------------------------------------#
 #  Personal post install script for Kali-Linux.         #
 #-Author(s)---------------------------------------------#
@@ -390,6 +390,8 @@ done
 file=/root/.config/xfce4/helpers.rc; [ -e $file ] && cp -n $file{,.bkup}    #exo-preferred-applications   #xdg-mime default
 sed -i 's#^FileManager=.*#FileManager=Thunar#' $file 2>/dev/null
 grep -q '^FileManager=Thunar' $file 2>/dev/null || echo -e 'FileManager=Thunar' >> $file
+#--- Remove any old sessions
+rm -f /root/.cache/sessions/*
 #--- XFCE fixes for terminator (We do this later)
 #mkdir -p /root/.local/share/xfce4/helpers/
 #file=/root/.local/share/xfce4/helpers/custom-TerminalEmulator.desktop; [ -e $file ] && cp -n $file{,.bkup}
@@ -400,6 +402,13 @@ grep -q '^FileManager=Thunar' $file 2>/dev/null || echo -e 'FileManager=Thunar' 
 #--- Set XFCE as default desktop manager
 file=/root/.xsession; [ -e $file ] && cp -n $file{,.bkup}       #~/.xsession
 echo xfce4-session > $file
+#--- Create Conky refresh script
+file=/usr/local/bin/conky_refresh.sh; [ -e $file ] && cp -n $file{,.bkup}
+echo -e '#!/bin/bash\nkillall conky\nconky &' > $file
+chmod +x $file
+#--- Add keyboard shortcut (Ctrl + R)
+file=/root/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortcuts.xml   #; [ -e $file ] && cp -n $file{,.bkup}
+grep -q  '<property name="&lt;Primary&gt;r" type="string" value="/usr/local/bin/conky_refresh.sh"/>' $file || sed -i 's#<property name="\&lt;Alt\&gt;F2" type="string" value="xfrun4"/>#<property name="\&lt;Alt\&gt;F2" type="string" value="xfrun4"/>\n      <property name="\&lt;Primary\&gt;r" type="string" value="/usr/local/bin/conky_refresh.sh"/>#' $file
 
 
 ##### Configuring file browser (need to restart xserver for effect)
@@ -476,7 +485,7 @@ sed -i 's#PS1='"'"'.*'"'"'#PS1='"'"'${debian_chroot:+($debian_chroot)}\\[\\033\[
 #--- Apply new aliases
 #source $file   # If using ZSH, will fail
 #--- All other users that are made afterwards
-#file=/etc/skel/.bashrc;   #; [ -e $file ] && cp -n $file{,.bkup}
+#file=/etc/skel/.bashrc   #; [ -e $file ] && cp -n $file{,.bkup}
 #sed -i 's/.*force_color_prompt=.*/force_color_prompt=yes/' $file
 
 
@@ -632,7 +641,7 @@ fi
 cd - &>/dev/null
 
 
-##### Installing conky
+##### Installing conky ~ gui desktop monitor
 echo -e "\e[01;32m[+]\e[00m Installing conky"
 apt-get -y -qq install conky
 #--- Configure conky
@@ -665,7 +674,7 @@ msfconsole -r /tmp/msf.rc
 rm -f /tmp/msf.rc
 
 
-##### Installing geany
+##### Installing geany ~ gui text editor
 echo -e "\e[01;32m[+]\e[00m Installing geany"
 apt-get -y -qq install geany
 #--- Add to panel
@@ -698,7 +707,7 @@ file=/root/.config/geany/plugins/saveactions/saveactions.conf; [ -e $file ] && c
 echo -e '\n[saveactions]\nenable_autosave=false\nenable_instantsave=false\nenable_backupcopy=true\n\n[autosave]\nprint_messages=false\nsave_all=false\ninterval=300\n\n[instantsave]\ndefault_ft=None\n\n[backupcopy]\ndir_levels=5\ntime_fmt=%Y-%m-%d-%H-%M-%S\nbackup_dir=/root/backups/geany' > $file
 
 
-##### Installing meld
+##### Installing meld ~ gui text compare
 echo -e "\e[01;32m[+]\e[00m Installing meld"
 apt-get -y -qq install meld
 #--- Configure meld
@@ -730,24 +739,24 @@ apt-get -y -qq install openvas
 #test -e /var/lib/openvas/users/root || openvasad -c add_user -n root -r Admin   #<--- Doesn't automate
 
 
-##### Installing libreoffice
+##### Installing libreoffice ~ gui office suite
 #echo -e "\e[01;32m[+]\e[00m Installing libreoffice"
 #apt-get -y -qq install libreoffice
 
 
-##### Installing recordmydesktop
+##### Installing recordmydesktop ~ gui screen capture
 #echo -e "\e[01;32m[+]\e[00m Installing recordmydesktop"
 #apt-get -y -qq install recordmydesktop
 #--- Installing GUI front end
 #apt-get -y -qq install gtk-recordmydesktop
 
 
-##### Installing shutter
+##### Installing shutter ~ gui screenshot
 echo -e "\e[01;32m[+]\e[00m Installing shutter"
 apt-get -y -qq install shutter
 
 
-##### Installing gdebi
+##### Installing gdebi ~ gui package installer
 #echo -e "\e[01;32m[+]\e[00m Installing gdebi"
 #apt-get -y -qq install gdebi
 
@@ -765,32 +774,6 @@ apt-get -y -qq install mc
 ##### Installing htop ~ cli process viewer
 echo -e "\e[01;32m[+]\e[00m Installing htop"
 apt-get -y -qq install htop
-
-
-##### Installing nethogs ~ cli network monitor
-#echo -e "\e[01;32m[+]\e[00m Installing nethogs"
-#apt-get -y -qq install nethogs
-
-
-##### Installing bmon ~ cli bandwidth monitor
-#echo -e "\e[01;32m[+]\e[00m Installing bmon"
-#apt-get -y -qq install bmon
-
-
-##### Installing vnstat ~ cli bandwidth monitor
-#echo -e "\e[01;32m[+]\e[00m Installing vnstat"
-#apt-get -y -qq install vnstat
-#--- Add to start up
-#update-rc.d vnstat defaults
-#--- Check
-#vnstat
-#vnstat -h && vnstat -d && vnstat -w && vnstat -m && vnstat -s
-#vnstat -t
-
-
-##### Installing slurm ~ cli network monitor
-#echo -e "\e[01;32m[+]\e[00m Installing slurm"
-#apt-get -y -qq install slurm
 
 
 ##### Installing axel ~ cli download manager
