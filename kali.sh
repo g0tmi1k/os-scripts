@@ -1,13 +1,13 @@
 #!/bin/bash
 #-Metadata----------------------------------------------#
-#  Filename: kali.sh         (Last update: 2014-09-24)  #
+#  Filename: kali.sh         (Last update: 2014-08-30)  #
 #-Info--------------------------------------------------#
-#  Personal post install script for Kali-Linux.         #
+#  Personal post install script for Kali Linux.         #
 #-Author(s)---------------------------------------------#
 #  g0tmilk ~ http://blog.g0tmi1k.com                    #
 #-Operating System--------------------------------------#
-#  Designed for: Kali-Linux 1.0.8 [x64] (VM - VMware)   #
-#     Tested on: Kali-Linux 1.0.0 - 1.0.8 [x64 & x84]   #
+#  Designed for: Kali Linux 1.0.9 [x64] (VM - VMware)   #
+#     Tested on: Kali Linux 1.0.0 - 1.0.9 [x64 & x84]   #
 #-Notes-------------------------------------------------#
 #  Run as root, after a fresh/clean install of Kali.    #
 #                          ---                          #
@@ -116,9 +116,9 @@ fi
 
 
 ##### (Optional) Setting up static IP address on eth1 - host only
-echo -e "\e[01;32m[+]\e[00m (Optional) Setting up static IP (192.168.155.175/24) address on eth1."
 ifconfig eth1 &>/devnull
 if [[ $? == 0 ]]; then
+  echo -e "\e[01;32m[+]\e[00m (Optional) Setting up static IP (192.168.155.175/24) address on eth1."
   ifconfig eth1 192.168.155.175/24
   file=/etc/network/interfaces; [ -e $file ] && cp -n $file{,.bkup}
   grep -q '^iface eth1 inet static' $file 2>/dev/null || echo -e '\nauto eth1\niface eth1 inet static\n    address 192.168.155.175\n    netmask 255.255.255.0\n    gateway 192.168.155.1' >> $file
@@ -141,17 +141,17 @@ chattr +i $file 2>/dev/null
 
 
 if [ 1 -eq 0 ]; then        # This is never true, thus it acts as block comments ;)
-##### Updating hostname
+##### Updating hostname (but not domainname)
 echo -e "\e[01;32m[+]\e[00m Updating hostname"
 hostname="kali"
 #--- Change it now
 hostname "$hostname"
-#--- Set host file
-file=/etc/hosts; [ -e $file ] && cp -n $file{,.bkup}
-echo -e "127.0.0.1  localhost.localdomain localhost\n127.0.0.1  $hostname" > $file    #$hostname.$domainname
 #--- Make sure it sticks after reboot
 file=/etc/hostname; [ -e $file ] && cp -n $file{,.bkup}
 echo "$(hostname)" > $file
+#--- Set host file
+file=/etc/hosts; [ -e $file ] && cp -n $file{,.bkup}
+sed -i 's/127.0.1.1.*/127.0.1.1  kali/' $file    #echo -e "127.0.0.1  localhost.localdomain localhost\n127.0.1.1  $hostname" > $file    #$hostname.$domainname
 #--- Check
 #hostname; hostname -f
 fi
@@ -215,10 +215,10 @@ echo -e "\e[01;32m[+]\e[00m Configuring login (console login - non GUI)"
 #--- Disable GUI login screen
 apt-get -y -qq install chkconfig
 chkconfig gdm3 off                                 # ...or: mv -f /etc/rc2.d/S19gdm3 /etc/rc2.d/K17gdm           #file=/etc/X11/default-display-manager; [ -e $file ] && cp -n $file{,.bkup}   #echo /bin/true > $file
-#--- Enable auto login
-file=/etc/gdm3/daemon.conf; [ -e $file ] && cp -n $file{,.bkup}
-sed -i 's/^.*AutomaticLoginEnable = .*/AutomaticLoginEnable = True/' $file
-sed -i 's/^.*AutomaticLogin = .*/AutomaticLogin = root/' $file
+#--- Enable auto (gui) login
+#file=/etc/gdm3/daemon.conf; [ -e $file ] && cp -n $file{,.bkup}
+#sed -i 's/^.*AutomaticLoginEnable = .*/AutomaticLoginEnable = true/' $file
+#sed -i 's/^.*AutomaticLogin = .*/AutomaticLogin = root/' $file
 #--- Shortcut for when you want to start GUI
 ln -sf /usr/sbin/gdm3 /usr/bin/startx
 
@@ -352,19 +352,28 @@ xdg-user-dirs-update
 file=/etc/xdg/user-dirs.conf; [ -e $file ] && cp -n $file{,.bkup}
 sed -i 's/^enable=.*/enable=False/' $file   #sed -i 's/^XDG_/#XDG_/; s/^#XDG_DESKTOP/XDG_DESKTOP/;' /root/.config/user-dirs.dirs
 rm -rf /root/{Documents,Downloads,Music,Pictures,Public,Templates,Videos}/
-#--- Change desktop wallpaper
-# More? http://www.kali.org/kali-linux-wallpapers/
+#--- Get new desktop wallpaper
 wget http://www.kali.org/images/wallpapers-01/kali-wp-june-2014_1920x1080_A.png -O /usr/share/wallpapers/kali_blue_3d_a.png
 wget http://www.kali.org/images/wallpapers-01/kali-wp-june-2014_1920x1080_B.png -O /usr/share/wallpapers/kali_blue_3d_b.png
 wget http://www.kali.org/images/wallpapers-01/kali-wp-june-2014_1920x1080_G.png -O /usr/share/wallpapers/kali_black_honeycomb.png
 wget http://imageshack.us/a/img17/4646/vzex.png -O /usr/share/wallpapers/kali_blue_splat.png
 wget http://www.n1tr0g3n.com/wp-content/uploads/2013/03/Kali-Linux-faded-no-Dragon-small-text.png -O /usr/share/wallpapers/kali_black_clean.png
 wget http://1hdwallpapers.com/wallpapers/kali_linux.jpg -O /usr/share/wallpapers/kali_black_stripes.jpg
-wallpaper=/usr/share/wallpapers/kali_blue_splat.png
+#--- Change desktop wallpaper (Random each install)
+wallpaper=$(shuf -n1 -e /usr/share/wallpapers/kali_*)   #wallpaper=/usr/share/wallpapers/kali_blue_splat.png
 xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitor0/image-show -s true
 xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitor0/image-path -s $wallpaper
 #--- Change login wallpaper (though we are using console, so this shouldn't be seen)
 cp -f $wallpaper /usr/share/images/desktop-base/login-background.png
+#--- Reload XFCE
+#/usr/bin/xfdesktop --reload
+#--- New wallpaper - Add to startup (each login)
+file=/usr/local/bin/wallpaper.sh; [ -e $file ] && cp -n $file{,.bkup}
+echo -e '#!/bin/bash\nwallpaper=$(shuf -n1 -e /usr/share/wallpapers/kali_*)\nxfconf-query -c xfce4-desktop -p /backdrop/screen0/monitor0/image-path -s $wallpaper\ncp -f $wallpaper /usr/share/images/desktop-base/login-background.png\n/usr/bin/xfdesktop --reload' > $file
+chmod 0500 $file
+mkdir -p /root/.config/autostart/
+file=/root/.config/autostart/wallpaper.sh.desktop; [ -e $file ] && cp -n $file{,.bkup}
+echo -e '\n[Desktop Entry]\nType=Application\nExec=/usr/local/bin/wallpaper.sh\nHidden=false\nNoDisplay=false\nX-GNOME-Autostart-enabled=true\nName[en_US]=wallpaper\nName=wallpaper\nComment[en_US]=\nComment=' > $file
 #--- Configure file browser (need to re-login for effect)
 mkdir -p /root/.config/Thunar/
 file=/root/.config/Thunar/thunarrc; [ -e $file ] && cp -n $file{,.bkup}
@@ -404,8 +413,8 @@ file=/root/.xsession; [ -e $file ] && cp -n $file{,.bkup}       #~/.xsession
 echo xfce4-session > $file
 #--- Create Conky refresh script
 file=/usr/local/bin/conky_refresh.sh; [ -e $file ] && cp -n $file{,.bkup}
-echo -e '#!/bin/bash\nkillall conky\nconky &' > $file
-chmod +x $file
+echo -e '#!/bin/bash\nkillall -q conky\nconky &' > $file
+chmod 0500 $file
 #--- Add keyboard shortcut (Ctrl + R)
 file=/root/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortcuts.xml   #; [ -e $file ] && cp -n $file{,.bkup}
 grep -q  '<property name="&lt;Primary&gt;r" type="string" value="/usr/local/bin/conky_refresh.sh"/>' $file || sed -i 's#<property name="\&lt;Alt\&gt;F2" type="string" value="xfrun4"/>#<property name="\&lt;Alt\&gt;F2" type="string" value="xfrun4"/>\n      <property name="\&lt;Primary\&gt;r" type="string" value="/usr/local/bin/conky_refresh.sh"/>#' $file
@@ -466,10 +475,10 @@ grep -q '^alias tmux' $file 2>/dev/null || echo -e '\n### tmux\nalias tmux="tmux
 grep -q '^alias axel' $file 2>/dev/null || echo -e '\n### axel\nalias axel="axel -a"\n' >> $file
 grep -q '^alias screen' $file 2>/dev/null || echo -e '\n### screen\nalias screen="screen -xRR"\n' >> $file
 #--- Add in ours (shortcuts)
-grep -q '^### Grep aliases' $file 2>/dev/null || echo -e '\n### Grep aliases\nalias grep="grep --color=always"\nalias ngrep="grep -n"\n\n' >> $file
+grep -q '^### Grep aliases' $file 2>/dev/null || echo -e '\n### grep aliases\nalias grep="grep --color=always"\nalias ngrep="grep -n"\n\n' >> $file
 grep -q '^### Directory navigation aliases' $file 2>/dev/null || echo -e '\n### Directory navigation aliases\nalias ..="cd .."\nalias ...="cd ../.."\nalias ....="cd ../../.."\nalias .....="cd ../../../.."\n\n' >> $file
 grep -q '^### Add more aliases' $file 2>/dev/null || echo -e '\n### Add more aliases\nalias upd="sudo apt-get update"\nalias upg="sudo apt-get upgrade"\nalias ins="sudo apt-get install"\nalias rem="sudo apt-get purge"\nalias fix="sudo apt-get install -f"\n\n' >> $file
-grep -q '^### Extract file, example' $file 2>/dev/null || echo -e '\n### Extract file, example. "ex package.tar.bz2"\nex() {\n    if [[ -f $1 ]]; then\n        case $1 in\n            *.tar.bz2)   tar xjf $1  ;;\n            *.tar.gz)    tar xzf $1  ;;\n            *.bz2)       bunzip2 $1  ;;\n            *.rar)       rar x $1    ;;\n            *.gz)        gunzip $1   ;;\n            *.tar)       tar xf $1   ;;\n            *.tbz2)      tar xjf $1  ;;\n            *.tgz)       tar xzf $1  ;;\n            *.zip)       unzip $1    ;;\n            *.Z)         uncompress $1  ;;\n            *.7z)        7z x $1     ;;\n            *)           echo $1 cannot be extracted ;;\n        esac\n    else\n        echo $1 is not a valid file\n    fi\n}' >> $file
+grep -q '^### Extract file' $file 2>/dev/null || echo -e '\n### Extract file, example. "ex package.tar.bz2"\nex() {\n    if [[ -f $1 ]]; then\n        case $1 in\n            *.tar.bz2)   tar xjf $1  ;;\n            *.tar.gz)    tar xzf $1  ;;\n            *.bz2)       bunzip2 $1  ;;\n            *.rar)       rar x $1    ;;\n            *.gz)        gunzip $1   ;;\n            *.tar)       tar xf $1   ;;\n            *.tbz2)      tar xjf $1  ;;\n            *.tgz)       tar xzf $1  ;;\n            *.zip)       unzip $1    ;;\n            *.Z)         uncompress $1  ;;\n            *.7z)        7z x $1     ;;\n            *)           echo $1 cannot be extracted ;;\n        esac\n    else\n        echo $1 is not a valid file\n    fi\n}' >> $file
 #--- Apply new aliases
 #source $file   # If using ZSH, will fail
 #--- Check
@@ -633,9 +642,9 @@ iceweasel & sleep 15; killall -q -w iceweasel >/dev/null
 #--- Configure foxyproxy (need to install foxyproxy first... so this will not work.)
 file=$(echo /root/.mozilla/firefox/*.default/foxyproxy.xml); [ -e $file ] && cp -n $file{,.bkup}
 if [[ -e $file ]]; then
-  sed -i 's#<proxies><proxy name="Default"#<proxies><proxy name="localhost:8080" id="1145138293" notes="" fromSubscription="false" enabled="true" mode="manual" selectedTabIndex="0" lastresort="false" animatedIcons="true" includeInCycle="false" color="\#FC0511" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="true" clearCookiesBeforeUse="false" rejectCookies="false"><matches/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="127.0.0.1" port="8080" socksversion="5" isSocks="false" username="" password="" domain=""/></proxy><proxy name="Default"#' $file
+  sed -i 's#<proxies><proxy name="Default"#<proxies><proxy name="localhost:8080" id="1145138293" notes="" fromSubscription="false" enabled="true" mode="manual" selectedTabIndex="0" lastresort="false" animatedIcons="true" includeInCycle="false" color="\#05FC81" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="true" clearCookiesBeforeUse="false" rejectCookies="false"><matches/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="127.0.0.1" port="8080" socksversion="5" isSocks="false" username="" password="" domain=""/></proxy><proxy name="Default"#' $file
 else
-  echo -e '<?xml version="1.0" encoding="UTF-8"?>\n<foxyproxy mode="disabled" selectedTabIndex="0" toolbaricon="true" toolsMenu="true" contextMenu="true" advancedMenus="false" previousMode="disabled" resetIconColors="true" useStatusBarPrefix="true" excludePatternsFromCycling="false" excludeDisabledFromCycling="false" ignoreProxyScheme="false" apiDisabled="false" proxyForVersionCheck=""><random includeDirect="false" includeDisabled="false"/><statusbar icon="true" text="false" left="options" middle="cycle" right="contextmenu" width="0"/><toolbar left="options" middle="cycle" right="contextmenu"/><logg enabled="false" maxSize="500" noURLs="false" header="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;\n&lt;!DOCTYPE html PUBLIC &quot;-//W3C//DTD XHTML 1.0 Strict//EN&quot; &quot;http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd&quot;&gt;\n&lt;html xmlns=&quot;http://www.w3.org/1999/xhtml&quot;&gt;&lt;head&gt;&lt;title&gt;&lt;/title&gt;&lt;link rel=&quot;icon&quot; href=&quot;http://getfoxyproxy.org/favicon.ico&quot;/&gt;&lt;link rel=&quot;shortcut icon&quot; href=&quot;http://getfoxyproxy.org/favicon.ico&quot;/&gt;&lt;link rel=&quot;stylesheet&quot; href=&quot;http://getfoxyproxy.org/styles/log.css&quot; type=&quot;text/css&quot;/&gt;&lt;/head&gt;&lt;body&gt;&lt;table class=&quot;log-table&quot;&gt;&lt;thead&gt;&lt;tr&gt;&lt;td class=&quot;heading&quot;&gt;${timestamp-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${url-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${proxy-name-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${proxy-notes-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-name-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-case-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-type-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-color-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pac-result-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${error-msg-heading}&lt;/td&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tfoot&gt;&lt;tr&gt;&lt;td/&gt;&lt;/tr&gt;&lt;/tfoot&gt;&lt;tbody&gt;" row="&lt;tr&gt;&lt;td class=&quot;timestamp&quot;&gt;${timestamp}&lt;/td&gt;&lt;td class=&quot;url&quot;&gt;&lt;a href=&quot;${url}&quot;&gt;${url}&lt;/a&gt;&lt;/td&gt;&lt;td class=&quot;proxy-name&quot;&gt;${proxy-name}&lt;/td&gt;&lt;td class=&quot;proxy-notes&quot;&gt;${proxy-notes}&lt;/td&gt;&lt;td class=&quot;pattern-name&quot;&gt;${pattern-name}&lt;/td&gt;&lt;td class=&quot;pattern&quot;&gt;${pattern}&lt;/td&gt;&lt;td class=&quot;pattern-case&quot;&gt;${pattern-case}&lt;/td&gt;&lt;td class=&quot;pattern-type&quot;&gt;${pattern-type}&lt;/td&gt;&lt;td class=&quot;pattern-color&quot;&gt;${pattern-color}&lt;/td&gt;&lt;td class=&quot;pac-result&quot;&gt;${pac-result}&lt;/td&gt;&lt;td class=&quot;error-msg&quot;&gt;${error-msg}&lt;/td&gt;&lt;/tr&gt;" footer="&lt;/tbody&gt;&lt;/table&gt;&lt;/body&gt;&lt;/html&gt;"/><warnings/><autoadd enabled="false" temp="false" reload="true" notify="true" notifyWhenCanceled="true" prompt="true"><match enabled="true" name="Dynamic AutoAdd Pattern" pattern="*://${3}${6}/*" isRegEx="false" isBlackList="false" isMultiLine="false" caseSensitive="false" fromSubscription="false"/><match enabled="true" name="" pattern="*You are not authorized to view this page*" isRegEx="false" isBlackList="false" isMultiLine="true" caseSensitive="false" fromSubscription="false"/></autoadd><quickadd enabled="false" temp="false" reload="true" notify="true" notifyWhenCanceled="true" prompt="true"><match enabled="true" name="Dynamic QuickAdd Pattern" pattern="*://${3}${6}/*" isRegEx="false" isBlackList="false" isMultiLine="false" caseSensitive="false" fromSubscription="false"/></quickadd><defaultPrefs origPrefetch="null"/><proxies><proxy name="localhost:8080" id="1145138293" notes="" fromSubscription="false" enabled="true" mode="manual" selectedTabIndex="0" lastresort="false" animatedIcons="true" includeInCycle="false" color="#FC0511" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="true" clearCookiesBeforeUse="false" rejectCookies="false"><matches/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="127.0.0.1" port="8080" socksversion="5" isSocks="false" username="" password="" domain=""/></proxy><proxy name="Default" id="3377581719" notes="" fromSubscription="false" enabled="true" mode="direct" selectedTabIndex="0" lastresort="true" animatedIcons="false" includeInCycle="true" color="#0055E5" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="false" disableCache="false" clearCookiesBeforeUse="false" rejectCookies="false"><matches><match enabled="true" name="All" pattern="*" isRegEx="false" isBlackList="false" isMultiLine="false" caseSensitive="false" fromSubscription="false"/></matches><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="" port="" socksversion="5" isSocks="false" username="" password=""/></proxy></proxies></foxyproxy>' > $file
+  echo -e '<?xml version="1.0" encoding="UTF-8"?>\n<foxyproxy mode="disabled" selectedTabIndex="0" toolbaricon="true" toolsMenu="true" contextMenu="true" advancedMenus="false" previousMode="disabled" resetIconColors="true" useStatusBarPrefix="true" excludePatternsFromCycling="false" excludeDisabledFromCycling="false" ignoreProxyScheme="false" apiDisabled="false" proxyForVersionCheck=""><random includeDirect="false" includeDisabled="false"/><statusbar icon="true" text="false" left="options" middle="cycle" right="contextmenu" width="0"/><toolbar left="options" middle="cycle" right="contextmenu"/><logg enabled="false" maxSize="500" noURLs="false" header="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;\n&lt;!DOCTYPE html PUBLIC &quot;-//W3C//DTD XHTML 1.0 Strict//EN&quot; &quot;http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd&quot;&gt;\n&lt;html xmlns=&quot;http://www.w3.org/1999/xhtml&quot;&gt;&lt;head&gt;&lt;title&gt;&lt;/title&gt;&lt;link rel=&quot;icon&quot; href=&quot;http://getfoxyproxy.org/favicon.ico&quot;/&gt;&lt;link rel=&quot;shortcut icon&quot; href=&quot;http://getfoxyproxy.org/favicon.ico&quot;/&gt;&lt;link rel=&quot;stylesheet&quot; href=&quot;http://getfoxyproxy.org/styles/log.css&quot; type=&quot;text/css&quot;/&gt;&lt;/head&gt;&lt;body&gt;&lt;table class=&quot;log-table&quot;&gt;&lt;thead&gt;&lt;tr&gt;&lt;td class=&quot;heading&quot;&gt;${timestamp-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${url-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${proxy-name-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${proxy-notes-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-name-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-case-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-type-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-color-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pac-result-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${error-msg-heading}&lt;/td&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tfoot&gt;&lt;tr&gt;&lt;td/&gt;&lt;/tr&gt;&lt;/tfoot&gt;&lt;tbody&gt;" row="&lt;tr&gt;&lt;td class=&quot;timestamp&quot;&gt;${timestamp}&lt;/td&gt;&lt;td class=&quot;url&quot;&gt;&lt;a href=&quot;${url}&quot;&gt;${url}&lt;/a&gt;&lt;/td&gt;&lt;td class=&quot;proxy-name&quot;&gt;${proxy-name}&lt;/td&gt;&lt;td class=&quot;proxy-notes&quot;&gt;${proxy-notes}&lt;/td&gt;&lt;td class=&quot;pattern-name&quot;&gt;${pattern-name}&lt;/td&gt;&lt;td class=&quot;pattern&quot;&gt;${pattern}&lt;/td&gt;&lt;td class=&quot;pattern-case&quot;&gt;${pattern-case}&lt;/td&gt;&lt;td class=&quot;pattern-type&quot;&gt;${pattern-type}&lt;/td&gt;&lt;td class=&quot;pattern-color&quot;&gt;${pattern-color}&lt;/td&gt;&lt;td class=&quot;pac-result&quot;&gt;${pac-result}&lt;/td&gt;&lt;td class=&quot;error-msg&quot;&gt;${error-msg}&lt;/td&gt;&lt;/tr&gt;" footer="&lt;/tbody&gt;&lt;/table&gt;&lt;/body&gt;&lt;/html&gt;"/><warnings/><autoadd enabled="false" temp="false" reload="true" notify="true" notifyWhenCanceled="true" prompt="true"><match enabled="true" name="Dynamic AutoAdd Pattern" pattern="*://${3}${6}/*" isRegEx="false" isBlackList="false" isMultiLine="false" caseSensitive="false" fromSubscription="false"/><match enabled="true" name="" pattern="*You are not authorized to view this page*" isRegEx="false" isBlackList="false" isMultiLine="true" caseSensitive="false" fromSubscription="false"/></autoadd><quickadd enabled="false" temp="false" reload="true" notify="true" notifyWhenCanceled="true" prompt="true"><match enabled="true" name="Dynamic QuickAdd Pattern" pattern="*://${3}${6}/*" isRegEx="false" isBlackList="false" isMultiLine="false" caseSensitive="false" fromSubscription="false"/></quickadd><defaultPrefs origPrefetch="null"/><proxies><proxy name="localhost:8080" id="1145138293" notes="" fromSubscription="false" enabled="true" mode="manual" selectedTabIndex="0" lastresort="false" animatedIcons="true" includeInCycle="false" color="#05FC81" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="true" clearCookiesBeforeUse="false" rejectCookies="false"><matches/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="127.0.0.1" port="8080" socksversion="5" isSocks="false" username="" password="" domain=""/></proxy><proxy name="Default" id="3377581719" notes="" fromSubscription="false" enabled="true" mode="direct" selectedTabIndex="0" lastresort="true" animatedIcons="false" includeInCycle="true" color="#0055E5" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="false" disableCache="false" clearCookiesBeforeUse="false" rejectCookies="false"><matches><match enabled="true" name="All" pattern="*" isRegEx="false" isBlackList="false" isMultiLine="false" caseSensitive="false" fromSubscription="false"/></matches><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="" port="" socksversion="5" isSocks="false" username="" password=""/></proxy></proxies></foxyproxy>' > $file
 fi
 #--- Restore to folder
 cd - &>/dev/null
@@ -647,13 +656,13 @@ apt-get -y -qq install conky
 #--- Configure conky
 file=/root/.conkyrc; [ -e $file ] && cp -n $file{,.bkup}
 echo -e '#http://forums.opensuse.org/english/get-technical-help-here/how-faq-forums/unreviewed-how-faq/464737-easy-configuring-conky-conkyconf.html\nbackground yes\n\nfont Monospace:size=8:weight=bold\nuse_xft yes\n\nupdate_interval 2.0\n\nown_window yes\nown_window_type normal\nown_window_transparent yes\nown_window_class conky-semi\nown_window_argb_visual yes  # GNOME & XFCE yes, KDE no\nown_window_colour brown\nown_window_hints undecorated,below,sticky,skip_taskbar,skip_pager\n\ndouble_buffer yes\nmaximum_width 250\n\ndraw_shades yes\ndraw_outline no\ndraw_borders no\n\nstippled_borders 3\n#border_margin 9   # Old command\nborder_inner_margin 9\nborder_width 10\n\ndefault_color grey\n\nalignment bottom_right\n#gap_x 55 # KDE\n#gap_x 0  # GNOME\ngap_x 5\ngap_y 0\n\nuppercase no\nuse_spacer right\n\nTEXT\n${color dodgerblue3}SYSTEM ${hr 2}$color\n${color white}${time %A},${time %e} ${time %B} ${time %G}${alignr}${time %H:%M:%S}\n${color white}Machine$color: $nodename ${alignr}${color white}Uptime$color: $uptime\n\n${color dodgerblue3}CPU ${hr 2}$color\n#${font Arial:bold:size=8}${execi 99999 grep "model name" -m1 /proc/cpuinfo | cut -d":" -f2 | cut -d" " -f2- | sed "s#Processor ##"}$font$color\n${color white}MHz$color: ${freq}GHz $color${color white}Load$color: ${exec uptime | awk -F "load average: " '"'"'{print $2}'"'"'}\n${color white}Tasks$color: $running_processes/$processes ${alignr}${alignr}${color white}CPU0$color: ${cpu cpu0}% ${color white}CPU1$color: ${cpu cpu1}%\n#${color #c0ff3e}${acpitemp}C\n#${execi 20 sensors |grep "Core0 Temp" | cut -d" " -f4}$font$color$alignr${freq_g 2} ${execi 20 sensors |grep "Core1 Temp" | cut -d" " -f4}\n${cpugraph cpu0 25,120 000000 white} ${cpugraph cpu1 25,120 000000 white}\n${color white}${cpubar cpu1 3,120} ${color white}${cpubar cpu2 3,120}$color\n\n${color dodgerblue3}TOP 5 PROCESSES ${hr 2}$color\n${color white}NAME                PID      CPU      MEM\n${color white}1. ${top name 1}${top pid 1}   ${top cpu 1}   ${top mem 1}$color\n2. ${top name 2}${top pid 2}   ${top cpu 2}   ${top mem 2}\n3. ${top name 3}${top pid 3}   ${top cpu 3}   ${top mem 3}\n4. ${top name 4}${top pid 4}   ${top cpu 4}   ${top mem 4}\n5. ${top name 5}${top pid 5}   ${top cpu 5}   ${top mem 5}\n\n${color dodgerblue3}MEMORY & SWAP ${hr 2}$color\n${color white}RAM$color   $memperc%  ${membar 6}$color\n${color white}Swap$color  $swapperc%  ${swapbar 6}$color\n\n${color dodgerblue3}FILESYSTEM ${hr 2}$color\n${color white}root$color ${fs_free_perc /}% free$alignr${fs_free /}/ ${fs_size /}\n${fs_bar 3 /}$color\n#${color white}home$color ${fs_free_perc /home}% free$alignr${fs_free /home}/ ${fs_size /home}\n#${fs_bar 3 /home}$color\n\n${color dodgerblue3}LAN eth0 (${addr eth0}) ${hr 2}$color\n${color white}Down$color:  ${downspeed eth0} KB/s${alignr}${color white}Up$color: ${upspeed eth0} KB/s\n${color white}Downloaded$color: ${totaldown eth0} ${alignr}${color white}Uploaded$color: ${totalup eth0}\n${downspeedgraph eth0 25,120 000000 00ff00} ${alignr}${upspeedgraph eth0 25,120 000000 ff0000}$color\n${color dodgerblue3}LAN eth1 (${addr eth1}) ${hr 2}$color\n${color white}Down$color:  ${downspeed eth1} KB/s${alignr}${color white}Up$color: ${upspeed eth1} KB/s\n${color white}Downloaded$color: ${totaldown eth1} ${alignr}${color white}Uploaded$color: ${totalup eth1}\n${downspeedgraph eth1 25,120 000000 00ff00} ${alignr}${upspeedgraph eth1 25,120 000000 ff0000}$color\n${color dodgerblue3}WiFi (${addr wlan0}) ${hr 2}$color\n${color white}Down$color:  ${downspeed wlan0} KB/s${alignr}${color white}Up$color: ${upspeed wlan0} KB/s\n${color white}Downloaded$color: ${totaldown wlan0} ${alignr}${color white}Uploaded$color: ${totalup wlan0}\n${downspeedgraph wlan0 25,120 000000 00ff00} ${alignr}${upspeedgraph wlan0 25,120 000000 ff0000}$color\n\n${color dodgerblue3}CONNECTIONS ${hr 2}$color\n${color white}Inbound: $color${tcp_portmon 1 32767 count}${color white}  ${alignc}Outbound: $color${tcp_portmon 32768 61000 count}${alignr} ${color white}ALL: $color${tcp_portmon 1 65535 count}\n${color white}Inbound Connection ${alignr} Local Service/Port$color\n$color ${tcp_portmon 1 32767 rhost 0} ${alignr} ${tcp_portmon 1 32767 lservice 0}\n$color ${tcp_portmon 1 32767 rhost 1} ${alignr} ${tcp_portmon 1 32767 lservice 1}\n$color ${tcp_portmon 1 32767 rhost 2} ${alignr} ${tcp_portmon 1 32767 lservice 2}\n${color white}Outbound Connection ${alignr} Remote Service/Port$color\n$color ${tcp_portmon 32768 61000 rhost 0} ${alignr} ${tcp_portmon 32768 61000 rservice 0}\n$color ${tcp_portmon 32768 61000 rhost 1} ${alignr} ${tcp_portmon 32768 61000 rservice 1}\n$color ${tcp_portmon 32768 61000 rhost 2} ${alignr} ${tcp_portmon 32768 61000 rservice 2}' > $file
-#--- Add to startup
-file=/root/.conkyscript.sh; [ -e $file ] && cp -n $file{,.bkup}
-echo -e '#!/bin/bash\nsleep 30 && conky;' > $file
+#--- Add to startup (each login)
+file=/usr/local/bin/conky.sh; [ -e $file ] && cp -n $file{,.bkup}
+echo -e '#!/bin/bash\nkillall -q conky\nsleep 15\nconky &' > $file
 chmod 0500 $file
 mkdir -p /root/.config/autostart/
 file=/root/.config/autostart/conkyscript.sh.desktop; [ -e $file ] && cp -n $file{,.bkup}
-echo -e '\n[Desktop Entry]\nType=Application\nExec=/root/.conkyscript.sh\nHidden=false\nNoDisplay=false\nX-GNOME-Autostart-enabled=true\nName[en_US]=conky\nName=conky\nComment[en_US]=\nComment=' > $file
+echo -e '\n[Desktop Entry]\nType=Application\nExec=/usr/local/bin/conky.sh\nHidden=false\nNoDisplay=false\nX-GNOME-Autostart-enabled=true\nName[en_US]=conky\nName=conky\nComment[en_US]=\nComment=' > $file
 
 
 ##### Configuring metasploit ~ http://docs.kali.org/general-use/starting-metasploit-framework-in-kali
@@ -666,7 +675,7 @@ export GOCOW=1   # Always a cow logo ;)
 file=/root/.bashrc; [ -e $file ] && cp -n $file{,.bkup}
 grep -q '^GOCOW' $file 2>/dev/null || echo 'GOCOW=1' >> $file
 #--- First time run
-echo 'exit' > /tmp/msf.rc   #echo -e 'go_pro\nexit' > /tmp/msf.rc
+echo 'db_rebuild_cache\nsleep 180\nexit' > /tmp/msf.rc   #echo -e 'go_pro\nexit' > /tmp/msf.rc
 msfconsole -r /tmp/msf.rc
 #--- Setup GUI
 #bash /opt/metasploit/scripts/launchui.sh    #*** #<--- Doesn't automate. May take a little while to kick in
@@ -1026,6 +1035,12 @@ echo -e "\e[01;32m[+]\e[00m Installing fuzzdb"
 svn checkout http://fuzzdb.googlecode.com/svn/trunk/ /usr/share/fuzzdb/
 
 
+##### Installing apt-file - find which package includes a specific file.
+echo -e "\e[01;32m[+]\e[00m Installing apt-file"
+apt-get -y -qq install apt-file
+apt-file update
+
+
 ##### Configuring samba ~ file transfer method
 echo -e "\e[01;32m[+]\e[00m Configuring samba"
 #--- Install samba
@@ -1090,7 +1105,10 @@ echo -e "\e[01;33m[i]\e[00m Time taken: $(( $(( finish_time - start_time )) / 60
 
 
 ##### Done!
-echo -e '\e[01;33m[i]\e[00m Highly suggest rebooting the machine, before checking the above output.'
-echo -e '\e[01;33m[i]\e[00m Do not forget to take a snapshot (...if you are using a VM).'
+echo -e '\e[01;33m[i]\e[00m Highly suggest rebooting the machine (before checking the above output).'
+echo -e '\e[01;33m[i]\e[00m Do not forget to:'
+echo -e '\e[01;33m[i]\e[00m   + Sort out Iceweasel add-ons'
+echo -e '\e[01;33m[i]\e[00m   + Take a snapshot (...if you are using a VM).'
+
 echo -e '\n\e[01;32m[+]\e[00m Done!\n'
 #reboot
