@@ -1,6 +1,6 @@
 #!/bin/bash
 #-Metadata----------------------------------------------#
-#  Filename: kali.sh         (Last update: 2014-08-30)  #
+#  Filename: kali.sh         (Last update: 2014-09-10)  #
 #-Info--------------------------------------------------#
 #  Personal post install script for Kali Linux.         #
 #-Author(s)---------------------------------------------#
@@ -77,8 +77,8 @@ apt-get -y -qq install gcc make linux-headers-$(uname -r)
 
 
 ##### (Optional) Installing Virtual Machines tools ~ http://docs.kali.org/general-use/install-vmware-tools-kali-guest
-echo -e "\e[01;32m[+]\e[00m (Optional) Installing VirtualMachines Tools"
-#--- VM -> Install VMware Tools.    Note, you may need to apply patch: https://github.com/offensive-security/kali-vmware-tools-patches
+echo -e "\e[01;32m[+]\e[00m (Optional) Installing Virtual Machines tools"
+#--- VM -> Install VMware Tools.    Note: you may need to apply patch: https://github.com/offensive-security/kali-vmware-tools-patches
 mkdir -p /mnt/cdrom/
 umount /mnt/cdrom 2>/dev/null
 mount -o ro /dev/cdrom /mnt/cdrom 2>/dev/null
@@ -96,7 +96,7 @@ if [[ $? == 0 ]]; then                         # If there is a CD in (hoping its
   cd - &>/dev/null
   umount /mnt/cdrom
 else                                           # Fall back is 'open vm tools'
-  echo -e "\e[01;31m[!]\e[00m VMware CD/ISO isn't mounted. Skipping 'native' VMware tools, using 'Open VM Tools' instead."
+  echo -e "\e[01;31m[!]\e[00m VMware CD/ISO isn't mounted. Skipping 'native' VMware tools, using 'Open VM Tools' instead"
   apt-get -y -qq install open-vm-toolbox       #apt-get -y -qq install open-vm-tools
 fi
 #--- Slow mouse?
@@ -111,14 +111,14 @@ fi
 #./install   #<--- Doesn't automate
 # <insert bash fu here>
 #--- Install VirtualBox Guest Additions
-# Mount CD - Use autorun
+# Mount CD - use autorun
 # <insert bash fu here>
 
 
 ##### (Optional) Setting up static IP address on eth1 - host only
 ifconfig eth1 &>/devnull
 if [[ $? == 0 ]]; then
-  echo -e "\e[01;32m[+]\e[00m (Optional) Setting up static IP (192.168.155.175/24) address on eth1."
+  echo -e "\e[01;32m[+]\e[00m (Optional) Setting up static IP (192.168.155.175/24) address on eth1"
   ifconfig eth1 192.168.155.175/24
   file=/etc/network/interfaces; [ -e $file ] && cp -n $file{,.bkup}
   grep -q '^iface eth1 inet static' $file 2>/dev/null || echo -e '\nauto eth1\niface eth1 inet static\n    address 192.168.155.175\n    netmask 255.255.255.0\n    gateway 192.168.155.1' >> $file
@@ -141,7 +141,7 @@ chattr +i $file 2>/dev/null
 
 
 if [ 1 -eq 0 ]; then        # This is never true, thus it acts as block comments ;)
-##### Updating hostname (but not domainname)
+##### Updating hostname (but not domain name)
 echo -e "\e[01;32m[+]\e[00m Updating hostname"
 hostname="kali"
 #--- Change it now
@@ -367,7 +367,7 @@ xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitor0/image-path -s $wallp
 cp -f $wallpaper /usr/share/images/desktop-base/login-background.png
 #--- Reload XFCE
 #/usr/bin/xfdesktop --reload
-#--- New wallpaper - Add to startup (each login)
+#--- New wallpaper - add to startup (each login)
 file=/usr/local/bin/wallpaper.sh; [ -e $file ] && cp -n $file{,.bkup}
 echo -e '#!/bin/bash\nwallpaper=$(shuf -n1 -e /usr/share/wallpapers/kali_*)\nxfconf-query -c xfce4-desktop -p /backdrop/screen0/monitor0/image-path -s $wallpaper\ncp -f $wallpaper /usr/share/images/desktop-base/login-background.png\n/usr/bin/xfdesktop --reload' > $file
 chmod 0500 $file
@@ -523,15 +523,15 @@ grep -q '^alias tmux' $file 2>/dev/null || echo -e '\n### tmux\nalias tmux="tmux
 #tmux   # If ZSH isn't installed, it will not start up
 
 
-##### Configuring screen (if possible, use tmux instead)
-echo -e "\e[01;32m[+]\e[00m Configuring screen (if possible, use tmux instead)"
+##### Configuring screen ~ if possible, use tmux instead
+echo -e "\e[01;32m[+]\e[00m Configuring screen"
 #apt-get -y -qq install screen
 #--- Configure screen
 file=/root/.screenrc; [ -e $file ] && cp -n $file{,.bkup}
 echo -e "## Don't display the copyright page\nstartup_message off\n\n## tab-completion flash in heading bar\nvbell off\n\n## Keep scrollback n lines\ndefscrollback 1000\n\n## hardstatus is a bar of text that is visible in all screens\nhardstatus on\nhardstatus alwayslastline\nhardstatus string '%{gk}%{G}%H %{g}[%{Y}%l%{g}] %= %{wk}%?%-w%?%{=b kR}(%{W}%n %t%?(%u)%?%{=b kR})%{= kw}%?%+w%?%?%= %{g} %{Y} %Y-%m-%d %C%a %{W}'\n\n## title bar\ntermcapinfo xterm ti@:te@\n\n## default windows (syntax: screen -t label order command)\nscreen -t bash1 0\nscreen -t bash2 1\n\n## select the default window\nselect 1" > $file
 
 
-##### Installing ZSH & oh-my-zsh ~ root user ~ Note, if you use thurar, 'Open terminal here', will not work
+##### Installing ZSH & oh-my-zsh ~ root user ~ note: If you use thurar, 'Open terminal here', will not work
 echo -e "\e[01;32m[+]\e[00m Installing ZSH & oh-my-zsh"
 group="sudo"
 apt-get -y -qq install zsh git curl
@@ -588,9 +588,9 @@ grep -q '^set foldmethod=marker' $file 2>/dev/null || echo 'set foldmethod=marke
 grep -q '^nnoremap <space> za' $file 2>/dev/null || echo 'nnoremap <space> za' >> $file                        # Space toggle folds
 grep -q '^set hlsearch' $file 2>/dev/null || echo 'set hlsearch' >> $file                                      # Highlight search results
 grep -q '^set laststatus' $file 2>/dev/null || echo -e 'set laststatus=2\nset statusline=%F%m%r%h%w\ (%{&ff}){%Y}\ [%l,%v][%p%%]' >> $file   # Status bar
-grep -q '^filetype on' $file 2>/dev/null || echo -e 'filetype on\nfiletype plugin on\nsyntax enable\nset grepprg=grep\ -nH\ $*' >> $file     # Syntax Highlighting
+grep -q '^filetype on' $file 2>/dev/null || echo -e 'filetype on\nfiletype plugin on\nsyntax enable\nset grepprg=grep\ -nH\ $*' >> $file     # Syntax highlighting
 grep -q '^set wildmenu' $file 2>/dev/null || echo -e 'set wildmenu\nset wildmode=list:longest,full' >> $file   # Tab completion
-grep -q '^set pastetoggle=<F10>' $file 2>/dev/null || echo -e 'set pastetoggle=<F10>' >> $file                 # Hotkey - Turning off auto indent when pasting
+grep -q '^set pastetoggle=<F10>' $file 2>/dev/null || echo -e 'set pastetoggle=<F10>' >> $file                 # Hotkey - turning off auto indent when pasting
 #--- Set as default editor
 export EDITOR="vim"    #update-alternatives --config editor
 file=/etc/bash.bashrc; [ -e $file ] && cp -n $file{,.bkup}
@@ -670,12 +670,22 @@ echo -e "\e[01;32m[+]\e[00m Configuring metasploit"
 #--- Start services
 service postgresql start
 service metasploit start
+#--- Add to start up
+#update-rc.d postgresql enable
+#update-rc.d metasploit enable
 #--- Misc
 export GOCOW=1   # Always a cow logo ;)
 file=/root/.bashrc; [ -e $file ] && cp -n $file{,.bkup}
 grep -q '^GOCOW' $file 2>/dev/null || echo 'GOCOW=1' >> $file
+#--- Metasploit 4.10.x+ database fix #1 ~ https://community.rapid7.com/community/metasploit/blog/2014/08/25/not-reinventing-the-wheel
+ln -sf /opt/metasploit/apps/pro/ui/config/database.yml /root/.msf4/database.yml    #cp -f   #find / -name database.yml -type f | grep metasploit | grep -v gems   # /usr/share/metasploit-framework/config/database.yml
+#--- Metasploit 4.10.x+ database fix #2 ~ Using method #1, so this isn't needed
+#file=/root/.bash_aliases; [ -e $file ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
+#grep -q '^alias msfconsole' $file 2>/dev/null || echo -e '\n### Metasploit\nalias msfconsole="msfconsole db_connect -y /opt/metasploit/apps/pro/ui/config/database.yml"\n' >> $file
+#--- Apply new alias
+#source $file   # If using ZSH, will fail
 #--- First time run
-echo 'db_rebuild_cache\nsleep 180\nexit' > /tmp/msf.rc   #echo -e 'go_pro\nexit' > /tmp/msf.rc
+echo -e 'sleep 10\ndb_rebuild_cache\nsleep 180\nexit' > /tmp/msf.rc   #echo -e 'go_pro' > /tmp/msf.rc
 msfconsole -r /tmp/msf.rc
 #--- Setup GUI
 #bash /opt/metasploit/scripts/launchui.sh    #*** #<--- Doesn't automate. May take a little while to kick in
@@ -910,10 +920,9 @@ echo -e "\e[01;32m[+]\e[00m Installing httprint"
 apt-get -y -qq install httprint
 
 
-##### Installing clusterd ~ http://bugs.kali.org/view.php?id=1024
-echo -e "\e[01;32m[+]\e[00m Installing clusterd"
-apt-get -y -qq install clusterd
-
+##### Installing fuzzdb ~ pre defined wordlists (and more)
+echo -e "\e[01;32m[+]\e[00m Installing fuzzdb"
+svn checkout http://fuzzdb.googlecode.com/svn/trunk/ /usr/share/fuzzdb/
 
 ##### Installing seclist ~ https://bugs.kali.org/view.php?id=648
 echo -e "\e[01;32m[+]\e[00m Installing seclist"
@@ -923,6 +932,11 @@ apt-get -y -qq install seclists
 ##### Installing unicornscan ~ http://bugs.kali.org/view.php?id=388
 echo -e "\e[01;32m[+]\e[00m Installing unicornscan"
 apt-get -y -qq install unicornscan
+
+
+##### Installing clusterd ~ http://bugs.kali.org/view.php?id=1024
+echo -e "\e[01;32m[+]\e[00m Installing clusterd"
+apt-get -y -qq install clusterd
 
 
 ##### Installing webhandler ~ https://bugs.kali.org/view.php?id=291
@@ -965,6 +979,8 @@ apt-get -y -qq install bridge-utils
 ##### Installing zerofree ~ cli nulls free blocks
 echo -e "\e[01;32m[+]\e[00m Installing zerofree"
 apt-get -y -qq install zerofree
+#fdisk -l
+#zerofree -v /dev/sda1
 
 
 ##### Installing veil ~ http://bugs.kali.org/view.php?id=421
@@ -1030,12 +1046,7 @@ wget http://xato.net/files/10k%20most%20common.zip -O /tmp/10kcommon.zip && unzi
 ##find / \( -iname '*wordlist*' -or -iname '*passwords*' \) #-exec ls -l {} \;
 
 
-##### Installing fuzzdb - pre defined wordlists (and more)
-echo -e "\e[01;32m[+]\e[00m Installing fuzzdb"
-svn checkout http://fuzzdb.googlecode.com/svn/trunk/ /usr/share/fuzzdb/
-
-
-##### Installing apt-file - find which package includes a specific file.
+##### Installing apt-file ~ find which package includes a specific file
 echo -e "\e[01;32m[+]\e[00m Installing apt-file"
 apt-get -y -qq install apt-file
 apt-file update
@@ -1063,8 +1074,8 @@ grep -q '^\[shared\]' $file 2>/dev/null || echo -e '\n[shared]\n   comment = Sha
 #service samba stop
 
 
-##### Setting up ssh
-echo -e "\e[01;32m[+]\e[00m Setting up ssh"
+##### Setting up SSH
+echo -e "\e[01;32m[+]\e[00m Setting up SSH"
 #--- Wipe current keys
 rm -f /etc/ssh/ssh_host_*
 rm -f /root/.ssh/*
@@ -1105,10 +1116,10 @@ echo -e "\e[01;33m[i]\e[00m Time taken: $(( $(( finish_time - start_time )) / 60
 
 
 ##### Done!
-echo -e '\e[01;33m[i]\e[00m Highly suggest rebooting the machine (before checking the above output).'
-echo -e '\e[01;33m[i]\e[00m Do not forget to:'
-echo -e '\e[01;33m[i]\e[00m   + Sort out Iceweasel add-ons'
-echo -e '\e[01;33m[i]\e[00m   + Take a snapshot (...if you are using a VM).'
+echo -e "\e[01;33m[i]\e[00m Highly suggest rebooting the machine (before checking the above output)"
+echo -e "\e[01;33m[i]\e[00m Do not forget to:"
+echo -e "\e[01;33m[i]\e[00m   + Sort out Iceweasel add-ons"
+echo -e "\e[01;33m[i]\e[00m   + Take a snapshot (...if you are using a VM)"
 
 echo -e '\n\e[01;32m[+]\e[00m Done!\n'
 #reboot
