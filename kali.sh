@@ -1,6 +1,6 @@
 #!/bin/bash
 #-Metadata----------------------------------------------#
-#  Filename: kali.sh         (Last update: 2014-09-10)  #
+#  Filename: kali.sh         (Last update: 2014-09-15)  #
 #-Info--------------------------------------------------#
 #  Personal post install script for Kali Linux.         #
 #-Author(s)---------------------------------------------#
@@ -78,7 +78,7 @@ apt-get -y -qq install gcc make linux-headers-$(uname -r)
 
 ##### (Optional) Installing Virtual Machines tools ~ http://docs.kali.org/general-use/install-vmware-tools-kali-guest
 echo -e "\e[01;32m[+]\e[00m (Optional) Installing Virtual Machines tools"
-#--- VM -> Install VMware Tools.    Note: you may need to apply patch: https://github.com/offensive-security/kali-vmware-tools-patches
+#--- VM -> Install VMware Tools.    Note: you may need to apply a patch: https://github.com/offensive-security/kali-vmware-tools-patches
 mkdir -p /mnt/cdrom/
 umount /mnt/cdrom 2>/dev/null
 mount -o ro /dev/cdrom /mnt/cdrom 2>/dev/null
@@ -151,7 +151,7 @@ file=/etc/hostname; [ -e $file ] && cp -n $file{,.bkup}
 echo "$(hostname)" > $file
 #--- Set host file
 file=/etc/hosts; [ -e $file ] && cp -n $file{,.bkup}
-sed -i 's/127.0.1.1.*/127.0.1.1  kali/' $file    #echo -e "127.0.0.1  localhost.localdomain localhost\n127.0.1.1  $hostname" > $file    #$hostname.$domainname
+sed -i 's/127.0.1.1.*/127.0.1.1  '$hostname'/' $file    #echo -e "127.0.0.1  localhost.localdomain localhost\n127.0.1.1  $hostname" > $file    #$hostname.$domainname
 #--- Check
 #hostname; hostname -f
 fi
@@ -210,17 +210,17 @@ sed -i 's/^GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT=""/' $file  
 update-grub
 
 
-##### Configuring login manager (console login - non GUI)
-echo -e "\e[01;32m[+]\e[00m Configuring login (console login - non GUI)"
+##### Disabling login manager (console login - non GUI)
+#echo -e "\e[01;32m[+]\e[00m Disabling login (console login - non GUI)"
 #--- Disable GUI login screen
-apt-get -y -qq install chkconfig
-chkconfig gdm3 off                                 # ...or: mv -f /etc/rc2.d/S19gdm3 /etc/rc2.d/K17gdm           #file=/etc/X11/default-display-manager; [ -e $file ] && cp -n $file{,.bkup}   #echo /bin/true > $file
+#apt-get -y -qq install chkconfig
+#chkconfig gdm3 off                                 # ...or: mv -f /etc/rc2.d/S19gdm3 /etc/rc2.d/K17gdm           #file=/etc/X11/default-display-manager; [ -e $file ] && cp -n $file{,.bkup}   #echo /bin/true > $file
 #--- Enable auto (gui) login
 #file=/etc/gdm3/daemon.conf; [ -e $file ] && cp -n $file{,.bkup}
 #sed -i 's/^.*AutomaticLoginEnable = .*/AutomaticLoginEnable = true/' $file
 #sed -i 's/^.*AutomaticLogin = .*/AutomaticLogin = root/' $file
 #--- Shortcut for when you want to start GUI
-ln -sf /usr/sbin/gdm3 /usr/bin/startx
+#ln -sf /usr/sbin/gdm3 /usr/bin/startx
 
 
 ##### Configuring startup (randomize the hostname, eth0 & wlan0s MAC address)
@@ -363,7 +363,7 @@ wget http://1hdwallpapers.com/wallpapers/kali_linux.jpg -O /usr/share/wallpapers
 wallpaper=$(shuf -n1 -e /usr/share/wallpapers/kali_*)   #wallpaper=/usr/share/wallpapers/kali_blue_splat.png
 xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitor0/image-show -s true
 xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitor0/image-path -s $wallpaper
-#--- Change login wallpaper (though we are using console, so this shouldn't be seen)
+#--- Change login wallpaper
 cp -f $wallpaper /usr/share/images/desktop-base/login-background.png
 #--- Reload XFCE
 #/usr/bin/xfdesktop --reload
@@ -607,18 +607,18 @@ echo -e "\e[01;32m[+]\e[00m Setting up iceweasel"
 apt-get install -y -qq unzip
 #--- Configure iceweasel
 iceweasel & sleep 15; killall -q -w iceweasel >/dev/null   # Start and kill. Files needed for first time run
-file=$(echo /root/.mozilla/firefox/*.default/prefs.js); [ -e $file ] && cp -n $file{,.bkup}
+file=$(echo /root/.mozilla/firefox/*.default/prefs.js); [ -e $file ] && cp -n $file{,.bkup}    #/etc/iceweasel/pref/*.js
 sed -i 's/^.*browser.startup.page.*/user_pref("browser.startup.page", 0);' $file 2>/dev/null || echo 'user_pref("browser.startup.page", 0);' >> $file                                              # Iceweasel -> Edit -> Preferences -> General -> When firefox starts: Show a blank page
 sed -i 's/^.*privacy.donottrackheader.enabled.*/user_pref("privacy.donottrackheader.enabled", true);' $file 2>/dev/null || echo 'user_pref("privacy.donottrackheader.enabled", true);' >> $file    # Privacy -> Enable: Tell websites I do not want to be tracked
 sed -i 's/^.*browser.showQuitWarning.*/user_pref("browser.showQuitWarning", true);' $file 2>/dev/null || echo 'user_pref("browser.showQuitWarning", true);' >> $file                               # Stop Ctrl + Q from quitting without warning
 #--- Replace bookmarks
-file=$(echo /root/.mozilla/firefox/*.default/bookmarks.html); [ -e $file ] && cp -n $file{,.bkup}
-wget http://pentest-bookmarks.googlecode.com/files/bookmarksv1.5.html -O /tmp/bookmarks_new.html    # ***!!! hardcoded version! Need to manually check for updates
+file=$(echo /root/.mozilla/firefox/*.default/bookmarks.html); [ -e $file ] && cp -n $file{,.bkup}    #/etc/iceweasel/profile/bookmarks.html
+wget http://pentest-bookmarks.googlecode.com/files/bookmarksv1.5.html -O /tmp/bookmarks_new.html     # ***!!! hardcoded version! Need to manually check for updates
 rm -f /root/.mozilla/firefox/*.default/places.sqlite
 rm -f /root/.mozilla/firefox/*.default/bookmarkbackups/*
 #--- Configure bookmarks
 awk '!a[$0]++' /tmp/bookmarks_new.html | egrep -v ">(Latest Headlines|Getting Started|Recently Bookmarked|Recent Tags|Mozilla Firefox|Help and Tutorials|Customize Firefox|Get Involved|About Us|Hacker Media|Bookmarks Toolbar|Most Visited)</" | egrep -v "^    </DL><p>" | egrep -v "^<DD>Add" > $file
-sed -i 's#^</DL><p>#        </DL><p>\n    </DL><p>\n    <DT><A HREF="https://127.0.0.1:8834">Nessus</A>\n    <DT><A HREF="https://127.0.0.1:9392">OpenVAS</A>\n    <DT><A HREF="https://127.0.0.1:3790">MSF Community</A>\n</DL><p>#' $file
+sed -i 's#^</DL><p>#        </DL><p>\n    </DL><p>\n    <DT><A HREF="https://127.0.0.1:8834">Nessus</A>\n    <DT><A HREF="https://127.0.0.1:3790">MSF Community</A>\n    <DT><A HREF="https://127.0.0.1:9392">OpenVAS</A>\n</DL><p>#' $file
 sed -i 's#<HR>#<DT><H3 ADD_DATE="1303667175" LAST_MODIFIED="1303667175" PERSONAL_TOOLBAR_FOLDER="true">Bookmarks Toolbar</H3>\n<DD>Add bookmarks to this folder to see them displayed on the Bookmarks Toolbar#' $file
 #--- Download addons
 path=$(echo /root/.mozilla/firefox/*.default/)extensions/
@@ -689,6 +689,7 @@ echo -e 'sleep 10\ndb_rebuild_cache\nsleep 180\nexit' > /tmp/msf.rc   #echo -e '
 msfconsole -r /tmp/msf.rc
 #--- Setup GUI
 #bash /opt/metasploit/scripts/launchui.sh    #*** #<--- Doesn't automate. May take a little while to kick in
+#xdg-open https://127.0.0.1:3790/
 #--- Clean up
 rm -f /tmp/msf.rc
 
@@ -739,14 +740,17 @@ gconftool-2 --type int --set /apps/meld/edit_wrap_lines 2
 ##### Installing nessus   *** Doesn't automate ***
 #echo -e "\e[01;32m[+]\e[00m Installing nessus"
 #--- Get download link
-#xdg-open http://www.tenable.com/products/nessus/select-your-operating-system    *** #wget "http://downloads.nessus.org/<file>" -O /tmp/nessus.deb   # ***!!! Hardcoded version value
-#dpkg -i /usr/local/src/Nessus-*-debian6_i386.deb
-#rm -f /tmp/nessus.deb
+#xdg-open http://www.tenable.com/products/nessus/select-your-operating-system    *** #wget "http://downloads.nessus.org/<file>" -O /usr/local/src/nessus.deb   # ***!!! Hardcoded version value
+#dpkg -i /usr/local/src/Nessus-*-debian6_*.deb
+#service nessusd start
+#xdg-open http://www.tenable.com/products/nessus-home
 #/opt/nessus/sbin/nessus-adduser   #<--- Doesn't automate
-#xdg-open http://www.tenable.com/products/nessus/nessus-plugins/register-a-homefeed
+##rm -f /usr/local/src/Nessus-*-debian6_*.deb
 #--- Check email
 # /opt/nessus/bin/nessus-fetch --register <key>   #<--- Doesn't automate
-#service nessusd start
+#xdg-open https://127.0.0.1:8834/
+#--- Remove from start up
+#update-rc.d -f nessusd remove
 
 
 ##### Installing openvas   *** Doesn't automate ***
@@ -980,7 +984,7 @@ apt-get -y -qq install bridge-utils
 echo -e "\e[01;32m[+]\e[00m Installing zerofree"
 apt-get -y -qq install zerofree
 #fdisk -l
-#zerofree -v /dev/sda1
+#zerofree -v /dev/sda1   #for i in $(mount | grep sda | grep ext | cut -b 9); do  mount -o remount,ro /dev/sda$i && zerofree -v /dev/sda$i && mount -o remount,rw /dev/sda$i; done
 
 
 ##### Installing veil ~ http://bugs.kali.org/view.php?id=421
