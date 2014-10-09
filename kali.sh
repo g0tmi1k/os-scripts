@@ -1,6 +1,6 @@
 #!/bin/bash
 #-Metadata----------------------------------------------#
-#  Filename: kali.sh         (Last update: 2014-09-15)  #
+#  Filename: kali.sh         (Last update: 2014-10-09)  #
 #-Info--------------------------------------------------#
 #  Personal post install script for Kali Linux.         #
 #-Author(s)---------------------------------------------#
@@ -13,17 +13,12 @@
 #                          ---                          #
 #  Will set time zone & keyboard layout to UK & GB.     #
 #                                                       #
-#  Will install (open) vm tools.                        #
+#  Will check for if VM guest and install addons tools. #
 #                                                       #
-#  Skips installing OpenVAS, MSF Community & Nessus.    #
+#  Skips installing Nessus, MSF Community & OpenVAS.    #
 #                                                       #
 #  Skips making the NIC MAC & hostname random on boot.  #
-#                                                       #
-#  Need to manually enable all iceweasel plugins  =(    #
-#  ...and re-configure FoxyProxy (can re-run commands). #
 #                          ---                          #
-#  One day I'll replace '/root' with '$USER'.           #
-#                                                       #
 #  Incomplete stuff/buggy search for '***'.             #
 #                          ---                          #
 #         ** This script is meant for _ME_. **          #
@@ -36,6 +31,12 @@ if [ 1 -eq 0 ]; then        # This is never true, thus it acts as block comments
 wget -qO- https://raw.github.com/g0tmi1k/os-scripts/master/kali.sh | bash
 #########################################################################
 fi
+
+
+
+keyboardlayout="gb"         # Great Britain
+timezone="Europe/London"    # London, Europe
+
 
 
 ##### (Optional) Setup remote connection via SSH
@@ -76,57 +77,80 @@ echo -e "\e[01;32m[+]\e[00m (Optional) Installing kernel headers"
 apt-get -y -qq install gcc make linux-headers-$(uname -r)
 
 
-##### (Optional) Installing Virtual Machines tools ~ http://docs.kali.org/general-use/install-vmware-tools-kali-guest
-echo -e "\e[01;32m[+]\e[00m (Optional) Installing Virtual Machines tools"
-#--- VM -> Install VMware Tools.    Note: you may need to apply a patch: https://github.com/offensive-security/kali-vmware-tools-patches
-mkdir -p /mnt/cdrom/
-umount /mnt/cdrom 2>/dev/null
-mount -o ro /dev/cdrom /mnt/cdrom 2>/dev/null
-if [[ $? == 0 ]]; then                         # If there is a CD in (hoping its right - Linux VMware tools...), install native VMware tools
-  apt-get -y -qq install gcc make linux-headers-$(uname -r)
-  # Kernel 3.14  - doesn't need patching
-  #file=/usr/sbin/update-rc.d; [ -e $file ] && cp -n $file{,.bkup}
-  #grep -q '^cups enabled' $file 2>/dev/null || echo "cups enabled" >> $file
-  #grep -q '^vmware-tools enabled' $file 2>/dev/null || echo "vmware-tools enabled" >> $file
-  #ln -sf /usr/src/linux-headers-$(uname -r)/include/generated/uapi/linux/version.h /usr/src/linux-headers-$(uname -r)/include/linux/
-  cp -f /mnt/cdrom/VMwareTools-*.tar.gz /tmp/
-  tar -zxf /tmp/VMwareTools* -C /tmp/
-  cd /tmp/vmware-tools-distrib/
-  echo -e '\n' | perl vmware-install.pl
-  cd - &>/dev/null
-  umount /mnt/cdrom
-else                                           # Fall back is 'open vm tools'
-  echo -e "\e[01;31m[!]\e[00m VMware CD/ISO isn't mounted. Skipping 'native' VMware tools, using 'Open VM Tools' instead"
-  apt-get -y -qq install open-vm-toolbox       #apt-get -y -qq install open-vm-tools
+#--- VMware
+_vmdetect=$(dmidecode | awk '/VMware Virtual Platform/ {print $3,$4,$5}')
+if [[ ! -z $_vmdetect ]]; then
+  ##### (Optional) Installing Virtual Machines tools ~ http://docs.kali.org/general-use/install-vmware-tools-kali-guest
+  echo -e "\e[01;32m[+]\e[00m (Optional) Installing Virtual Machines tools"
+  #--- VM -> Install VMware Tools.    Note: you may need to apply a patch: https://github.com/offensive-security/kali-vmware-tools-patches
+  mkdir -p /mnt/cdrom/
+  umount -f /mnt/cdrom 2>/dev/null
+  sleep 1
+  mount -o ro /dev/cdrom /mnt/cdrom 2>/dev/null; _mount=$?   # CD1
+  file=$(find /mnt/cdrom/ -maxdepth 1 -type f -name 'VMwareTools-*.tar.gz')
+  if [[ $_mount == 0 ]] && [[ -z $file ]]; then
+    echo -e "\e[01;31m[!]\e[00m Incorrect CD/ISO mounted. Skipping..."
+  elif [[ $_mount == 0 ]]; then                         # If there is a CD in (and its right!), try to install native Guest Additions
+    apt-get -y -qq install gcc make linux-headers-$(uname -r)
+    # Kernel 3.14  - doesn't need patching
+    #file=/usr/sbin/update-rc.d; [ -e $file ] && cp -n $file{,.bkup}
+    #grep -q '^cups enabled' $file 2>/dev/null || echo "cups enabled" >> $file
+    #grep -q '^vmware-tools enabled' $file 2>/dev/null || echo "vmware-tools enabled" >> $file
+    #ln -sf /usr/src/linux-headers-$(uname -r)/include/generated/uapi/linux/version.h /usr/src/linux-headers-$(uname -r)/include/linux/
+    cp -f /mnt/cdrom/VMwareTools-*.tar.gz /tmp/
+    tar -zxf /tmp/VMwareTools-* -C /tmp/
+    cd /tmp/vmware-tools-distrib/
+    echo -e '\n' | perl vmware-install.pl
+    cd - &>/dev/null
+    umount /mnt/cdrom
+  else                                             # Fall back is 'open vm tools' ~ http://open-vm-tools.sourceforge.net/about.php
+    echo -e "\e[01;31m[!]\e[00m VMware Tools CD/ISO isn't mounted. Skipping 'native' VMware tools, failing back to 'Open VM Tools' instead"
+    apt-get -y -qq install open-vm-toolbox
+  fi
 fi
-#--- Slow mouse?
-#apt-get -y -qq install xserver-xorg-input-vmmouse
+#--- VirtualBox
+_vmdetect=$(dmidecode | awk '/VirtualBox/ {print $3}')
+if [[ ! -z $_vmdetect ]]; then
+  ##### (Optional) Installing Guest Additions. Note: Need VirtualBox 4.2.xx+ (http://docs.kali.org/general-use/kali-linux-virtual-box-guest)
+  echo -e "\e[01;32m[+]\e[00m (Optional) Installing Guest Additions"
+  #--- Devices -> Install Guest Additions CD image...
+  mkdir -p /mnt/cdrom/
+  umount -f /mnt/cdrom 2>/dev/null
+  sleep 1
+  mount -o ro /dev/cdrom /mnt/cdrom 2>/dev/null;             # CD1
+  if [[ $? == 0 ]] && [[ -z /media/cdrom/VBoxLinuxAdditions.run ]]; then
+    echo -e "\e[01;31m[!]\e[00m Incorrect CD/ISO mounted. Skipping..."
+  elif [[ $? == 0 ]]; then                         # If there is a CD in (and its right!), try to install native Guest Additions
+    apt-get -y -qq install gcc make linux-headers-$(uname -r)
+    cp -f /mnt/cdrom/VBoxLinuxAdditions.run /tmp/
+    chmod 0755 /tmp/VBoxLinuxAdditions.run
+    cd /tmp/VBoxLinuxAdditions.run --nox11         #<--- Doesn't automate
+    umount /mnt/cdrom
+  else                                             # Fall back is to... panic!
+    echo -e "\e[01;31m[!]\e[00m Guest Additions CD/ISO isn't mounted. Skipping..."
+  fi
+fi
 #--- Install parallel tools
-#grep -q '^cups enabled' /usr/sbin/update-rc.d || echo "cups enabled" >> /usr/sbin/update-rc.d
-#grep -q '^vmware-tools enabled' /usr/sbin/update-rc.d || echo "vmware-tools enabled" >> /usr/sbin/update-rc.d
-#apt-get -y -qq install gcc make linux-headers-$(uname -r)
-#ln -sf /usr/src/linux-headers-$(uname -r)/include/generated/uapi/linux/version.h /usr/src/linux-headers-$(uname -r)/include/linux/
 #Virtual Machine -> Install Parallels Tools
 #cd /media/Parallel\ Tools/
 #./install   #<--- Doesn't automate
 # <insert bash fu here>
-#--- Install VirtualBox Guest Additions
-# Mount CD - use autorun
-# <insert bash fu here>
+#--- Slow mouse?
+#apt-get -y -qq install xserver-xorg-input-vmmouse
 
 
-##### (Optional) Setting up static IP address on eth1 - host only
+##### Setting up static IP address on eth1 - host only
 ifconfig eth1 &>/devnull
 if [[ $? == 0 ]]; then
-  echo -e "\e[01;32m[+]\e[00m (Optional) Setting up static IP (192.168.155.175/24) address on eth1"
+  echo -e "\e[01;32m[+]\e[00m Setting up static IP (192.168.155.175/24) address on eth1"
   ifconfig eth1 192.168.155.175/24
   file=/etc/network/interfaces; [ -e $file ] && cp -n $file{,.bkup}
   grep -q '^iface eth1 inet static' $file 2>/dev/null || echo -e '\nauto eth1\niface eth1 inet static\n    address 192.168.155.175\n    netmask 255.255.255.0\n    gateway 192.168.155.1' >> $file
 fi
 
 
-##### (Optional) Setting up static DNS
-echo -e "\e[01;32m[+]\e[00m (Optional) Setting up static DNS"
+##### Setting static + protecting DNS name servers. Note: May cause issues with forced values (e.g. captive portals etc)
+echo -e "\e[01;32m[+]\e[00m Setting static + protecting DNS name servers"
 file=/etc/resolv.conf; [ -e $file ] && cp -n $file{,.bkup}
 chattr -i $file 2>/dev/null
 #--- Remove duplicate results
@@ -159,17 +183,15 @@ fi
 
 ##### Updating location information (keyboard layout & time zone) - set either value to "" to skip.
 echo -e "\e[01;32m[+]\e[00m Updating location information (keyboard layout & time zone)"
-keyboardlayout="gb"         # Great Britain
-timezone="Europe/London"    # London, Europe
 #--- Configure keyboard layout
 if [ ! -z "$keyboardlayout" ]; then
   file=/etc/default/keyboard; [ -e $file ] && cp -n $file{,.bkup}
   sed -i 's/XKBLAYOUT=".*"/XKBLAYOUT="'$keyboardlayout'"/' $file   #; dpkg-reconfigure keyboard-configuration -u       #<--- May automate (need to restart xserver for effect)
   #dpkg-reconfigure keyboard-configuration   #dpkg-reconfigure console-setup                                           #<--- Doesn't automate
 fi
-#--- Change the time zone
-[[ -z "$timezone" ]] || ln -sf /usr/share/zoneinfo/$timezone /etc/localtime
-#---  Install ntp to help keep time in sync (helpful when resuming VMs)
+#--- Changing time zone
+[[ -z "$timezone" ]] || ln -sf /usr/share/zoneinfo/Europe/London /etc/localtime   # London, Europe   #ln -sf /usr/share/zoneinfo/Etc/GMT
+#--- Installing ntp to help keep time in sync (helpful when resuming VMs)
 apt-get -y -qq install ntp
 #--- Start service
 service ntp restart
@@ -184,6 +206,7 @@ start_time=$(date +%s)
 ##### Updating software from repositories
 echo -e "\e[01;32m[+]\e[00m Updating OS from repositories"
 for ITEM in clean autoremove autoclean; do apt-get -y -qq $ITEM; done
+export DEBIAN_FRONTEND=noninteractive
 apt-get update && apt-get -y -q dist-upgrade --fix-missing
 #--- Enable bleeding edge ~ http://www.kali.org/kali-monday/bleeding-edge-kali-repositories/
 #file=/etc/apt/sources.list; [ -e $file ] && cp -n $file{,.bkup}
@@ -198,6 +221,7 @@ echo -e "\e[01;32m[+]\e[00m Fixing audio issues"
 #sed -i 's/^PULSEAUDIO_SYSTEM_START=.*/PULSEAUDIO_SYSTEM_START=1/' $file
 #--- Unmute on startup
 apt-get -y -qq install alsa-utils
+#--- Set volume now
 amixer set Master unmute >/dev/null
 amixer set Master 50% >/dev/null
 
@@ -311,10 +335,11 @@ grep -q '^/usr/bin/numlockx' $file 2>/dev/null || sed -i 's#exit 0#if [ -x /usr/
 #killall -q -w gnome-panel >/dev/null && gnome-panel&   # Still need to logoff!
 
 
-##### Installing & configuring XFCE4
-echo -e "\e[01;32m[+]\e[00m Installing & configuring XFCE4"
+##### Installing & configuring xfce4 ~ desktop environment
+echo -e "\e[01;32m[+]\e[00m Installing & configuring xfce4"
 apt-get -y -qq install wget
 apt-get -y -qq install xfce4 xfce4-places-plugin
+#apt-get -y -qq install shiki-colors-xfwm-theme    # theme
 #--- Configuring XFCE4
 mv -f /usr/bin/startx{,-gnome}
 ln -sf /usr/bin/startx{fce4,}
@@ -331,15 +356,15 @@ echo -e "[Desktop Entry]\nType=Application\nVersion=1.0\nName=Geany\nName[en_GB]
 echo -e "[Desktop Entry]\nVersion=1.0\nName=Application Finder\nName[en_GB]=Application Finder\nComment=Find and launch applications installed on your system\nComment[en_GB]=Find and launch applications installed on your system\nExec=xfce4-appfinder\nIcon=xfce4-appfinder\nStartupNotify=true\nTerminal=false\nType=Application\nCategories=X-XFCE;Utility;\nX-XFCE-Source=file:///usr/share/applications/xfce4-appfinder.desktop" > /root/.config/xfce4/panel/launcher-19/136845425410.desktop
 echo -e '<?xml version="1.0" encoding="UTF-8"?>\n\n<channel name="xfce4-appfinder" version="1.0">\n  <property name="category" type="string" value="All"/>\n  <property name="window-width" type="int" value="640"/>\n  <property name="window-height" type="int" value="480"/>\n  <property name="close-after-execute" type="bool" value="true"/>\n</channel>' > /root/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-appfinder.xml
 echo -e '<?xml version="1.0" encoding="UTF-8"?>\n\n<channel name="xfce4-desktop" version="1.0">\n  <property name="backdrop" type="empty">\n    <property name="screen0" type="empty">\n      <property name="monitor0" type="empty">\n        <property name="brightness" type="empty"/>\n        <property name="color1" type="empty"/>\n        <property name="color2" type="empty"/>\n        <property name="color-style" type="empty"/>\n        <property name="image-path" type="empty"/>\n        <property name="image-show" type="empty"/>\n        <property name="last-image" type="empty"/>\n        <property name="last-single-image" type="empty"/>\n      </property>\n    </property>\n  </property>\n  <property name="desktop-icons" type="empty">\n    <property name="file-icons" type="empty">\n      <property name="show-removable" type="bool" value="true"/>\n      <property name="show-trash" type="bool" value="false"/>\n      <property name="show-filesystem" type="bool" value="false"/>\n      <property name="show-home" type="bool" value="false"/>\n    </property>\n  </property>\n</channel>' > /root/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml
-echo -e '<?xml version="1.0" encoding="UTF-8"?>\n\n<channel name="xfce4-keyboard-shortcuts" version="1.0">\n  <property name="commands" type="empty">\n    <property name="default" type="empty">\n      <property name="&lt;Alt&gt;F2" type="empty"/>\n      <property name="&lt;Primary&gt;&lt;Alt&gt;Delete" type="empty"/>\n      <property name="XF86Display" type="empty"/>\n      <property name="&lt;Super&gt;p" type="empty"/>\n      <property name="&lt;Primary&gt;Escape" type="empty"/>\n    </property>\n    <property name="custom" type="empty">\n      <property name="XF86Display" type="string" value="xfce4-display-settings --minimal"/>\n      <property name="&lt;Super&gt;p" type="string" value="xfce4-display-settings --minimal"/>\n      <property name="&lt;Primary&gt;&lt;Alt&gt;Delete" type="string" value="xflock4"/>\n      <property name="&lt;Primary&gt;Escape" type="string" value="xfdesktop --menu"/>\n      <property name="&lt;Alt&gt;F2" type="string" value="xfrun4"/>\n      <property name="override" type="bool" value="true"/>\n    </property>\n  </property>\n  <property name="xfwm4" type="empty">\n    <property name="default" type="empty">\n      <property name="&lt;Alt&gt;Insert" type="empty"/>\n      <property name="Escape" type="empty"/>\n      <property name="Left" type="empty"/>\n      <property name="Right" type="empty"/>\n      <property name="Up" type="empty"/>\n      <property name="Down" type="empty"/>\n      <property name="&lt;Alt&gt;Tab" type="empty"/>\n      <property name="&lt;Alt&gt;&lt;Shift&gt;Tab" type="empty"/>\n      <property name="&lt;Alt&gt;Delete" type="empty"/>\n      <property name="&lt;Control&gt;&lt;Alt&gt;Down" type="empty"/>\n      <property name="&lt;Control&gt;&lt;Alt&gt;Left" type="empty"/>\n      <property name="&lt;Shift&gt;&lt;Alt&gt;Page_Down" type="empty"/>\n      <property name="&lt;Alt&gt;F4" type="empty"/>\n      <property name="&lt;Alt&gt;F6" type="empty"/>\n      <property name="&lt;Alt&gt;F7" type="empty"/>\n      <property name="&lt;Alt&gt;F8" type="empty"/>\n      <property name="&lt;Alt&gt;F9" type="empty"/>\n      <property name="&lt;Alt&gt;F10" type="empty"/>\n      <property name="&lt;Alt&gt;F11" type="empty"/>\n      <property name="&lt;Alt&gt;F12" type="empty"/>\n      <property name="&lt;Control&gt;&lt;Shift&gt;&lt;Alt&gt;Left" type="empty"/>\n      <property name="&lt;Alt&gt;&lt;Control&gt;End" type="empty"/>\n      <property name="&lt;Alt&gt;&lt;Control&gt;Home" type="empty"/>\n      <property name="&lt;Control&gt;&lt;Shift&gt;&lt;Alt&gt;Right" type="empty"/>\n      <property name="&lt;Control&gt;&lt;Shift&gt;&lt;Alt&gt;Up" type="empty"/>\n      <property name="&lt;Alt&gt;&lt;Control&gt;KP_1" type="empty"/>\n      <property name="&lt;Alt&gt;&lt;Control&gt;KP_2" type="empty"/>\n      <property name="&lt;Alt&gt;&lt;Control&gt;KP_3" type="empty"/>\n      <property name="&lt;Alt&gt;&lt;Control&gt;KP_4" type="empty"/>\n      <property name="&lt;Alt&gt;&lt;Control&gt;KP_5" type="empty"/>\n      <property name="&lt;Alt&gt;&lt;Control&gt;KP_6" type="empty"/>\n      <property name="&lt;Alt&gt;&lt;Control&gt;KP_7" type="empty"/>\n      <property name="&lt;Alt&gt;&lt;Control&gt;KP_8" type="empty"/>\n      <property name="&lt;Alt&gt;&lt;Control&gt;KP_9" type="empty"/>\n      <property name="&lt;Alt&gt;space" type="empty"/>\n      <property name="&lt;Shift&gt;&lt;Alt&gt;Page_Up" type="empty"/>\n      <property name="&lt;Control&gt;&lt;Alt&gt;Right" type="empty"/>\n      <property name="&lt;Control&gt;&lt;Alt&gt;d" type="empty"/>\n      <property name="&lt;Control&gt;&lt;Alt&gt;Up" type="empty"/>\n      <property name="&lt;Super&gt;Tab" type="empty"/>\n      <property name="&lt;Control&gt;F1" type="empty"/>\n      <property name="&lt;Control&gt;F2" type="empty"/>\n      <property name="&lt;Control&gt;F3" type="empty"/>\n      <property name="&lt;Control&gt;F4" type="empty"/>\n      <property name="&lt;Control&gt;F5" type="empty"/>\n      <property name="&lt;Control&gt;F6" type="empty"/>\n      <property name="&lt;Control&gt;F7" type="empty"/>\n      <property name="&lt;Control&gt;F8" type="empty"/>\n      <property name="&lt;Control&gt;F9" type="empty"/>\n      <property name="&lt;Control&gt;F10" type="empty"/>\n      <property name="&lt;Control&gt;F11" type="empty"/>\n      <property name="&lt;Control&gt;F12" type="empty"/>\n    </property>\n    <property name="custom" type="empty">\n      <property name="&lt;Control&gt;F3" type="string" value="workspace_3_key"/>\n      <property name="&lt;Control&gt;F4" type="string" value="workspace_4_key"/>\n      <property name="&lt;Control&gt;F5" type="string" value="workspace_5_key"/>\n      <property name="&lt;Control&gt;F6" type="string" value="workspace_6_key"/>\n      <property name="&lt;Control&gt;F7" type="string" value="workspace_7_key"/>\n      <property name="&lt;Control&gt;F8" type="string" value="workspace_8_key"/>\n      <property name="&lt;Control&gt;F9" type="string" value="workspace_9_key"/>\n      <property name="&lt;Alt&gt;Tab" type="string" value="cycle_windows_key"/>\n      <property name="&lt;Control&gt;&lt;Alt&gt;Right" type="string" value="right_workspace_key"/>\n      <property name="Left" type="string" value="left_key"/>\n      <property name="&lt;Control&gt;&lt;Alt&gt;d" type="string" value="show_desktop_key"/>\n      <property name="&lt;Control&gt;&lt;Shift&gt;&lt;Alt&gt;Left" type="string" value="move_window_left_key"/>\n      <property name="&lt;Control&gt;&lt;Shift&gt;&lt;Alt&gt;Right" type="string" value="move_window_right_key"/>\n      <property name="Up" type="string" value="up_key"/>\n      <property name="&lt;Alt&gt;F4" type="string" value="close_window_key"/>\n      <property name="&lt;Alt&gt;F6" type="string" value="stick_window_key"/>\n      <property name="&lt;Control&gt;&lt;Alt&gt;Down" type="string" value="down_workspace_key"/>\n      <property name="&lt;Alt&gt;F7" type="string" value="move_window_key"/>\n      <property name="&lt;Alt&gt;F9" type="string" value="hide_window_key"/>\n      <property name="&lt;Alt&gt;F11" type="string" value="fullscreen_key"/>\n      <property name="&lt;Alt&gt;F8" type="string" value="resize_window_key"/>\n      <property name="&lt;Super&gt;Tab" type="string" value="switch_window_key"/>\n      <property name="Escape" type="string" value="cancel_key"/>\n      <property name="&lt;Alt&gt;&lt;Control&gt;KP_1" type="string" value="move_window_workspace_1_key"/>\n      <property name="&lt;Alt&gt;&lt;Control&gt;KP_2" type="string" value="move_window_workspace_2_key"/>\n      <property name="&lt;Alt&gt;&lt;Control&gt;KP_3" type="string" value="move_window_workspace_3_key"/>\n      <property name="&lt;Alt&gt;&lt;Control&gt;KP_4" type="string" value="move_window_workspace_4_key"/>\n      <property name="&lt;Alt&gt;&lt;Control&gt;KP_5" type="string" value="move_window_workspace_5_key"/>\n      <property name="&lt;Alt&gt;&lt;Control&gt;KP_6" type="string" value="move_window_workspace_6_key"/>\n      <property name="Down" type="string" value="down_key"/>\n      <property name="&lt;Control&gt;&lt;Shift&gt;&lt;Alt&gt;Up" type="string" value="move_window_up_key"/>\n      <property name="&lt;Shift&gt;&lt;Alt&gt;Page_Down" type="string" value="lower_window_key"/>\n      <property name="&lt;Alt&gt;F12" type="string" value="above_key"/>\n      <property name="&lt;Alt&gt;&lt;Control&gt;KP_8" type="string" value="move_window_workspace_8_key"/>\n      <property name="&lt;Alt&gt;&lt;Control&gt;KP_9" type="string" value="move_window_workspace_9_key"/>\n      <property name="Right" type="string" value="right_key"/>\n      <property name="&lt;Alt&gt;F10" type="string" value="maximize_window_key"/>\n      <property name="&lt;Control&gt;&lt;Alt&gt;Up" type="string" value="up_workspace_key"/>\n      <property name="&lt;Control&gt;F10" type="string" value="workspace_10_key"/>\n      <property name="&lt;Alt&gt;&lt;Control&gt;KP_7" type="string" value="move_window_workspace_7_key"/>\n      <property name="&lt;Alt&gt;&lt;Control&gt;End" type="string" value="move_window_next_workspace_key"/>\n      <property name="&lt;Alt&gt;Delete" type="string" value="del_workspace_key"/>\n      <property name="&lt;Control&gt;&lt;Alt&gt;Left" type="string" value="left_workspace_key"/>\n      <property name="&lt;Control&gt;F12" type="string" value="workspace_12_key"/>\n      <property name="&lt;Alt&gt;space" type="string" value="popup_menu_key"/>\n      <property name="&lt;Alt&gt;&lt;Shift&gt;Tab" type="string" value="cycle_reverse_windows_key"/>\n      <property name="&lt;Shift&gt;&lt;Alt&gt;Page_Up" type="string" value="raise_window_key"/>\n      <property name="&lt;Alt&gt;Insert" type="string" value="add_workspace_key"/>\n      <property name="&lt;Alt&gt;&lt;Control&gt;Home" type="string" value="move_window_prev_workspace_key"/>\n      <property name="&lt;Control&gt;F2" type="string" value="workspace_2_key"/>\n      <property name="&lt;Control&gt;F1" type="string" value="workspace_1_key"/>\n      <property name="&lt;Control&gt;F11" type="string" value="workspace_11_key"/>\n      <property name="override" type="bool" value="true"/>\n    </property>\n  </property>\n  <property name="providers" type="array">\n    <value type="string" value="xfwm4"/>\n    <value type="string" value="commands"/>\n  </property>\n</channel>' > /root/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortcuts.xml
+echo -e '<?xml version="1.0" encoding="UTF-8"?>\n\n<channel name="xfce4-keyboard-shortcuts" version="1.0">\n  <property name="commands" type="empty">\n    <property name="default" type="empty">\n      <property name="&lt;Alt&gt;F2" type="empty"/>\n      <property name="&lt;Primary&gt;&lt;Alt&gt;Delete" type="empty"/>\n      <property name="XF86Display" type="empty"/>\n      <property name="&lt;Super&gt;p" type="empty"/>\n      <property name="&lt;Primary&gt;Escape" type="empty"/>\n    </property>\n    <property name="custom" type="empty">\n      <property name="XF86Display" type="string" value="xfce4-display-settings --minimal"/>\n      <property name="&lt;Super&gt;p" type="string" value="xfce4-display-settings --minimal"/>\n      <property name="&lt;Primary&gt;&lt;Alt&gt;Delete" type="string" value="xflock4"/>\n      <property name="&lt;Primary&gt;Escape" type="string" value="xfdesktop --menu"/>\n      <property name="&lt;Alt&gt;F2" type="string" value="xfrun4"/>\n      <property name="override" type="bool" value="true"/>\n    </property>\n  </property>\n  <property name="xfwm4" type="empty">\n    <property name="default" type="empty">\n      <property name="&lt;Alt&gt;Insert" type="empty"/>\n      <property name="Escape" type="empty"/>\n      <property name="Left" type="empty"/>\n      <property name="Right" type="empty"/>\n      <property name="Up" type="empty"/>\n      <property name="Down" type="empty"/>\n      <property name="&lt;Alt&gt;Tab" type="empty"/>\n      <property name="&lt;Alt&gt;&lt;Shift&gt;Tab" type="empty"/>\n      <property name="&lt;Alt&gt;Delete" type="empty"/>\n      <property name="&lt;Control&gt;&lt;Alt&gt;Down" type="empty"/>\n      <property name="&lt;Control&gt;&lt;Alt&gt;Left" type="empty"/>\n      <property name="&lt;Shift&gt;&lt;Alt&gt;Page_Down" type="empty"/>\n      <property name="&lt;Alt&gt;F4" type="empty"/>\n      <property name="&lt;Alt&gt;F6" type="empty"/>\n      <property name="&lt;Alt&gt;F7" type="empty"/>\n      <property name="&lt;Alt&gt;F8" type="empty"/>\n      <property name="&lt;Alt&gt;F9" type="empty"/>\n      <property name="&lt;Alt&gt;F10" type="empty"/>\n      <property name="&lt;Alt&gt;F11" type="empty"/>\n      <property name="&lt;Alt&gt;F12" type="empty"/>\n      <property name="&lt;Control&gt;&lt;Shift&gt;&lt;Alt&gt;Left" type="empty"/>\n      <property name="&lt;Alt&gt;&lt;Control&gt;End" type="empty"/>\n      <property name="&lt;Alt&gt;&lt;Control&gt;Home" type="empty"/>\n      <property name="&lt;Control&gt;&lt;Shift&gt;&lt;Alt&gt;Right" type="empty"/>\n      <property name="&lt;Control&gt;&lt;Shift&gt;&lt;Alt&gt;Up" type="empty"/>\n      <property name="&lt;Alt&gt;&lt;Control&gt;KP_1" type="empty"/>\n      <property name="&lt;Alt&gt;&lt;Control&gt;KP_2" type="empty"/>\n      <property name="&lt;Alt&gt;&lt;Control&gt;KP_3" type="empty"/>\n      <property name="&lt;Alt&gt;&lt;Control&gt;KP_4" type="empty"/>\n      <property name="&lt;Alt&gt;&lt;Control&gt;KP_5" type="empty"/>\n      <property name="&lt;Alt&gt;&lt;Control&gt;KP_6" type="empty"/>\n      <property name="&lt;Alt&gt;&lt;Control&gt;KP_7" type="empty"/>\n      <property name="&lt;Alt&gt;&lt;Control&gt;KP_8" type="empty"/>\n      <property name="&lt;Alt&gt;&lt;Control&gt;KP_9" type="empty"/>\n      <property name="&lt;Alt&gt;space" type="empty"/>\n      <property name="&lt;Shift&gt;&lt;Alt&gt;Page_Up" type="empty"/>\n      <property name="&lt;Control&gt;&lt;Alt&gt;Right" type="empty"/>\n      <property name="&lt;Control&gt;&lt;Alt&gt;d" type="empty"/>\n      <property name="&lt;Control&gt;&lt;Alt&gt;Up" type="empty"/>\n      <property name="&lt;Super&gt;Tab" type="empty"/>\n      <property name="&lt;Control&gt;F1" type="empty"/>\n      <property name="&lt;Control&gt;F2" type="empty"/>\n      <property name="&lt;Control&gt;F3" type="empty"/>\n      <property name="&lt;Control&gt;F4" type="empty"/>\n      <property name="&lt;Control&gt;F5" type="empty"/>\n      <property name="&lt;Control&gt;F6" type="empty"/>\n      <property name="&lt;Control&gt;F7" type="empty"/>\n      <property name="&lt;Control&gt;F8" type="empty"/>\n      <property name="&lt;Control&gt;F9" type="empty"/>\n      <property name="&lt;Control&gt;F10" type="empty"/>\n      <property name="&lt;Control&gt;F11" type="empty"/>\n      <property name="&lt;Control&gt;F12" type="empty"/>\n    </property>' >> /root/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortcuts.xml
+echo -e '    <property name="custom" type="empty">\n      <property name="&lt;Control&gt;F3" type="string" value="workspace_3_key"/>\n      <property name="&lt;Control&gt;F4" type="string" value="workspace_4_key"/>\n      <property name="&lt;Control&gt;F5" type="string" value="workspace_5_key"/>\n      <property name="&lt;Control&gt;F6" type="string" value="workspace_6_key"/>\n      <property name="&lt;Control&gt;F7" type="string" value="workspace_7_key"/>\n      <property name="&lt;Control&gt;F8" type="string" value="workspace_8_key"/>\n      <property name="&lt;Control&gt;F9" type="string" value="workspace_9_key"/>\n      <property name="&lt;Alt&gt;Tab" type="string" value="cycle_windows_key"/>\n      <property name="&lt;Control&gt;&lt;Alt&gt;Right" type="string" value="right_workspace_key"/>\n      <property name="Left" type="string" value="left_key"/>\n      <property name="&lt;Control&gt;&lt;Alt&gt;d" type="string" value="show_desktop_key"/>\n      <property name="&lt;Control&gt;&lt;Shift&gt;&lt;Alt&gt;Left" type="string" value="move_window_left_key"/>\n      <property name="&lt;Control&gt;&lt;Shift&gt;&lt;Alt&gt;Right" type="string" value="move_window_right_key"/>\n      <property name="Up" type="string" value="up_key"/>\n      <property name="&lt;Alt&gt;F4" type="string" value="close_window_key"/>\n      <property name="&lt;Alt&gt;F6" type="string" value="stick_window_key"/>\n      <property name="&lt;Control&gt;&lt;Alt&gt;Down" type="string" value="down_workspace_key"/>\n      <property name="&lt;Alt&gt;F7" type="string" value="move_window_key"/>\n      <property name="&lt;Alt&gt;F9" type="string" value="hide_window_key"/>\n      <property name="&lt;Alt&gt;F11" type="string" value="fullscreen_key"/>\n      <property name="&lt;Alt&gt;F8" type="string" value="resize_window_key"/>\n      <property name="&lt;Super&gt;Tab" type="string" value="switch_window_key"/>\n      <property name="Escape" type="string" value="cancel_key"/>\n      <property name="&lt;Alt&gt;&lt;Control&gt;KP_1" type="string" value="move_window_workspace_1_key"/>\n      <property name="&lt;Alt&gt;&lt;Control&gt;KP_2" type="string" value="move_window_workspace_2_key"/>\n      <property name="&lt;Alt&gt;&lt;Control&gt;KP_3" type="string" value="move_window_workspace_3_key"/>\n      <property name="&lt;Alt&gt;&lt;Control&gt;KP_4" type="string" value="move_window_workspace_4_key"/>\n      <property name="&lt;Alt&gt;&lt;Control&gt;KP_5" type="string" value="move_window_workspace_5_key"/>\n      <property name="&lt;Alt&gt;&lt;Control&gt;KP_6" type="string" value="move_window_workspace_6_key"/>\n      <property name="Down" type="string" value="down_key"/>\n      <property name="&lt;Control&gt;&lt;Shift&gt;&lt;Alt&gt;Up" type="string" value="move_window_up_key"/>\n      <property name="&lt;Shift&gt;&lt;Alt&gt;Page_Down" type="string" value="lower_window_key"/>\n      <property name="&lt;Alt&gt;F12" type="string" value="above_key"/>\n      <property name="&lt;Alt&gt;&lt;Control&gt;KP_8" type="string" value="move_window_workspace_8_key"/>\n      <property name="&lt;Alt&gt;&lt;Control&gt;KP_9" type="string" value="move_window_workspace_9_key"/>\n      <property name="Right" type="string" value="right_key"/>\n      <property name="&lt;Alt&gt;F10" type="string" value="maximize_window_key"/>\n      <property name="&lt;Control&gt;&lt;Alt&gt;Up" type="string" value="up_workspace_key"/>\n      <property name="&lt;Control&gt;F10" type="string" value="workspace_10_key"/>\n      <property name="&lt;Alt&gt;&lt;Control&gt;KP_7" type="string" value="move_window_workspace_7_key"/>\n      <property name="&lt;Alt&gt;&lt;Control&gt;End" type="string" value="move_window_next_workspace_key"/>\n      <property name="&lt;Alt&gt;Delete" type="string" value="del_workspace_key"/>\n      <property name="&lt;Control&gt;&lt;Alt&gt;Left" type="string" value="left_workspace_key"/>\n      <property name="&lt;Control&gt;F12" type="string" value="workspace_12_key"/>\n      <property name="&lt;Alt&gt;space" type="string" value="popup_menu_key"/>\n      <property name="&lt;Alt&gt;&lt;Shift&gt;Tab" type="string" value="cycle_reverse_windows_key"/>\n      <property name="&lt;Shift&gt;&lt;Alt&gt;Page_Up" type="string" value="raise_window_key"/>\n      <property name="&lt;Alt&gt;Insert" type="string" value="add_workspace_key"/>\n      <property name="&lt;Alt&gt;&lt;Control&gt;Home" type="string" value="move_window_prev_workspace_key"/>\n      <property name="&lt;Control&gt;F2" type="string" value="workspace_2_key"/>\n      <property name="&lt;Control&gt;F1" type="string" value="workspace_1_key"/>\n      <property name="&lt;Control&gt;F11" type="string" value="workspace_11_key"/>\n      <property name="override" type="bool" value="true"/>\n    </property>\n  </property>\n  <property name="providers" type="array">\n    <value type="string" value="xfwm4"/>\n    <value type="string" value="commands"/>\n  </property>\n</channel>' >> /root/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortcuts.xml
 echo -e '<?xml version="1.0" encoding="UTF-8"?>\n\n<channel name="xfce4-mixer" version="1.0">\n  <property name="active-card" type="string" value="PlaybackES1371AudioPCI97AnalogStereoPulseAudioMixer"/>\n  <property name="volume-step-size" type="uint" value="5"/>\n  <property name="sound-card" type="string" value="PlaybackES1371AudioPCI97AnalogStereoPulseAudioMixer"/>\n  <property name="sound-cards" type="empty">\n    <property name="PlaybackES1371AudioPCI97AnalogStereoPulseAudioMixer" type="array">\n      <value type="string" value="Master"/>\n    </property>\n  </property>\n  <property name="window-height" type="int" value="400"/>\n  <property name="window-width" type="int" value="738"/>\n</channel>' > /root/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-mixer.xml
 echo -e '<?xml version="1.0" encoding="UTF-8"?>\n\n<channel name="xfce4-panel" version="1.0">\n  <property name="panels" type="uint" value="1">\n    <property name="panel-0" type="empty">\n      <property name="position" type="string" value="p=6;x=0;y=0"/>\n      <property name="length" type="uint" value="100"/>\n      <property name="position-locked" type="bool" value="true"/>\n      <property name="plugin-ids" type="array">\n        <value type="int" value="1"/>\n        <value type="int" value="15"/>\n        <value type="int" value="16"/>\n        <value type="int" value="17"/>\n        <value type="int" value="21"/>\n        <value type="int" value="23"/>\n        <value type="int" value="19"/>\n        <value type="int" value="3"/>\n        <value type="int" value="24"/>\n        <value type="int" value="6"/>\n        <value type="int" value="2"/>\n        <value type="int" value="5"/>\n        <value type="int" value="4"/>\n        <value type="int" value="25"/>\n      </property>\n      <property name="background-alpha" type="uint" value="90"/>\n    </property>\n  </property>\n  <property name="plugins" type="empty">\n    <property name="plugin-1" type="string" value="applicationsmenu">\n      <property name="button-icon" type="string" value="kali-menu"/>\n      <property name="show-button-title" type="bool" value="false"/>\n      <property name="show-generic-names" type="bool" value="true"/>\n      <property name="show-tooltips" type="bool" value="true"/>\n    </property>\n    <property name="plugin-2" type="string" value="actions"/>\n    <property name="plugin-3" type="string" value="tasklist"/>\n    <property name="plugin-4" type="string" value="pager">\n      <property name="rows" type="uint" value="1"/>\n    </property>\n    <property name="plugin-5" type="string" value="clock">\n      <property name="digital-format" type="string" value="%R, %A %d %B %Y"/>\n    </property>\n    <property name="plugin-6" type="string" value="systray">\n      <property name="names-visible" type="array">\n        <value type="string" value="networkmanager applet"/>\n      </property>\n    </property>\n    <property name="plugin-15" type="string" value="launcher">\n      <property name="items" type="array">\n        <value type="string" value="13684522587.desktop"/>\n      </property>\n    </property>\n    <property name="plugin-16" type="string" value="launcher">\n      <property name="items" type="array">\n        <value type="string" value="13684522758.desktop"/>\n      </property>\n    </property>\n    <property name="plugin-17" type="string" value="launcher">\n      <property name="items" type="array">\n        <value type="string" value="13684522859.desktop"/>\n      </property>\n    </property>\n    <property name="plugin-21" type="string" value="applicationsmenu">\n      <property name="custom-menu" type="bool" value="true"/>\n      <property name="custom-menu-file" type="string" value="/root/.config/xfce4/menu/top10.menu"/>\n      <property name="button-icon" type="string" value="security-medium"/>\n      <property name="show-button-title" type="bool" value="false"/>\n      <property name="button-title" type="string" value="Top 10"/>\n    </property>\n    <property name="plugin-19" type="string" value="launcher">\n      <property name="items" type="array">\n        <value type="string" value="136845425410.desktop"/>\n      </property>\n    </property>\n    <property name="plugin-22" type="empty">\n      <property name="base-directory" type="string" value="/root"/>\n      <property name="hidden-files" type="bool" value="false"/>\n    </property>\n    <property name="plugin-23" type="string" value="places"/>\n    <property name="plugin-24" type="string" value="xfce4-mixer-plugin"/>\n    <property name="plugin-25" type="string" value="showdesktop"/>\n  </property>\n</channel>' > /root/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml
 echo -e '<?xml version="1.0" encoding="UTF-8"?>\n\n<channel name="xfce4-settings-editor" version="1.0">\n  <property name="window-width" type="int" value="600"/>\n  <property name="window-height" type="int" value="380"/>\n  <property name="hpaned-position" type="int" value="200"/>\n</channel>' > /root/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-settings-editor.xml
 echo -e '<?xml version="1.0" encoding="UTF-8"?>\n\n<channel name="xfwm4" version="1.0">\n  <property name="general" type="empty">\n    <property name="activate_action" type="string" value="bring"/>\n    <property name="borderless_maximize" type="bool" value="true"/>\n    <property name="box_move" type="bool" value="false"/>\n    <property name="box_resize" type="bool" value="false"/>\n    <property name="button_layout" type="string" value="O|SHMC"/>\n    <property name="button_offset" type="int" value="0"/>\n    <property name="button_spacing" type="int" value="0"/>\n    <property name="click_to_focus" type="bool" value="true"/>\n    <property name="focus_delay" type="int" value="250"/>\n    <property name="cycle_apps_only" type="bool" value="false"/>\n    <property name="cycle_draw_frame" type="bool" value="true"/>\n    <property name="cycle_hidden" type="bool" value="true"/>\n    <property name="cycle_minimum" type="bool" value="true"/>\n    <property name="cycle_workspaces" type="bool" value="false"/>\n    <property name="double_click_time" type="int" value="250"/>\n    <property name="double_click_distance" type="int" value="5"/>\n    <property name="double_click_action" type="string" value="maximize"/>\n    <property name="easy_click" type="string" value="Alt"/>\n    <property name="focus_hint" type="bool" value="true"/>\n    <property name="focus_new" type="bool" value="true"/>\n    <property name="frame_opacity" type="int" value="100"/>\n    <property name="full_width_title" type="bool" value="true"/>\n    <property name="inactive_opacity" type="int" value="100"/>\n    <property name="maximized_offset" type="int" value="0"/>\n    <property name="move_opacity" type="int" value="100"/>\n    <property name="placement_ratio" type="int" value="20"/>\n    <property name="placement_mode" type="string" value="center"/>\n    <property name="popup_opacity" type="int" value="100"/>\n    <property name="mousewheel_rollup" type="bool" value="true"/>\n    <property name="prevent_focus_stealing" type="bool" value="false"/>\n    <property name="raise_delay" type="int" value="250"/>\n    <property name="raise_on_click" type="bool" value="true"/>\n    <property name="raise_on_focus" type="bool" value="false"/>\n    <property name="raise_with_any_button" type="bool" value="true"/>\n    <property name="repeat_urgent_blink" type="bool" value="false"/>\n    <property name="resize_opacity" type="int" value="100"/>\n    <property name="restore_on_move" type="bool" value="true"/>\n    <property name="scroll_workspaces" type="bool" value="true"/>\n    <property name="shadow_delta_height" type="int" value="0"/>\n    <property name="shadow_delta_width" type="int" value="0"/>\n    <property name="shadow_delta_x" type="int" value="0"/>\n    <property name="shadow_delta_y" type="int" value="-3"/>\n    <property name="shadow_opacity" type="int" value="50"/>\n    <property name="show_app_icon" type="bool" value="false"/>\n    <property name="show_dock_shadow" type="bool" value="true"/>\n    <property name="show_frame_shadow" type="bool" value="false"/>\n    <property name="show_popup_shadow" type="bool" value="false"/>\n    <property name="snap_resist" type="bool" value="false"/>\n    <property name="snap_to_border" type="bool" value="true"/>\n    <property name="snap_to_windows" type="bool" value="false"/>\n    <property name="snap_width" type="int" value="10"/>\n    <property name="theme" type="string" value="Shiki-Colors-Light-Menus"/>\n    <property name="title_alignment" type="string" value="center"/>\n    <property name="title_font" type="string" value="Sans Bold 9"/>\n    <property name="title_horizontal_offset" type="int" value="0"/>\n    <property name="title_shadow_active" type="string" value="false"/>\n    <property name="title_shadow_inactive" type="string" value="false"/>\n    <property name="title_vertical_offset_active" type="int" value="0"/>\n    <property name="title_vertical_offset_inactive" type="int" value="0"/>\n    <property name="toggle_workspaces" type="bool" value="false"/>\n    <property name="unredirect_overlays" type="bool" value="true"/>\n    <property name="urgent_blink" type="bool" value="false"/>\n    <property name="use_compositing" type="bool" value="true"/>\n    <property name="workspace_count" type="int" value="2"/>\n    <property name="wrap_cycle" type="bool" value="true"/>\n    <property name="wrap_layout" type="bool" value="true"/>\n    <property name="wrap_resistance" type="int" value="10"/>\n    <property name="wrap_windows" type="bool" value="true"/>\n    <property name="wrap_workspaces" type="bool" value="false"/>\n    <property name="workspace_names" type="array">\n      <value type="string" value="Workspace 1"/>\n      <value type="string" value="Workspace 2"/>\n      <value type="string" value="Workspace 3"/>\n      <value type="string" value="Workspace 4"/>\n    </property>\n  </property>\n</channel>' > /root/.config/xfce4/xfconf/xfce-perchannel-xml/xfwm4.xml
 echo -e '<?xml version="1.0" encoding="UTF-8"?>\n\n<channel name="xsettings" version="1.0">\n  <property name="Net" type="empty">\n    <property name="ThemeName" type="empty"/>\n    <property name="IconThemeName" type="empty"/>\n    <property name="DoubleClickTime" type="int" value="250"/>\n    <property name="DoubleClickDistance" type="int" value="5"/>\n    <property name="DndDragThreshold" type="int" value="8"/>\n    <property name="CursorBlink" type="bool" value="true"/>\n    <property name="CursorBlinkTime" type="int" value="1200"/>\n    <property name="SoundThemeName" type="string" value="default"/>\n    <property name="EnableEventSounds" type="bool" value="false"/>\n    <property name="EnableInputFeedbackSounds" type="bool" value="false"/>\n  </property>\n  <property name="Xft" type="empty">\n    <property name="DPI" type="empty"/>\n    <property name="Antialias" type="int" value="-1"/>\n    <property name="Hinting" type="int" value="-1"/>\n    <property name="HintStyle" type="string" value="hintnone"/>\n    <property name="RGBA" type="string" value="none"/>\n  </property>\n  <property name="Gtk" type="empty">\n    <property name="CanChangeAccels" type="bool" value="false"/>\n    <property name="ColorPalette" type="string" value="black:white:gray50:red:purple:blue:light blue:green:yellow:orange:lavender:brown:goldenrod4:dodger blue:pink:light green:gray10:gray30:gray75:gray90"/>\n    <property name="FontName" type="string" value="Sans 10"/>\n    <property name="IconSizes" type="string" value=""/>\n    <property name="KeyThemeName" type="string" value=""/>\n    <property name="ToolbarStyle" type="string" value="icons"/>\n    <property name="ToolbarIconSize" type="int" value="3"/>\n    <property name="IMPreeditStyle" type="string" value=""/>\n    <property name="IMStatusStyle" type="string" value=""/>\n    <property name="MenuImages" type="bool" value="true"/>\n    <property name="ButtonImages" type="bool" value="true"/>\n    <property name="MenuBarAccel" type="string" value="F10"/>\n    <property name="CursorThemeName" type="string" value=""/>\n    <property name="CursorThemeSize" type="int" value="0"/>\n    <property name="IMModule" type="string" value=""/>\n  </property>\n</channel>' > /root/.config/xfce4/xfconf/xfce-perchannel-xml/xsettings.xml
 echo -e '<Menu>\n\t<Name>Top 10</Name>\n\t<DefaultAppDirs/>\n\t<Directory>top10.directory</Directory>\n\t<Include>\n\t\t<Category>top10</Category>\n\t</Include>\n</Menu>' > /root/.config/xfce4/menu/top10.menu
-rm -f /root/.cache/sessions/*
-#--- Get Shiki-Colors-Light theme
+#--- Get shiki-colors-light theme
 wget http://xfce-look.org/CONTENT/content-files/142110-Shiki-Colors-Light-Menus.tar.gz -O /tmp/Shiki-Colors-Light-Menus.tar.gz
 tar zxf /tmp/Shiki-Colors-Light-Menus.tar.gz -C /root/.themes/
 xfconf-query -c xsettings -p /Net/ThemeName -s "Shiki-Colors-Light-Menus"
@@ -359,7 +384,7 @@ wget http://www.kali.org/images/wallpapers-01/kali-wp-june-2014_1920x1080_G.png 
 wget http://imageshack.us/a/img17/4646/vzex.png -O /usr/share/wallpapers/kali_blue_splat.png
 wget http://www.n1tr0g3n.com/wp-content/uploads/2013/03/Kali-Linux-faded-no-Dragon-small-text.png -O /usr/share/wallpapers/kali_black_clean.png
 wget http://1hdwallpapers.com/wallpapers/kali_linux.jpg -O /usr/share/wallpapers/kali_black_stripes.jpg
-#--- Change desktop wallpaper (Random each install)
+#--- Change desktop wallpaper (random each install). Note: For now...
 wallpaper=$(shuf -n1 -e /usr/share/wallpapers/kali_*)   #wallpaper=/usr/share/wallpapers/kali_blue_splat.png
 xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitor0/image-show -s true
 xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitor0/image-path -s $wallpaper
@@ -386,7 +411,7 @@ grep -q '^/usr/bin/numlockx' $file 2>/dev/null || echo "/usr/bin/numlockx on" >>
 #--- XFCE fixes for default applications
 mkdir -p /root/.local/share/applications/
 file=/root/.local/share/applications/mimeapps.list; [ -e $file ] && cp -n $file{,.bkup}
-[[ ! -e $file ]] && echo '[Added Associations]' > $file
+[ ! -e $file ] && echo '[Added Associations]' > $file
 for VALUE in file trash; do
   sed -i 's#x-scheme-handler/'$VALUE'=.*#x-scheme-handler/'$VALUE'=exo-file-manager.desktop#' $file
   grep -q '^x-scheme-handler/'$VALUE'=' $file 2>/dev/null || echo -e 'x-scheme-handler/'$VALUE'=exo-file-manager.desktop' >> $file
@@ -437,7 +462,7 @@ gconftool-2 --type string --set /apps/gnome-terminal/profiles/Default/background
 gconftool-2 --type string --set /apps/gnome-terminal/profiles/Default/background_type transparent
 
 
-##### Installing terminator
+##### Installing terminator ~ multiple terminals in a single window
 echo -e "\e[01;32m[+]\e[00m Installing terminator"
 apt-get -y -qq install terminator
 #--- Configure terminator
@@ -453,7 +478,7 @@ sed -i 's#^TerminalEmulator=.*#TerminalEmulator=custom-TerminalEmulator#' $file
 grep -q '^TerminalEmulator=custom-TerminalEmulator' $file 2>/dev/null || echo -e 'TerminalEmulator=custom-TerminalEmulator' >> $file
 
 
-##### Installing bash-completion ~ all users
+##### Installing bash-completion - all users
 echo -e "\e[01;32m[+]\e[00m Installing bash-completion"
 apt-get -y -qq install bash-completion
 file=/etc/bash.bashrc; [ -e $file ] && cp -n $file{,.bkup}    #/root/.bashrc
@@ -462,30 +487,42 @@ sed -i '/# enable bash completion in/,+7{/enable bash completion/!s/^#//}' $file
 #source $file   # If using ZSH, will fail
 
 
-##### Configuring aliases ~ root user
+##### Configuring bash - all users
+echo -e "\e[01;32m[+]\e[00m Configuring bash"
+file=/etc/bash.bashrc; [ -e $file ] && cp -n $file{,.bkup}    #/root/.bashrc
+grep -q "cdspell" $file || echo "shopt -sq cdspell" >> $file                  ## Spell check 'cd' commands
+grep -q "checkwinsize" $file || echo "shopt -sq checkwinsize" >> $file        ## Wrap lines correctly after resizing
+grep -q "nocaseglob" $file || echo "shopt -sq nocaseglob" >> $file            ## Case insensitive pathname expansion
+grep -q "HISTSIZE" $file || echo "HISTSIZE=10000" >> $file                    ## Bash history (memory)
+grep -q "HISTFILESIZE" $file || echo "HISTFILESIZE=10000" >> $file            ## Bash history (file - .bash_history)
+
+
+##### Configuring aliases - root user
 echo -e "\e[01;32m[+]\e[00m Configuring aliases"
-#--- Enable defaults ~ root user
+#--- Enable defaults - root user
 for FILE in /etc/bash.bashrc /root/.bashrc /root/.bash_aliases; do    #/etc/profile /etc/bashrc /etc/bash_aliases /etc/bash.bash_aliases
-  file=$FILE; [ -e $file ] && cp -n $file{,.bkup}
-  [ -e $file ] && sed -i 's/#alias/alias/g' $file
+  [ ! -e $FILE ] && break
+  cp -n $FILE{,.bkup}
+  sed -i 's/#alias/alias/g' $FILE
 done
 #--- Add in ours (programs)
 file=/root/.bash_aliases; [ -e $file ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
-grep -q '^alias tmux' $file 2>/dev/null || echo -e '\n### tmux\nalias tmux="tmux attach || tmux new"\n' >> $file
-grep -q '^alias axel' $file 2>/dev/null || echo -e '\n### axel\nalias axel="axel -a"\n' >> $file
-grep -q '^alias screen' $file 2>/dev/null || echo -e '\n### screen\nalias screen="screen -xRR"\n' >> $file
+grep -q '^alias tmux' $file 2>/dev/null || echo -e '\n## tmux\nalias tmux="tmux attach || tmux new"\n\n' >> $file    #alias tmux="tmux attach -t $HOST || tmux new -s $HOST"
+grep -q '^alias axel' $file 2>/dev/null || echo -e '\n## axel\nalias axel="axel -a"\n\n' >> $file
+grep -q '^alias screen' $file 2>/dev/null || echo -e '\n## screen\nalias screen="screen -xRR"\n\n' >> $file
 #--- Add in ours (shortcuts)
-grep -q '^### Grep aliases' $file 2>/dev/null || echo -e '\n### grep aliases\nalias grep="grep --color=always"\nalias ngrep="grep -n"\n\n' >> $file
-grep -q '^### Directory navigation aliases' $file 2>/dev/null || echo -e '\n### Directory navigation aliases\nalias ..="cd .."\nalias ...="cd ../.."\nalias ....="cd ../../.."\nalias .....="cd ../../../.."\n\n' >> $file
-grep -q '^### Add more aliases' $file 2>/dev/null || echo -e '\n### Add more aliases\nalias upd="sudo apt-get update"\nalias upg="sudo apt-get upgrade"\nalias ins="sudo apt-get install"\nalias rem="sudo apt-get purge"\nalias fix="sudo apt-get install -f"\n\n' >> $file
-grep -q '^### Extract file' $file 2>/dev/null || echo -e '\n### Extract file, example. "ex package.tar.bz2"\nex() {\n    if [[ -f $1 ]]; then\n        case $1 in\n            *.tar.bz2)   tar xjf $1  ;;\n            *.tar.gz)    tar xzf $1  ;;\n            *.bz2)       bunzip2 $1  ;;\n            *.rar)       rar x $1    ;;\n            *.gz)        gunzip $1   ;;\n            *.tar)       tar xf $1   ;;\n            *.tbz2)      tar xjf $1  ;;\n            *.tgz)       tar xzf $1  ;;\n            *.zip)       unzip $1    ;;\n            *.Z)         uncompress $1  ;;\n            *.7z)        7z x $1     ;;\n            *)           echo $1 cannot be extracted ;;\n        esac\n    else\n        echo $1 is not a valid file\n    fi\n}' >> $file
+grep -q '^## Get external IP address' $file 2>/dev/null || echo -e '\n## Get external IP address\nalias ipx="curl ipinfo.io/ip"\n\n' >> $file
+grep -q '^## Grep aliases' $file 2>/dev/null || echo -e '\n## grep aliases\nalias grep="grep --color=always"\nalias ngrep="grep -n"\n\n' >> $file
+grep -q '^## Directory navigation aliases' $file 2>/dev/null || echo -e '\n## Directory navigation aliases\nalias ..="cd .."\nalias ...="cd ../.."\nalias ....="cd ../../.."\nalias .....="cd ../../../.."\n\n' >> $file
+grep -q '^## Add more aliases' $file 2>/dev/null || echo -e '\n## Add more aliases\nalias upd="sudo apt-get update"\nalias upg="sudo apt-get upgrade"\nalias ins="sudo apt-get install"\nalias rem="sudo apt-get purge"\nalias fix="sudo apt-get install -f"\n\n' >> $file
+grep -q '^## Extract file' $file 2>/dev/null || echo -e '\n## Extract file, example. "ex package.tar.bz2"\nex() {\n    if [[ -f $1 ]]; then\n        case $1 in\n            *.tar.bz2)   tar xjf $1  ;;\n            *.tar.gz)    tar xzf $1  ;;\n            *.bz2)       bunzip2 $1  ;;\n            *.rar)       rar x $1    ;;\n            *.gz)        gunzip $1   ;;\n            *.tar)       tar xf $1   ;;\n            *.tbz2)      tar xjf $1  ;;\n            *.tgz)       tar xzf $1  ;;\n            *.zip)       unzip $1    ;;\n            *.Z)         uncompress $1  ;;\n            *.7z)        7z x $1     ;;\n            *)           echo $1 cannot be extracted ;;\n        esac\n    else\n        echo $1 is not a valid file\n    fi\n}' >> $file
 #--- Apply new aliases
 #source $file   # If using ZSH, will fail
 #--- Check
 #alias
 
 
-##### Configuring bash colour ~ all users
+##### Configuring bash colour - all users
 echo -e "\e[01;32m[+]\e[00m Configuring bash colour"
 file=/etc/bash.bashrc; [ -e $file ] && cp -n $file{,.bkup}   #/root/.bashrc
 sed -i 's/.*force_color_prompt=.*/force_color_prompt=yes/' $file
@@ -498,7 +535,7 @@ sed -i 's#PS1='"'"'.*'"'"'#PS1='"'"'${debian_chroot:+($debian_chroot)}\\[\\033\[
 #sed -i 's/.*force_color_prompt=.*/force_color_prompt=yes/' $file
 
 
-##### Configuring tmux ~ all users
+##### Configuring tmux - all users
 echo -e "\e[01;32m[+]\e[00m Configuring tmux"
 group="sudo"
 #apt-get -y -qq remove screen   # Optional: If we're going to have/use tmux, why have screen?
@@ -508,7 +545,7 @@ file=/etc/tmux.conf; [ -e $file ] && cp -n $file{,.bkup}   #/root/.tmux.conf
 echo -e "#-Settings---------------------------------------------------------------------\n## Make it like screen (use C-a)\nunbind C-b\nset -g prefix C-a\n\n## Pane switching with Alt+arrow\nbind -n M-Left select-pane -L\nbind -n M-Right select-pane -R\nbind -n M-Up select-pane -U\nbind -n M-Down select-pane -D\n\n## Activity Monitoring\nsetw -g monitor-activity on\nset -g visual-activity on\n\n## Reload settings\nunbind R\nbind R source-file ~/.tmux.conf\n\n## Load custom sources\nsource ~/.bashrc\n\n## Set defaults\nset -g default-terminal screen-256color\nset -g history-limit 5000\n\n## Default windows titles\nset -g set-titles on\nset -g set-titles-string '#(whoami)@#H - #I:#W'\n\n## Last window switch\nbind-key C-a last-window\n\n## Use ZSH as default shell\n$( [[ ! -e /bin/zsh ]] && echo "#" )set-option -g default-shell /bin/zsh\n\n## Show tmux messages for longer\nset -g display-time 3000\n\n## Status bar is redrawn every minute\nset -g status-interval 60\n\n\n#-Theme------------------------------------------------------------------------\n## Default colours\nset -g status-bg black\nset -g status-fg white\n\n## Left hand side\nset -g status-left-length '$(($(echo -n $(hostname) | wc -c) + 23))'\nset -g status-left '#[fg=green,bold]#(whoami)#[default]@#[fg=yellow,dim]#H #[fg=green,dim][#[fg=yellow]#(cut -d \" \" -f 1-3 /proc/loadavg)#[fg=green,dim]]'\n\n## Inactive windows in status bar\nset-window-option -g window-status-format '#[fg=red,dim]#I#[fg=grey,dim]:#[default,dim]#W#[fg=grey,dim]'\n\n## Current or active window in status bar\n#set-window-option -g window-status-current-format '#[bg=white,fg=red]#I#[bg=white,fg=grey]:#[bg=white,fg=black]#W#[fg=dim]#F'\nset-window-option -g window-status-current-format '#[fg=red,bold](#[fg=white,bold]#I#[fg=red,dim]:#[fg=white,bold]#W#[fg=red,bold])'\n\n## Right hand side\nset -g status-right '#[fg=green][#[fg=yellow]%Y-%m-%d #[fg=white]%H:%M#[fg=green]]'" > $file
 #--- Setup alias
 file=/root/.bash_aliases; [ -e $file ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
-grep -q '^alias tmux' $file 2>/dev/null || echo -e '\n### tmux\nalias tmux="tmux attach || tmux new"\n' >> $file
+grep -q '^alias tmux' $file 2>/dev/null || echo -e '\n## tmux\nalias tmux="tmux attach || tmux new"\n\n' >> $file    #alias tmux="tmux attach -t $HOST || tmux new -s $HOST"
 #--- Apply new aliases
 #source $file   # If using ZSH, will fail
 #--- Copy it to other user(s) ~
@@ -517,7 +554,7 @@ grep -q '^alias tmux' $file 2>/dev/null || echo -e '\n### tmux\nalias tmux="tmux
 #  cp -f /{etc/,home/$username/.}tmux.conf
 #  chown $username\:$group /home/$username/.tmux.conf
 #  file=/home/$username/.bash_aliases; [ -e $file ] && cp -n $file{,.bkup}
-#  grep -q '^alias tmux' $file 2>/dev/null || echo -e '\n### tmux\nalias tmux="tmux attach || tmux new"\n' >> $file
+#  grep -q '^alias tmux' $file 2>/dev/null || echo -e '\n## tmux\nalias tmux="tmux attach || tmux new"\n\n' >> $file    #alias tmux="tmux attach -t $HOST || tmux new -s $HOST"
 #fi
 #--- Use it ~ bit pointless if used in a post-install script
 #tmux   # If ZSH isn't installed, it will not start up
@@ -531,7 +568,7 @@ file=/root/.screenrc; [ -e $file ] && cp -n $file{,.bkup}
 echo -e "## Don't display the copyright page\nstartup_message off\n\n## tab-completion flash in heading bar\nvbell off\n\n## Keep scrollback n lines\ndefscrollback 1000\n\n## hardstatus is a bar of text that is visible in all screens\nhardstatus on\nhardstatus alwayslastline\nhardstatus string '%{gk}%{G}%H %{g}[%{Y}%l%{g}] %= %{wk}%?%-w%?%{=b kR}(%{W}%n %t%?(%u)%?%{=b kR})%{= kw}%?%+w%?%?%= %{g} %{Y} %Y-%m-%d %C%a %{W}'\n\n## title bar\ntermcapinfo xterm ti@:te@\n\n## default windows (syntax: screen -t label order command)\nscreen -t bash1 0\nscreen -t bash2 1\n\n## select the default window\nselect 1" > $file
 
 
-##### Installing ZSH & oh-my-zsh ~ root user ~ note: If you use thurar, 'Open terminal here', will not work
+##### Installing ZSH & oh-my-zsh - root user. Note: If you use thurar, 'Open terminal here', will not work.
 echo -e "\e[01;32m[+]\e[00m Installing ZSH & oh-my-zsh"
 group="sudo"
 apt-get -y -qq install zsh git curl
@@ -539,11 +576,12 @@ apt-get -y -qq install zsh git curl
 curl -s -L https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh | sh
 #--- Configure zsh
 file=/root/.zshrc; [ -e $file ] && cp -n $file{,.bkup}   #/etc/zsh/zshrc
-grep -q 'interactivecomments' $file 2>/dev/null || echo "setopt interactivecomments" >> $file
-grep -q 'ignoreeof' $file 2>/dev/null || echo "setopt ignoreeof" >> $file
-grep -q 'correctall' $file 2>/dev/null || echo "setopt correctall" >> $file
-grep -q 'globdots' $file 2>/dev/null || echo "setopt globdots" >> $file
-grep -q 'bash_aliases' $file 2>/dev/null || echo -e 'source $HOME/.bash_aliases' >> $file
+grep -q 'interactivecomments' $file 2>/dev/null || echo 'setopt interactivecomments' >> $file
+grep -q 'ignoreeof' $file 2>/dev/null || echo 'setopt ignoreeof' >> $file
+grep -q 'correctall' $file 2>/dev/null || echo 'setopt correctall' >> $file
+grep -q 'globdots' $file 2>/dev/null || echo 'setopt globdots' >> $file
+grep -q '.bash_aliases' $file 2>/dev/null || echo 'source $HOME/.bash_aliases' >> $file
+grep -q '/usr/bin/tmux' $file 2>/dev/null || echo 'if ([[ -z "$TMUX" ]] && [[ -n "$SSH_CONNECTION" ]]); then /usr/bin/tmux attach || /usr/bin/tmux new; fi' >> $file   # If not already in tmux and via SSH
 #--- Configure zsh (themes) ~ https://github.com/robbyrussell/oh-my-zsh/wiki/Themes
 sed -i 's/ZSH_THEME=.*/ZSH_THEME="alanpeabody"/' $file   # Other themes: alanpeabody, jreese,   mh,   candy,   terminalparty, kardan,   nicoulaj, sunaku
 #--- Configure oh-my-zsh
@@ -565,7 +603,7 @@ chsh -s $(which zsh)
 #apt-get -y -qq remove git curl
 
 
-##### Configuring vim ~ all users
+##### Configuring vim - all users
 echo -e "\e[01;32m[+]\e[00m Configuring vim"
 apt-get -y -qq install vim
 #--- Configure vim
@@ -590,7 +628,7 @@ grep -q '^set hlsearch' $file 2>/dev/null || echo 'set hlsearch' >> $file       
 grep -q '^set laststatus' $file 2>/dev/null || echo -e 'set laststatus=2\nset statusline=%F%m%r%h%w\ (%{&ff}){%Y}\ [%l,%v][%p%%]' >> $file   # Status bar
 grep -q '^filetype on' $file 2>/dev/null || echo -e 'filetype on\nfiletype plugin on\nsyntax enable\nset grepprg=grep\ -nH\ $*' >> $file     # Syntax highlighting
 grep -q '^set wildmenu' $file 2>/dev/null || echo -e 'set wildmenu\nset wildmode=list:longest,full' >> $file   # Tab completion
-grep -q '^set pastetoggle=<F10>' $file 2>/dev/null || echo -e 'set pastetoggle=<F10>' >> $file                 # Hotkey - turning off auto indent when pasting
+grep -q '^set pastetoggle=<F11>' $file 2>/dev/null || echo -e 'set pastetoggle=<F11>' >> $file                 # Hotkey - turning off auto indent when pasting
 #--- Set as default editor
 export EDITOR="vim"    #update-alternatives --config editor
 file=/etc/bash.bashrc; [ -e $file ] && cp -n $file{,.bkup}
@@ -604,15 +642,15 @@ git config --global mergetool.prompt false
 
 ##### Setting up iceweasel
 echo -e "\e[01;32m[+]\e[00m Setting up iceweasel"
-apt-get install -y -qq unzip
+apt-get install -y -qq unzip curl wget
 #--- Configure iceweasel
 iceweasel & sleep 15; killall -q -w iceweasel >/dev/null   # Start and kill. Files needed for first time run
-file=$(echo /root/.mozilla/firefox/*.default/prefs.js); [ -e $file ] && cp -n $file{,.bkup}    #/etc/iceweasel/pref/*.js
+file=$(find /root/.mozilla/firefox/*.default/ -maxdepth 1 -type f -name 'prefs.js') && [ -e $file ] && cp -n $file{,.bkup}    #/etc/iceweasel/pref/*.js
 sed -i 's/^.*browser.startup.page.*/user_pref("browser.startup.page", 0);' $file 2>/dev/null || echo 'user_pref("browser.startup.page", 0);' >> $file                                              # Iceweasel -> Edit -> Preferences -> General -> When firefox starts: Show a blank page
 sed -i 's/^.*privacy.donottrackheader.enabled.*/user_pref("privacy.donottrackheader.enabled", true);' $file 2>/dev/null || echo 'user_pref("privacy.donottrackheader.enabled", true);' >> $file    # Privacy -> Enable: Tell websites I do not want to be tracked
 sed -i 's/^.*browser.showQuitWarning.*/user_pref("browser.showQuitWarning", true);' $file 2>/dev/null || echo 'user_pref("browser.showQuitWarning", true);' >> $file                               # Stop Ctrl + Q from quitting without warning
 #--- Replace bookmarks
-file=$(echo /root/.mozilla/firefox/*.default/bookmarks.html); [ -e $file ] && cp -n $file{,.bkup}    #/etc/iceweasel/profile/bookmarks.html
+file=$(find /root/.mozilla/firefox/*.default/ -maxdepth 1 -type f -name 'bookmarks.html') && [ -e $file ] && cp -n $file{,.bkup}    #/etc/iceweasel/profile/bookmarks.html
 wget http://pentest-bookmarks.googlecode.com/files/bookmarksv1.5.html -O /tmp/bookmarks_new.html     # ***!!! hardcoded version! Need to manually check for updates
 rm -f /root/.mozilla/firefox/*.default/places.sqlite
 rm -f /root/.mozilla/firefox/*.default/bookmarkbackups/*
@@ -621,30 +659,49 @@ awk '!a[$0]++' /tmp/bookmarks_new.html | egrep -v ">(Latest Headlines|Getting St
 sed -i 's#^</DL><p>#        </DL><p>\n    </DL><p>\n    <DT><A HREF="https://127.0.0.1:8834">Nessus</A>\n    <DT><A HREF="https://127.0.0.1:3790">MSF Community</A>\n    <DT><A HREF="https://127.0.0.1:9392">OpenVAS</A>\n</DL><p>#' $file
 sed -i 's#<HR>#<DT><H3 ADD_DATE="1303667175" LAST_MODIFIED="1303667175" PERSONAL_TOOLBAR_FOLDER="true">Bookmarks Toolbar</H3>\n<DD>Add bookmarks to this folder to see them displayed on the Bookmarks Toolbar#' $file
 #--- Download addons
-path=$(echo /root/.mozilla/firefox/*.default/)extensions/
-mkdir -p $path
-wget https://addons.mozilla.org/firefox/downloads/latest/1865/addon-1865-latest.xpi?src=dp-btn-primary -O $path/{d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d}.xpi          # Adblock Plus
-wget https://addons.mozilla.org/firefox/downloads/latest/92079/addon-92079-latest.xpi?src=dp-btn-primary  -O $path/{bb6bc1bb-f824-4702-90cd-35e2fb24f25d}.xpi       # Cookies Manager+
-wget https://addons.mozilla.org/firefox/downloads/latest/1843/addon-1843-latest.xpi?src=dp-btn-primary -O $path/firebug@software.joehewitt.com.xpi                  # Firebug - not working 100%
-wget https://addons.mozilla.org/firefox/downloads/file/150692/foxyproxy_basic-2.6.2-fx+tb+sm.xpi?src=search -O /tmp/FoxyProxyBasic.zip && unzip -o /tmp/FoxyProxyBasic.zip -d $path/foxyproxy-basic@eric.h.jung/; rm -f /tmp/FoxyProxyBasic.zip   # FoxyProxy Basic
-#wget https://addons.mozilla.org/firefox/downloads/latest/284030/addon-284030-latest.xpi?src=dp-btn-primary -O $path/{6bdc61ae-7b80-44a3-9476-e1d121ec2238}.xpi     # HTTPS Finder
-wget https://www.eff.org/files/https-everywhere-latest.xpi -O $path/https-everywhere@eff.org.xpi                                                                    # HTTPS Everywhere
-wget https://addons.mozilla.org/firefox/downloads/latest/3829/addon-3829-latest.xpi?src=dp-btn-primary -O $path/{8f8fe09b-0bd3-4470-bc1b-8cad42b8203a}.xpi          # Live HTTP Headers
-wget https://addons.mozilla.org/firefox/downloads/file/79565/tamper_data-11.0.1-fx.xpi?src=dp-btn-primary -O $path/{9c51bd27-6ed8-4000-a2bf-36cb95c0c947}.xpi       # Tamper Data  - not working 100%
-wget https://addons.mozilla.org/firefox/downloads/latest/300254/addon-300254-latest.xpi?src=dp-btn-primary -O $path/check-compatibility@dactyl.googlecode.com.xpi   # Disable Add-on Compatibility Checks
+path="$(find /root/.mozilla/firefox/*.default/ -maxdepth 1 -type d -name 'extensions')"
+mkdir -p $path/
+curl -k -L https://addons.mozilla.org/firefox/downloads/latest/5817/addon-5817-latest.xpi?src=dp-btn-primary -o $path/SQLiteManager@mrinalkant.blogspot.com.xpi           # SQLite Manager
+curl -k -L https://addons.mozilla.org/firefox/downloads/latest/1865/addon-1865-latest.xpi?src=dp-btn-primary -o $path/{d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d}.xpi          # Adblock Plus
+curl -k -L https://addons.mozilla.org/firefox/downloads/latest/92079/addon-92079-latest.xpi?src=dp-btn-primary -o $path/{bb6bc1bb-f824-4702-90cd-35e2fb24f25d}.xpi        # Cookies Manager+
+curl -k -L https://addons.mozilla.org/firefox/downloads/latest/1843/addon-1843-latest.xpi?src=dp-btn-primary -o $path/firebug@software.joehewitt.com.xpi                  # Firebug - not working 100%
+curl -k -L https://addons.mozilla.org/firefox/downloads/file/150692/foxyproxy_basic-2.6.2-fx+tb+sm.xpi?src=search -o /tmp/FoxyProxyBasic.zip && unzip -o /tmp/FoxyProxyBasic.zip -d $path/foxyproxy-basic@eric.h.jung/; rm -f /tmp/FoxyProxyBasic.zip   # FoxyProxy Basic
+#curl -k -L https://addons.mozilla.org/firefox/downloads/latest/284030/addon-284030-latest.xpi?src=dp-btn-primary -o $path/{6bdc61ae-7b80-44a3-9476-e1d121ec2238}.xpi     # HTTPS Finder
+curl -k -L https://www.eff.org/files/https-everywhere-latest.xpi -o $path/https-everywhere@eff.org.xpi                                                                    # HTTPS Everywhere
+curl -k -L https://addons.mozilla.org/firefox/downloads/latest/3829/addon-3829-latest.xpi?src=dp-btn-primary -o $path/{8f8fe09b-0bd3-4470-bc1b-8cad42b8203a}.xpi          # Live HTTP Headers
+curl -k -L https://addons.mozilla.org/firefox/downloads/file/79565/tamper_data-11.0.1-fx.xpi?src=dp-btn-primary -o $path/{9c51bd27-6ed8-4000-a2bf-36cb95c0c947}.xpi       # Tamper Data  - not working 100%
+curl -k -L https://addons.mozilla.org/firefox/downloads/latest/300254/addon-300254-latest.xpi?src=dp-btn-primary -o $path/check-compatibility@dactyl.googlecode.com.xpi   # Disable Add-on Compatibility Checks
 #--- Install addons
-#for FILE in *.xpi; do
-#  d=$(basename $z .xpi)
-#  mkdir -p $d && unzip -o $z -d $d
-#done
-#iceweasel   #<--- Doesn't automate
+for FILE in $(find $path -maxdepth 1 -type f -name '*.xpi'); do
+  d="$(basename $FILE .xpi)"
+  mkdir -p $d/
+  unzip -o $FILE -d $path/$d/ && rm -f $FILE
+done
+#--- Enable addons
 iceweasel & sleep 15; killall -q -w iceweasel >/dev/null
-#--- Configure foxyproxy (need to install foxyproxy first... so this will not work.)
-file=$(echo /root/.mozilla/firefox/*.default/foxyproxy.xml); [ -e $file ] && cp -n $file{,.bkup}
+apt-get install -y -qq sqlite3
+touch /tmp/iceweasel.sql
+#for FILE in $(find /root/.mozilla/firefox/*.default/extensions/ -maxdepth 1 -mindepth 1 -type d); do
+#  xpi="$(basename $FILE)"
+#  echo "UPDATE 'main'.'addon'  SET 'active' = 1, 'userDisabled' = 0  WHERE 'id' = '"$xpi"';" >> /tmp/iceweasel.sql
+#done
+echo "UPDATE 'main'.'addon'  SET 'active' = 1, 'userDisabled' = 0;" > /tmp/iceweasel.sql    # Force every addons!
+killall -q -w iceweasel >/dev/null     #fuser extensions.sqlite
+sqlite3 /root/.mozilla/firefox/n52jqts1.default/extensions.sqlite < /tmp/iceweasel.sql
+rm -f /tmp/iceweasel.sql
+#--- Wipe session (due to force close)
+find /root/.mozilla/firefox/*.default/ -maxdepth 1 -type f -name 'sessionstore.*' -delete
+#--- Configure foxyproxy
+file=$(find /root/.mozilla/firefox/*.default/ -maxdepth 1 -name 'foxyproxy.xml') && [ -e $file ] && cp -n $file{,.bkup}
 if [[ -e $file ]]; then
-  sed -i 's#<proxies><proxy name="Default"#<proxies><proxy name="localhost:8080" id="1145138293" notes="" fromSubscription="false" enabled="true" mode="manual" selectedTabIndex="0" lastresort="false" animatedIcons="true" includeInCycle="false" color="\#05FC81" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="true" clearCookiesBeforeUse="false" rejectCookies="false"><matches/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="127.0.0.1" port="8080" socksversion="5" isSocks="false" username="" password="" domain=""/></proxy><proxy name="Default"#' $file
+  grep -q 'localhost:8080' $file 2>/dev/null || sed -i 's#<proxy name="Default"#<proxy name="localhost:8080" id="1145138293" notes="e.g. Burp" fromSubscription="false" enabled="true" mode="manual" selectedTabIndex="0" lastresort="false" animatedIcons="true" includeInCycle="false" color="\#05FC81" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="true" clearCookiesBeforeUse="false" rejectCookies="false"><matches/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="127.0.0.1" port="8080" socksversion="5" isSocks="false" username="" password="" domain=""/></proxy><proxy name="Default"#' $file            # localhost:8080
+  grep -q 'localhost:8081' $file 2>/dev/null || sed -i 's#<proxy name="Default"#<proxy name="localhost:8081 (socket5)" id="212586674" notes="e.g. SSH" fromSubscription="false" enabled="true" mode="manual" selectedTabIndex="0" lastresort="false" animatedIcons="true" includeInCycle="false" color="\##FCCB05" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="true" clearCookiesBeforeUse="false" rejectCookies="false"><matches/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="127.0.0.1" port="8081" socksversion="5" isSocks="true" username="" password="" domain=""/></proxy><proxy name="Default"#' $file   # localhost:8081 (socket5)
 else
-  echo -e '<?xml version="1.0" encoding="UTF-8"?>\n<foxyproxy mode="disabled" selectedTabIndex="0" toolbaricon="true" toolsMenu="true" contextMenu="true" advancedMenus="false" previousMode="disabled" resetIconColors="true" useStatusBarPrefix="true" excludePatternsFromCycling="false" excludeDisabledFromCycling="false" ignoreProxyScheme="false" apiDisabled="false" proxyForVersionCheck=""><random includeDirect="false" includeDisabled="false"/><statusbar icon="true" text="false" left="options" middle="cycle" right="contextmenu" width="0"/><toolbar left="options" middle="cycle" right="contextmenu"/><logg enabled="false" maxSize="500" noURLs="false" header="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;\n&lt;!DOCTYPE html PUBLIC &quot;-//W3C//DTD XHTML 1.0 Strict//EN&quot; &quot;http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd&quot;&gt;\n&lt;html xmlns=&quot;http://www.w3.org/1999/xhtml&quot;&gt;&lt;head&gt;&lt;title&gt;&lt;/title&gt;&lt;link rel=&quot;icon&quot; href=&quot;http://getfoxyproxy.org/favicon.ico&quot;/&gt;&lt;link rel=&quot;shortcut icon&quot; href=&quot;http://getfoxyproxy.org/favicon.ico&quot;/&gt;&lt;link rel=&quot;stylesheet&quot; href=&quot;http://getfoxyproxy.org/styles/log.css&quot; type=&quot;text/css&quot;/&gt;&lt;/head&gt;&lt;body&gt;&lt;table class=&quot;log-table&quot;&gt;&lt;thead&gt;&lt;tr&gt;&lt;td class=&quot;heading&quot;&gt;${timestamp-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${url-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${proxy-name-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${proxy-notes-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-name-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-case-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-type-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-color-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pac-result-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${error-msg-heading}&lt;/td&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tfoot&gt;&lt;tr&gt;&lt;td/&gt;&lt;/tr&gt;&lt;/tfoot&gt;&lt;tbody&gt;" row="&lt;tr&gt;&lt;td class=&quot;timestamp&quot;&gt;${timestamp}&lt;/td&gt;&lt;td class=&quot;url&quot;&gt;&lt;a href=&quot;${url}&quot;&gt;${url}&lt;/a&gt;&lt;/td&gt;&lt;td class=&quot;proxy-name&quot;&gt;${proxy-name}&lt;/td&gt;&lt;td class=&quot;proxy-notes&quot;&gt;${proxy-notes}&lt;/td&gt;&lt;td class=&quot;pattern-name&quot;&gt;${pattern-name}&lt;/td&gt;&lt;td class=&quot;pattern&quot;&gt;${pattern}&lt;/td&gt;&lt;td class=&quot;pattern-case&quot;&gt;${pattern-case}&lt;/td&gt;&lt;td class=&quot;pattern-type&quot;&gt;${pattern-type}&lt;/td&gt;&lt;td class=&quot;pattern-color&quot;&gt;${pattern-color}&lt;/td&gt;&lt;td class=&quot;pac-result&quot;&gt;${pac-result}&lt;/td&gt;&lt;td class=&quot;error-msg&quot;&gt;${error-msg}&lt;/td&gt;&lt;/tr&gt;" footer="&lt;/tbody&gt;&lt;/table&gt;&lt;/body&gt;&lt;/html&gt;"/><warnings/><autoadd enabled="false" temp="false" reload="true" notify="true" notifyWhenCanceled="true" prompt="true"><match enabled="true" name="Dynamic AutoAdd Pattern" pattern="*://${3}${6}/*" isRegEx="false" isBlackList="false" isMultiLine="false" caseSensitive="false" fromSubscription="false"/><match enabled="true" name="" pattern="*You are not authorized to view this page*" isRegEx="false" isBlackList="false" isMultiLine="true" caseSensitive="false" fromSubscription="false"/></autoadd><quickadd enabled="false" temp="false" reload="true" notify="true" notifyWhenCanceled="true" prompt="true"><match enabled="true" name="Dynamic QuickAdd Pattern" pattern="*://${3}${6}/*" isRegEx="false" isBlackList="false" isMultiLine="false" caseSensitive="false" fromSubscription="false"/></quickadd><defaultPrefs origPrefetch="null"/><proxies><proxy name="localhost:8080" id="1145138293" notes="" fromSubscription="false" enabled="true" mode="manual" selectedTabIndex="0" lastresort="false" animatedIcons="true" includeInCycle="false" color="#05FC81" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="true" clearCookiesBeforeUse="false" rejectCookies="false"><matches/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="127.0.0.1" port="8080" socksversion="5" isSocks="false" username="" password="" domain=""/></proxy><proxy name="Default" id="3377581719" notes="" fromSubscription="false" enabled="true" mode="direct" selectedTabIndex="0" lastresort="true" animatedIcons="false" includeInCycle="true" color="#0055E5" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="false" disableCache="false" clearCookiesBeforeUse="false" rejectCookies="false"><matches><match enabled="true" name="All" pattern="*" isRegEx="false" isBlackList="false" isMultiLine="false" caseSensitive="false" fromSubscription="false"/></matches><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="" port="" socksversion="5" isSocks="false" username="" password=""/></proxy></proxies></foxyproxy>' > $file
+  echo -ne '<?xml version="1.0" encoding="UTF-8"?>\n<foxyproxy mode="disabled" selectedTabIndex="0" toolbaricon="true" toolsMenu="true" contextMenu="true" advancedMenus="false" previousMode="disabled" resetIconColors="true" useStatusBarPrefix="true" excludePatternsFromCycling="false" excludeDisabledFromCycling="false" ignoreProxyScheme="false" apiDisabled="false" proxyForVersionCheck=""><random includeDirect="false" includeDisabled="false"/><statusbar icon="true" text="false" left="options" middle="cycle" right="contextmenu" width="0"/><toolbar left="options" middle="cycle" right="contextmenu"/><logg enabled="false" maxSize="500" noURLs="false" header="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;\n&lt;!DOCTYPE html PUBLIC &quot;-//W3C//DTD XHTML 1.0 Strict//EN&quot; &quot;http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd&quot;&gt;\n&lt;html xmlns=&quot;http://www.w3.org/1999/xhtml&quot;&gt;&lt;head&gt;&lt;title&gt;&lt;/title&gt;&lt;link rel=&quot;icon&quot; href=&quot;http://getfoxyproxy.org/favicon.ico&quot;/&gt;&lt;link rel=&quot;shortcut icon&quot; href=&quot;http://getfoxyproxy.org/favicon.ico&quot;/&gt;&lt;link rel=&quot;stylesheet&quot; href=&quot;http://getfoxyproxy.org/styles/log.css&quot; type=&quot;text/css&quot;/&gt;&lt;/head&gt;&lt;body&gt;&lt;table class=&quot;log-table&quot;&gt;&lt;thead&gt;&lt;tr&gt;&lt;td class=&quot;heading&quot;&gt;${timestamp-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${url-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${proxy-name-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${proxy-notes-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-name-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-case-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-type-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-color-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pac-result-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${error-msg-heading}&lt;/td&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tfoot&gt;&lt;tr&gt;&lt;td/&gt;&lt;/tr&gt;&lt;/tfoot&gt;&lt;tbody&gt;" row="&lt;tr&gt;&lt;td class=&quot;timestamp&quot;&gt;${timestamp}&lt;/td&gt;&lt;td class=&quot;url&quot;&gt;&lt;a href=&quot;${url}&quot;&gt;${url}&lt;/a&gt;&lt;/td&gt;&lt;td class=&quot;proxy-name&quot;&gt;${proxy-name}&lt;/td&gt;&lt;td class=&quot;proxy-notes&quot;&gt;${proxy-notes}&lt;/td&gt;&lt;td class=&quot;pattern-name&quot;&gt;${pattern-name}&lt;/td&gt;&lt;td class=&quot;pattern&quot;&gt;${pattern}&lt;/td&gt;&lt;td class=&quot;pattern-case&quot;&gt;${pattern-case}&lt;/td&gt;&lt;td class=&quot;pattern-type&quot;&gt;${pattern-type}&lt;/td&gt;&lt;td class=&quot;pattern-color&quot;&gt;${pattern-color}&lt;/td&gt;&lt;td class=&quot;pac-result&quot;&gt;${pac-result}&lt;/td&gt;&lt;td class=&quot;error-msg&quot;&gt;${error-msg}&lt;/td&gt;&lt;/tr&gt;" footer="&lt;/tbody&gt;&lt;/table&gt;&lt;/body&gt;&lt;/html&gt;"/><warnings/><autoadd enabled="false" temp="false" reload="true" notify="true" notifyWhenCanceled="true" prompt="true"><match enabled="true" name="Dynamic AutoAdd Pattern" pattern="*://${3}${6}/*" isRegEx="false" isBlackList="false" isMultiLine="false" caseSensitive="false" fromSubscription="false"/><match enabled="true" name="" pattern="*You are not authorized to view this page*" isRegEx="false" isBlackList="false" isMultiLine="true" caseSensitive="false" fromSubscription="false"/></autoadd><quickadd enabled="false" temp="false" reload="true" notify="true" notifyWhenCanceled="true" prompt="true"><match enabled="true" name="Dynamic QuickAdd Pattern" pattern="*://${3}${6}/*" isRegEx="false" isBlackList="false" isMultiLine="false" caseSensitive="false" fromSubscription="false"/></quickadd><defaultPrefs origPrefetch="null"/><proxies>' > $file
+  echo -ne '<proxy name="localhost:8080" id="1145138293" notes="e.g. Burp" fromSubscription="false" enabled="true" mode="manual" selectedTabIndex="0" lastresort="false" animatedIcons="true" includeInCycle="false" color="#05FC81" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="true" clearCookiesBeforeUse="false" rejectCookies="false"><matches/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="127.0.0.1" port="8080" socksversion="5" isSocks="false" username="" password="" domain=""/></proxy>' >> $file
+  echo -ne '<proxy name="localhost:8081 (socket5)" id="212586674" notes="e.g. SSH" fromSubscription="false" enabled="true" mode="manual" selectedTabIndex="0" lastresort="false" animatedIcons="true" includeInCycle="false" color="#FCCB05" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="true" clearCookiesBeforeUse="false" rejectCookies="false"><matches/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="127.0.0.1" port="8081" socksversion="5" isSocks="true" username="" password="" domain=""/></proxy>' >> $file
+  echo -ne '<proxy name="Default" id="3377581719" notes="" fromSubscription="false" enabled="true" mode="direct" selectedTabIndex="0" lastresort="true" animatedIcons="false" includeInCycle="true" color="#0055E5" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="false" disableCache="false" clearCookiesBeforeUse="false" rejectCookies="false"><matches><match enabled="true" name="All" pattern="*" isRegEx="false" isBlackList="false" isMultiLine="false" caseSensitive="false" fromSubscription="false"/></matches><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="" port="" socksversion="5" isSocks="false" username="" password=""/></proxy>' >> $file
+  echo -e '</proxies></foxyproxy>' >> $file
 fi
 #--- Restore to folder
 cd - &>/dev/null
@@ -655,7 +712,9 @@ echo -e "\e[01;32m[+]\e[00m Installing conky"
 apt-get -y -qq install conky
 #--- Configure conky
 file=/root/.conkyrc; [ -e $file ] && cp -n $file{,.bkup}
-echo -e '#http://forums.opensuse.org/english/get-technical-help-here/how-faq-forums/unreviewed-how-faq/464737-easy-configuring-conky-conkyconf.html\nbackground yes\n\nfont Monospace:size=8:weight=bold\nuse_xft yes\n\nupdate_interval 2.0\n\nown_window yes\nown_window_type normal\nown_window_transparent yes\nown_window_class conky-semi\nown_window_argb_visual yes  # GNOME & XFCE yes, KDE no\nown_window_colour brown\nown_window_hints undecorated,below,sticky,skip_taskbar,skip_pager\n\ndouble_buffer yes\nmaximum_width 250\n\ndraw_shades yes\ndraw_outline no\ndraw_borders no\n\nstippled_borders 3\n#border_margin 9   # Old command\nborder_inner_margin 9\nborder_width 10\n\ndefault_color grey\n\nalignment bottom_right\n#gap_x 55 # KDE\n#gap_x 0  # GNOME\ngap_x 5\ngap_y 0\n\nuppercase no\nuse_spacer right\n\nTEXT\n${color dodgerblue3}SYSTEM ${hr 2}$color\n${color white}${time %A},${time %e} ${time %B} ${time %G}${alignr}${time %H:%M:%S}\n${color white}Machine$color: $nodename ${alignr}${color white}Uptime$color: $uptime\n\n${color dodgerblue3}CPU ${hr 2}$color\n#${font Arial:bold:size=8}${execi 99999 grep "model name" -m1 /proc/cpuinfo | cut -d":" -f2 | cut -d" " -f2- | sed "s#Processor ##"}$font$color\n${color white}MHz$color: ${freq}GHz $color${color white}Load$color: ${exec uptime | awk -F "load average: " '"'"'{print $2}'"'"'}\n${color white}Tasks$color: $running_processes/$processes ${alignr}${alignr}${color white}CPU0$color: ${cpu cpu0}% ${color white}CPU1$color: ${cpu cpu1}%\n#${color #c0ff3e}${acpitemp}C\n#${execi 20 sensors |grep "Core0 Temp" | cut -d" " -f4}$font$color$alignr${freq_g 2} ${execi 20 sensors |grep "Core1 Temp" | cut -d" " -f4}\n${cpugraph cpu0 25,120 000000 white} ${cpugraph cpu1 25,120 000000 white}\n${color white}${cpubar cpu1 3,120} ${color white}${cpubar cpu2 3,120}$color\n\n${color dodgerblue3}TOP 5 PROCESSES ${hr 2}$color\n${color white}NAME                PID      CPU      MEM\n${color white}1. ${top name 1}${top pid 1}   ${top cpu 1}   ${top mem 1}$color\n2. ${top name 2}${top pid 2}   ${top cpu 2}   ${top mem 2}\n3. ${top name 3}${top pid 3}   ${top cpu 3}   ${top mem 3}\n4. ${top name 4}${top pid 4}   ${top cpu 4}   ${top mem 4}\n5. ${top name 5}${top pid 5}   ${top cpu 5}   ${top mem 5}\n\n${color dodgerblue3}MEMORY & SWAP ${hr 2}$color\n${color white}RAM$color   $memperc%  ${membar 6}$color\n${color white}Swap$color  $swapperc%  ${swapbar 6}$color\n\n${color dodgerblue3}FILESYSTEM ${hr 2}$color\n${color white}root$color ${fs_free_perc /}% free$alignr${fs_free /}/ ${fs_size /}\n${fs_bar 3 /}$color\n#${color white}home$color ${fs_free_perc /home}% free$alignr${fs_free /home}/ ${fs_size /home}\n#${fs_bar 3 /home}$color\n\n${color dodgerblue3}LAN eth0 (${addr eth0}) ${hr 2}$color\n${color white}Down$color:  ${downspeed eth0} KB/s${alignr}${color white}Up$color: ${upspeed eth0} KB/s\n${color white}Downloaded$color: ${totaldown eth0} ${alignr}${color white}Uploaded$color: ${totalup eth0}\n${downspeedgraph eth0 25,120 000000 00ff00} ${alignr}${upspeedgraph eth0 25,120 000000 ff0000}$color\n${color dodgerblue3}LAN eth1 (${addr eth1}) ${hr 2}$color\n${color white}Down$color:  ${downspeed eth1} KB/s${alignr}${color white}Up$color: ${upspeed eth1} KB/s\n${color white}Downloaded$color: ${totaldown eth1} ${alignr}${color white}Uploaded$color: ${totalup eth1}\n${downspeedgraph eth1 25,120 000000 00ff00} ${alignr}${upspeedgraph eth1 25,120 000000 ff0000}$color\n${color dodgerblue3}WiFi (${addr wlan0}) ${hr 2}$color\n${color white}Down$color:  ${downspeed wlan0} KB/s${alignr}${color white}Up$color: ${upspeed wlan0} KB/s\n${color white}Downloaded$color: ${totaldown wlan0} ${alignr}${color white}Uploaded$color: ${totalup wlan0}\n${downspeedgraph wlan0 25,120 000000 00ff00} ${alignr}${upspeedgraph wlan0 25,120 000000 ff0000}$color\n\n${color dodgerblue3}CONNECTIONS ${hr 2}$color\n${color white}Inbound: $color${tcp_portmon 1 32767 count}${color white}  ${alignc}Outbound: $color${tcp_portmon 32768 61000 count}${alignr} ${color white}ALL: $color${tcp_portmon 1 65535 count}\n${color white}Inbound Connection ${alignr} Local Service/Port$color\n$color ${tcp_portmon 1 32767 rhost 0} ${alignr} ${tcp_portmon 1 32767 lservice 0}\n$color ${tcp_portmon 1 32767 rhost 1} ${alignr} ${tcp_portmon 1 32767 lservice 1}\n$color ${tcp_portmon 1 32767 rhost 2} ${alignr} ${tcp_portmon 1 32767 lservice 2}\n${color white}Outbound Connection ${alignr} Remote Service/Port$color\n$color ${tcp_portmon 32768 61000 rhost 0} ${alignr} ${tcp_portmon 32768 61000 rservice 0}\n$color ${tcp_portmon 32768 61000 rhost 1} ${alignr} ${tcp_portmon 32768 61000 rservice 1}\n$color ${tcp_portmon 32768 61000 rhost 2} ${alignr} ${tcp_portmon 32768 61000 rservice 2}' > $file
+echo -e '#http://forums.opensuse.org/english/get-technical-help-here/how-faq-forums/unreviewed-how-faq/464737-easy-configuring-conky-conkyconf.html\nbackground yes\n\nfont Monospace:size=8:weight=bold\nuse_xft yes\n\nupdate_interval 2.0\n\nown_window yes\nown_window_type normal\nown_window_transparent yes\nown_window_class conky-semi\nown_window_argb_visual yes  # GNOME & XFCE yes, KDE no\nown_window_colour brown\nown_window_hints undecorated,below,sticky,skip_taskbar,skip_pager\n\ndouble_buffer yes\nmaximum_width 260\n\ndraw_shades yes\ndraw_outline no\ndraw_borders no\n\nstippled_borders 3\n#border_margin 9   # Old command\nborder_inner_margin 9\nborder_width 10\n\ndefault_color grey\n\nalignment bottom_right\n#gap_x 55 # KDE\n#gap_x 0  # GNOME\ngap_x 5\ngap_y 0\n\nuppercase no\nuse_spacer right\n\nTEXT\n${color dodgerblue3}SYSTEM ${hr 2}$color\n#${color white}${time %A},${time %e} ${time %B} ${time %G}${alignr}${time %H:%M:%S}\n${color white}Host$color: $nodename  ${alignr}${color white}Uptime$color: $uptime\n\n${color dodgerblue3}CPU ${hr 2}$color\n#${font Arial:bold:size=8}${execi 99999 grep "model name" -m1 /proc/cpuinfo | cut -d":" -f2 | cut -d" " -f2- | sed "s#Processor ##"}$font$color\n${color white}MHz$color: ${freq} ${alignr}${color white}Load$color: ${exec uptime | awk -F "load average: " '"'"'{print $2}'"'"'}\n${color white}Tasks$color: $running_processes/$processes ${alignr}${color white}CPU0$color: ${cpu cpu0}% ${color white}CPU1$color: ${cpu cpu1}%\n#${color #c0ff3e}${acpitemp}C\n#${execi 20 sensors |grep "Core0 Temp" | cut -d" " -f4}$font$color${alignr}${freq_g 2} ${execi 20 sensors |grep "Core1 Temp" | cut -d" " -f4}\n${cpugraph cpu0 25,120 000000 white} ${alignr}${cpugraph cpu1 25,120 000000 white}\n${color white}${cpubar cpu1 3,120} ${alignr}${color white}${cpubar cpu2 3,120}$color\n\n${color dodgerblue3}PROCESSES ${hr 2}$color\n${color white}NAME             PID     CPU     MEM\n${color white}${top name 1}${top pid 1}  ${top cpu 1}  ${top mem 1}$color\n${top name 2}${top pid 2}  ${top cpu 2}  ${top mem 2}\n${top name 3}${top pid 3}  ${top cpu 3}  ${top mem 3}\n${top name 4}${top pid 4}  ${top cpu 4}  ${top mem 4}\n${top name 5}${top pid 5}  ${top cpu 5}  ${top mem 5}\n\n${color dodgerblue3}MEMORY & SWAP ${hr 2}$color\n${color white}RAM$color   $memperc%  ${membar 6}$color\n${color white}Swap$color  $swapperc%  ${swapbar 6}$color\n\n${color dodgerblue3}FILESYSTEM ${hr 2}$color\n${color white}root$color ${fs_free_perc /}% free${alignr}${fs_free /}/ ${fs_size /}\n${fs_bar 3 /}$color\n#${color white}home$color ${fs_free_perc /home}% free${alignr}${fs_free /home}/ ${fs_size /home}\n#${fs_bar 3 /home}$color\n\n${color dodgerblue3}LAN eth0 (${addr eth0}) ${hr 2}$color\n${color white}Down$color:  ${downspeed eth0} KB/s${alignr}${color white}Up$color: ${upspeed eth0} KB/s\n${color white}Downloaded$color: ${totaldown eth0} ${alignr}${color white}Uploaded$color: ${totalup eth0}\n${downspeedgraph eth0 25,120 000000 00ff00} ${alignr}${upspeedgraph eth0 25,120 000000 ff0000}$color' > $file
+ifconfig eth1 &>/devnull && echo -e '${color dodgerblue3}LAN eth1 (${addr eth1}) ${hr 2}$color\n${color white}Down$color:  ${downspeed eth1} KB/s${alignr}${color white}Up$color: ${upspeed eth1} KB/s\n${color white}Downloaded$color: ${totaldown eth1} ${alignr}${color white}Uploaded$color: ${totalup eth1}\n${downspeedgraph eth1 25,120 000000 00ff00} ${alignr}${upspeedgraph eth1 25,120 000000 ff0000}$color' >> $file
+echo -e '${color dodgerblue3}WiFi (${addr wlan0}) ${hr 2}$color\n${color white}Down$color:  ${downspeed wlan0} KB/s${alignr}${color white}Up$color: ${upspeed wlan0} KB/s\n${color white}Downloaded$color: ${totaldown wlan0} ${alignr}${color white}Uploaded$color: ${totalup wlan0}\n${downspeedgraph wlan0 25,120 000000 00ff00} ${alignr}${upspeedgraph wlan0 25,120 000000 ff0000}$color\n\n${color dodgerblue3}CONNECTIONS ${hr 2}$color\n${color white}Inbound: $color${tcp_portmon 1 32767 count}  ${alignc}${color white}Outbound: $color${tcp_portmon 32768 61000 count}${alignr}${color white}Total: $color${tcp_portmon 1 65535 count}\n${color white}Inbound ${alignr}Local Service/Port$color\n$color ${tcp_portmon 1 32767 rhost 0} ${alignr}${tcp_portmon 1 32767 lservice 0}\n$color ${tcp_portmon 1 32767 rhost 1} ${alignr}${tcp_portmon 1 32767 lservice 1}\n$color ${tcp_portmon 1 32767 rhost 2} ${alignr}${tcp_portmon 1 32767 lservice 2}\n${color white}Outbound ${alignr}Remote Service/Port$color\n$color ${tcp_portmon 32768 61000 rhost 0} ${alignr}${tcp_portmon 32768 61000 rservice 0}\n$color ${tcp_portmon 32768 61000 rhost 1} ${alignr}${tcp_portmon 32768 61000 rservice 1}\n$color ${tcp_portmon 32768 61000 rhost 2} ${alignr}${tcp_portmon 32768 61000 rservice 2}' >> $file
 #--- Add to startup (each login)
 file=/usr/local/bin/conky.sh; [ -e $file ] && cp -n $file{,.bkup}
 echo -e '#!/bin/bash\nkillall -q conky\nsleep 15\nconky &' > $file
@@ -665,7 +724,7 @@ file=/root/.config/autostart/conkyscript.sh.desktop; [ -e $file ] && cp -n $file
 echo -e '\n[Desktop Entry]\nType=Application\nExec=/usr/local/bin/conky.sh\nHidden=false\nNoDisplay=false\nX-GNOME-Autostart-enabled=true\nName[en_US]=conky\nName=conky\nComment[en_US]=\nComment=' > $file
 
 
-##### Configuring metasploit ~ http://docs.kali.org/general-use/starting-metasploit-framework-in-kali
+##### Configuring metasploit ~ Exploit framework (More info: http://docs.kali.org/general-use/starting-metasploit-framework-in-kali)
 echo -e "\e[01;32m[+]\e[00m Configuring metasploit"
 #--- Start services
 service postgresql start
@@ -681,7 +740,7 @@ grep -q '^GOCOW' $file 2>/dev/null || echo 'GOCOW=1' >> $file
 ln -sf /opt/metasploit/apps/pro/ui/config/database.yml /root/.msf4/database.yml    #cp -f   #find / -name database.yml -type f | grep metasploit | grep -v gems   # /usr/share/metasploit-framework/config/database.yml
 #--- Metasploit 4.10.x+ database fix #2 ~ Using method #1, so this isn't needed
 #file=/root/.bash_aliases; [ -e $file ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
-#grep -q '^alias msfconsole' $file 2>/dev/null || echo -e '\n### Metasploit\nalias msfconsole="msfconsole db_connect -y /opt/metasploit/apps/pro/ui/config/database.yml"\n' >> $file
+#grep -q '^alias msfconsole' $file 2>/dev/null || echo -e '\n## Metasploit\nalias msfconsole="msfconsole db_connect -y /opt/metasploit/apps/pro/ui/config/database.yml"\n\n' >> $file
 #--- Apply new alias
 #source $file   # If using ZSH, will fail
 #--- First time run
@@ -737,7 +796,7 @@ gconftool-2 --type bool --set /apps/meld/use_syntax_highlighting true
 gconftool-2 --type int --set /apps/meld/edit_wrap_lines 2
 
 
-##### Installing nessus   *** Doesn't automate ***
+##### Installing nessus ~ vulnerability scanner   *** Doesn't automate ***
 #echo -e "\e[01;32m[+]\e[00m Installing nessus"
 #--- Get download link
 #xdg-open http://www.tenable.com/products/nessus/select-your-operating-system    *** #wget "http://downloads.nessus.org/<file>" -O /usr/local/src/nessus.deb   # ***!!! Hardcoded version value
@@ -753,7 +812,7 @@ gconftool-2 --type int --set /apps/meld/edit_wrap_lines 2
 #update-rc.d -f nessusd remove
 
 
-##### Installing openvas   *** Doesn't automate ***
+##### Installing openvas ~ vulnerability scanner   *** Doesn't automate ***
 echo -e "\e[01;32m[+]\e[00m Installing openvas"
 apt-get -y -qq install openvas
 #openvas-setup   #<--- Doesn't automate ***
@@ -767,7 +826,7 @@ apt-get -y -qq install openvas
 #apt-get -y -qq install libreoffice
 
 
-##### Installing recordmydesktop ~ gui screen capture
+##### Installing recordmydesktop ~ gui video screen capture
 #echo -e "\e[01;32m[+]\e[00m Installing recordmydesktop"
 #apt-get -y -qq install recordmydesktop
 #--- Installing GUI front end
@@ -799,12 +858,17 @@ echo -e "\e[01;32m[+]\e[00m Installing htop"
 apt-get -y -qq install htop
 
 
+##### Installing glance ~ cli process viewer
+#echo -e "\e[01;32m[+]\e[00m Installing glance"
+#apt-get -y -qq install glance
+
+
 ##### Installing axel ~ cli download manager
 echo -e "\e[01;32m[+]\e[00m Installing axel"
 apt-get -y -qq install axel
 #--- Setup alias
 file=/root/.bash_aliases; [ -e $file ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
-grep -q '^alias axel' $file 2>/dev/null || echo -e '\n### axel\nalias axel="axel -a"\n' >> $file
+grep -q '^alias axel' $file 2>/dev/null || echo -e '\n## axel\nalias axel="axel -a"\n\n' >> $file
 #--- Apply new aliases
 #source $file   # If using ZSH, will fail
 
@@ -848,6 +912,7 @@ update-rc.d -f atftpd remove
 ##### Installing pure-ftpd ~ file transfer method
 echo -e "\e[01;32m[+]\e[00m Installing pure-ftpd"
 apt-get -y -qq install pure-ftpd
+#--- Configure setup pure-ftpd
 update-rc.d -f pure-ftpd remove
 mkdir -p /var/ftp/
 groupdel ftpgroup 2>/dev/null; groupadd ftpgroup
@@ -856,6 +921,7 @@ chown -R ftp\:ftpgroup /var/ftp/
 chmod -R 0755 /var/ftp/
 pure-pw userdel ftp 2>/dev/null; echo -e '\n' | pure-pw useradd ftp -u ftp -d /var/ftp/
 pure-pw mkdb
+#--- Configure pure-ftpd
 echo no > /etc/pure-ftpd/conf/UnixAuthentication
 echo no > /etc/pure-ftpd/conf/PAMAuthentication
 echo yes > /etc/pure-ftpd/conf/NoChmod
@@ -878,7 +944,7 @@ apt-get -y -qq install lynx
 
 ##### Installing p7zip ~ cli file extractor
 echo -e "\e[01;32m[+]\e[00m Installing p7zip"
-apt-get -y -qq install p7zip
+apt-get -y -qq install p7zip-full
 
 
 ##### Installing zip/unzip ~ cli file extractor
@@ -893,20 +959,20 @@ apt-get -y -qq install file-roller
 apt-get -y -qq unrar unace unzip rar zip p7zip p7zip-full p7zip-rar
 
 
-##### Installing pptp vpn support
-echo -e "\e[01;32m[+]\e[00m Installing pptp vpn support"
+##### Installing PPTP VPN support
+echo -e "\e[01;32m[+]\e[00m Installing PPTP VPN support"
 apt-get -y -qq install network-manager-pptp-gnome network-manager-pptp
 
 
 ##### Installing flash ~ web plugin
-#echo -e "\e[01;32m[+]\e[00m Installing flash"
-#apt-get -y -qq install flashplugin-nonfree
-#update-flashplugin-nonfree --install
+echo -e "\e[01;32m[+]\e[00m Installing flash"
+apt-get -y -qq install flashplugin-nonfree
+update-flashplugin-nonfree --install
 
 
 ##### Installing java ~ web plugin
 #echo -e "\e[01;32m[+]\e[00m Installing java"
-# <insert bash fu here>
+# <***insert bash fu here***>
 
 
 ##### Installing the backdoor factory ~ anti-virus bypass
@@ -914,7 +980,7 @@ echo -e "\e[01;32m[+]\e[00m Installing backdoor factory"
 apt-get -y -qq install backdoor-factory
 
 
-##### Installing bully ~ wps brute force
+##### Installing bully ~ WPS brute force
 echo -e "\e[01;32m[+]\e[00m Installing bully"
 apt-get -y -qq install bully
 
@@ -924,53 +990,39 @@ echo -e "\e[01;32m[+]\e[00m Installing httprint"
 apt-get -y -qq install httprint
 
 
-##### Installing fuzzdb ~ pre defined wordlists (and more)
-echo -e "\e[01;32m[+]\e[00m Installing fuzzdb"
-svn checkout http://fuzzdb.googlecode.com/svn/trunk/ /usr/share/fuzzdb/
-
-##### Installing seclist ~ https://bugs.kali.org/view.php?id=648
-echo -e "\e[01;32m[+]\e[00m Installing seclist"
-apt-get -y -qq install seclists
-
-
-##### Installing unicornscan ~ http://bugs.kali.org/view.php?id=388
+##### Installing unicornscan ~ fast port scanner
 echo -e "\e[01;32m[+]\e[00m Installing unicornscan"
 apt-get -y -qq install unicornscan
 
 
-##### Installing clusterd ~ http://bugs.kali.org/view.php?id=1024
+##### Installing clusterd ~ clustered attack toolkit (jboss, coldfusion, weblogic, tomcat etc)
 echo -e "\e[01;32m[+]\e[00m Installing clusterd"
 apt-get -y -qq install clusterd
 
 
-##### Installing webhandler ~ https://bugs.kali.org/view.php?id=291
+##### Installing webhandler ~ shell TTY handler
 echo -e "\e[01;32m[+]\e[00m Installing webhandler"
 apt-get -y -qq install webhandler
 
 
-##### Installing azazel ~ http://blackhatlibrary.net/Azazel
+##### Installing azazel ~ linux userland rootkit
 echo -e "\e[01;32m[+]\e[00m Installing azazel"
 apt-get -y -qq install git
 git clone git://github.com/chokepoint/azazel.git /usr/share/azazel/
 
 
-##### Installing b374k ~ https://bugs.kali.org/view.php?id=1097
+##### Installing b374k ~ (PHP) web shell
 echo -e "\e[01;32m[+]\e[00m Installing b374k"
 apt-get -y -qq install git
 git clone git://github.com/b374k/b374k.git /usr/share/b374k/
 
 
-##### Installing jsp file browser ~ https://bugs.kali.org/view.php?id=1247
+##### Installing jsp file browser ~ (JSP) web shell
 echo -e "\e[01;32m[+]\e[00m Installing jsp file browser"
 wget http://www.vonloesch.de/files/browser.zip -O /tmp/jsp.zip && unzip -o -d /usr/share/webshells_jsp/ /tmp/jsp.zip && rm -f /tmp/jsp.zip
 
 
-##### Installing HTTPTunnel ~ https://bugs.kali.org/view.php?id=1090
-echo -e "\e[01;32m[+]\e[00m Installing HTTPTunnel"
-apt-get -y -qq install http-tunnel
-
-
-##### Installing htshells ~ http://bugs.kali.org/view.php?id=422
+##### Installing htshells ~ (htdocs/apache) web shells
 echo -e "\e[01;32m[+]\e[00m Installing htshells"
 apt-get -y -qq install htshells
 
@@ -980,24 +1032,56 @@ echo -e "\e[01;32m[+]\e[00m Installing bridge-utils"
 apt-get -y -qq install bridge-utils
 
 
-##### Installing zerofree ~ cli nulls free blocks
+##### Installing httptunnel ~ tunnels a data stream in HTTP requests
+echo -e "\e[01;32m[+]\e[00m Installing httptunnel"
+apt-get -y -qq install http-tunnel
+
+
+##### Installing sshuttle ~ proxy server for VPN over SSH
+echo -e "\e[01;32m[+]\e[00m Installing sshuttle"
+apt-get -y -qq install sshuttle
+#sshuttle --dns --remote root@123.9.9.9 0/0 -vv
+
+
+##### Installing iodine ~ DNS tunneling (IP over DNS)
+echo -e "\e[01;32m[+]\e[00m Installing iodine"
+apt-get -y -qq install ptunnel
+#iodined -f -P password1 10.0.0.1 dns.mydomain.com
+#iodine -f -P password1 123.9.9.9 dns.mydomain.com; ssh -C -D 8081 root@10.0.0.1
+
+
+##### Installing dns2tcp ~ DNS tunneling (TCP over DNS)
+echo -e "\e[01;32m[+]\e[00m Installing dns2tcp"
+apt-get -y -qq install dns2tcp
+#file=/etc/dns2tcpd.conf; [ -e $file ] && cp -n $file{,.bkup}; echo -e "listen = 0.0.0.0\nport = 53\nuser = nobody\nchroot = /tmp\ndomain = dnstunnel.mydomain.com\nkey = password1\nressources = ssh:127.0.0.1:22" > $file; dns2tcpd -F -d 1 -f /etc/dns2tcpd.conf
+#file=/etc/dns2tcpc.conf; [ -e $file ] && cp -n $file{,.bkup}; echo -e "domain = dnstunnel.mydomain.com\nkey = password1\nresources = ssh\nlocal_port = 8000\ndebug_level=1" > $file; dns2tcpc -f /etc/dns2tcpc.conf 178.62.206.227; ssh -C -D 8081 -p 8000 root@127.0.0.1
+
+
+##### Installing ptunnel ~ IMCP tunneling
+echo -e "\e[01;32m[+]\e[00m Installing ptunnel"
+apt-get -y -qq install ptunnel
+#ptunnel -x password1
+#ptunnel -x password1 -p 123.9.9.9 -lp 8000 -da 127.0.0.1 -dp 22; ssh -C -D 8081 -p 8000 root@127.0.0.1
+
+
+##### Installing zerofree ~ cli nulls free blocks on HDD
 echo -e "\e[01;32m[+]\e[00m Installing zerofree"
 apt-get -y -qq install zerofree
 #fdisk -l
 #zerofree -v /dev/sda1   #for i in $(mount | grep sda | grep ext | cut -b 9); do  mount -o remount,ro /dev/sda$i && zerofree -v /dev/sda$i && mount -o remount,rw /dev/sda$i; done
 
 
-##### Installing veil ~ http://bugs.kali.org/view.php?id=421
+##### Installing veil ~ anti-virus bypass framework
 echo -e "\e[01;32m[+]\e[00m Installing veil"
 apt-get -y -qq install veil
 
 
-##### Installing gcc & multilib ~ compiling
+##### Installing gcc & multilib ~ compiling libraries
 echo -e "\e[01;32m[+]\e[00m Installing gcc & multilib"
 apt-get -y -qq install gcc-multilib libc6-dev-i386
 
 
-##### Installing mingw ~ cross compiling
+##### Installing mingw ~ cross compiling tools
 echo -e "\e[01;32m[+]\e[00m Installing mingw"
 apt-get -y -qq install mingw-w64 binutils-mingw-w64 gcc-mingw-w64 mingw-w64-dev mingw-w64-tools
 
@@ -1015,7 +1099,17 @@ i686-w64-mingw32-g++ -static-libgcc -static-libstdc++ /usr/share/windows-binarie
 ln -sf /usr/share/windows-binaries/Hyperion-1.0/Src/Crypter/bin/crypter.exe /usr/share/windows-binaries/Hyperion-1.0/crypter.exe
 
 
-##### Updating wordlists ~ http://bugs.kali.org/view.php?id=429
+##### Installing fuzzdb ~ multiple types of (word)lists (and more)
+echo -e "\e[01;32m[+]\e[00m Installing fuzzdb"
+svn checkout http://fuzzdb.googlecode.com/svn/trunk/ /usr/share/fuzzdb/
+
+
+##### Installing seclist ~ multiple types of (word)lists (and more)
+echo -e "\e[01;32m[+]\e[00m Installing seclist"
+apt-get -y -qq install seclists
+
+
+##### Updating wordlists ~ collection of wordlists
 echo -e "\e[01;32m[+]\e[00m Updating wordlists"
 #--- Extract rockyou wordlist
 gzip -dc < /usr/share/wordlists/rockyou.txt.gz > /usr/share/wordlists/rockyou.txt   #gunzip rockyou.txt.gz
@@ -1080,6 +1174,7 @@ grep -q '^\[shared\]' $file 2>/dev/null || echo -e '\n[shared]\n   comment = Sha
 
 ##### Setting up SSH
 echo -e "\e[01;32m[+]\e[00m Setting up SSH"
+apt-get -y -qq install openssh-server
 #--- Wipe current keys
 rm -f /etc/ssh/ssh_host_*
 rm -f /root/.ssh/*
