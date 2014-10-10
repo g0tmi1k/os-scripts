@@ -1,3 +1,5 @@
 # OS-Scripts #
+
 ---
-Operating System's Scripts & stuff to go along with them
+
+Personal collection of Operating System (OS) scripts _(and related things)_.
