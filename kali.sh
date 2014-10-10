@@ -1,6 +1,6 @@
 #!/bin/bash
 #-Metadata----------------------------------------------#
-#  Filename: kali.sh         (Last update: 2014-10-09)  #
+#  Filename: kali.sh         (Last update: 2014-10-10)  #
 #-Info--------------------------------------------------#
 #  Personal post install script for Kali Linux.         #
 #-Author(s)---------------------------------------------#
@@ -77,22 +77,23 @@ echo -e "\e[01;32m[+]\e[00m (Optional) Installing kernel headers"
 apt-get -y -qq install gcc make linux-headers-$(uname -r)
 
 
-#--- VMware
-_vmdetect=$(dmidecode | awk '/VMware Virtual Platform/ {print $3,$4,$5}')
-if [[ ! -z $_vmdetect ]]; then
-  ##### (Optional) Installing Virtual Machines tools ~ http://docs.kali.org/general-use/install-vmware-tools-kali-guest
-  echo -e "\e[01;32m[+]\e[00m (Optional) Installing Virtual Machines tools"
+##### (Optional) Checking to see if Kali is in a VM. If so, install "Virtual Machine Addons/Tools"  for a "better" virtual experiment
+if $(dmidecode | grep -iq vmware); then
+  ##### Installing Virtual Machines tools ~ http://docs.kali.org/general-use/install-vmware-tools-kali-guest
+  echo -e "\e[01;32m[+]\e[00m Installing Virtual Machines tools"
   #--- VM -> Install VMware Tools.    Note: you may need to apply a patch: https://github.com/offensive-security/kali-vmware-tools-patches
   mkdir -p /mnt/cdrom/
   umount -f /mnt/cdrom 2>/dev/null
   sleep 1
-  mount -o ro /dev/cdrom /mnt/cdrom 2>/dev/null; _mount=$?   # CD1
+  mount -o ro /dev/cdrom /mnt/cdrom 2>/dev/null; _mount=$?   # Only checking first CD drive (if multiple)
   file=$(find /mnt/cdrom/ -maxdepth 1 -type f -name 'VMwareTools-*.tar.gz')
   if [[ $_mount == 0 ]] && [[ -z $file ]]; then
     echo -e "\e[01;31m[!]\e[00m Incorrect CD/ISO mounted. Skipping..."
+    #read -p "Press the [enter] key to once the disk/iso has been manually mounted"    # Virtualbox loops. This would be a 'one time' notice.
+  #fi
   elif [[ $_mount == 0 ]]; then                         # If there is a CD in (and its right!), try to install native Guest Additions
     apt-get -y -qq install gcc make linux-headers-$(uname -r)
-    # Kernel 3.14  - doesn't need patching
+    # Kernel 3.14+ - so it doesn't need patching any more
     #file=/usr/sbin/update-rc.d; [ -e $file ] && cp -n $file{,.bkup}
     #grep -q '^cups enabled' $file 2>/dev/null || echo "cups enabled" >> $file
     #grep -q '^vmware-tools enabled' $file 2>/dev/null || echo "vmware-tools enabled" >> $file
@@ -102,46 +103,45 @@ if [[ ! -z $_vmdetect ]]; then
     cd /tmp/vmware-tools-distrib/
     echo -e '\n' | perl vmware-install.pl
     cd - &>/dev/null
-    umount /mnt/cdrom
-  else                                             # Fall back is 'open vm tools' ~ http://open-vm-tools.sourceforge.net/about.php
-    echo -e "\e[01;31m[!]\e[00m VMware Tools CD/ISO isn't mounted. Skipping 'native' VMware tools, failing back to 'Open VM Tools' instead"
+    umount -f /mnt/cdrom 2>/dev/null
+  else                                             # The fallback is 'open vm tools'. ~ http://open-vm-tools.sourceforge.net/about.php
+    echo -e "\e[01;31m[!]\e[00m VMware Tools CD/ISO isn't mounted. Skipping 'native' VMware tools, switching to 'Open VM Tools' instead"
     apt-get -y -qq install open-vm-toolbox
   fi
-fi
-#--- VirtualBox
-_vmdetect=$(dmidecode | awk '/VirtualBox/ {print $3}')
-if [[ ! -z $_vmdetect ]]; then
+elif $(dmidecode | grep -iq virtualbox); then
   ##### (Optional) Installing Guest Additions. Note: Need VirtualBox 4.2.xx+ (http://docs.kali.org/general-use/kali-linux-virtual-box-guest)
   echo -e "\e[01;32m[+]\e[00m (Optional) Installing Guest Additions"
   #--- Devices -> Install Guest Additions CD image...
   mkdir -p /mnt/cdrom/
+  while [[ ! -e /mnt/cdrom/VBoxLinuxAdditions.run ]]; do       # Let's force them to have the correct CD in... (WARNING: breaks unattended install!)
+    umount -f /mnt/cdrom 2>/dev/null
+    sleep 1
+    mount -o ro /dev/cdrom /mnt/cdrom 2>/dev/null;             # Only checking first CD drive (if multiple)
+    if [[ ! -e /mnt/cdrom/VBoxLinuxAdditions.run ]]; then
+      echo -e "\e[01;31m[!]\e[00m Incorrect CD/ISO mounted"
+      echo -e "\e[01;33m[i]\e[00m   To Mount: 'Devices -> Install Guest Additions CD image'"
+      echo -ne "\e[01;33m[i]\e[00m "; read -p "Press the [enter] key to once the CD/ISO has been manually mounted"
+    fi
+  done
+  apt-get -y -qq install gcc make linux-headers-$(uname -r)
+  cp -f /mnt/cdrom/VBoxLinuxAdditions.run /tmp/
+  chmod 0755 /tmp/VBoxLinuxAdditions.run
+  /tmp/VBoxLinuxAdditions.run --nox11
   umount -f /mnt/cdrom 2>/dev/null
-  sleep 1
-  mount -o ro /dev/cdrom /mnt/cdrom 2>/dev/null;             # CD1
-  if [[ $? == 0 ]] && [[ -z /media/cdrom/VBoxLinuxAdditions.run ]]; then
-    echo -e "\e[01;31m[!]\e[00m Incorrect CD/ISO mounted. Skipping..."
-  elif [[ $? == 0 ]]; then                         # If there is a CD in (and its right!), try to install native Guest Additions
-    apt-get -y -qq install gcc make linux-headers-$(uname -r)
-    cp -f /mnt/cdrom/VBoxLinuxAdditions.run /tmp/
-    chmod 0755 /tmp/VBoxLinuxAdditions.run
-    cd /tmp/VBoxLinuxAdditions.run --nox11         #<--- Doesn't automate
-    umount /mnt/cdrom
-  else                                             # Fall back is to... panic!
-    echo -e "\e[01;31m[!]\e[00m Guest Additions CD/ISO isn't mounted. Skipping..."
-  fi
 fi
 #--- Install parallel tools
 #Virtual Machine -> Install Parallels Tools
 #cd /media/Parallel\ Tools/
-#./install   #<--- Doesn't automate
-# <insert bash fu here>
+#./install
+# <***insert bash fu here***>
 #--- Slow mouse?
 #apt-get -y -qq install xserver-xorg-input-vmmouse
 
 
-##### Setting up static IP address on eth1 - host only
+##### Checking to see if there is a second ethernet card
 ifconfig eth1 &>/devnull
 if [[ $? == 0 ]]; then
+  ##### Setting up static IP address on eth1
   echo -e "\e[01;32m[+]\e[00m Setting up static IP (192.168.155.175/24) address on eth1"
   ifconfig eth1 192.168.155.175/24
   file=/etc/network/interfaces; [ -e $file ] && cp -n $file{,.bkup}
@@ -183,6 +183,8 @@ fi
 
 ##### Updating location information (keyboard layout & time zone) - set either value to "" to skip.
 echo -e "\e[01;32m[+]\e[00m Updating location information (keyboard layout & time zone)"
+#keyboardlayout="gb"         # Great Britain
+#timezone="Europe/London"    # London, Europe
 #--- Configure keyboard layout
 if [ ! -z "$keyboardlayout" ]; then
   file=/etc/default/keyboard; [ -e $file ] && cp -n $file{,.bkup}
@@ -190,7 +192,7 @@ if [ ! -z "$keyboardlayout" ]; then
   #dpkg-reconfigure keyboard-configuration   #dpkg-reconfigure console-setup                                           #<--- Doesn't automate
 fi
 #--- Changing time zone
-[[ -z "$timezone" ]] || ln -sf /usr/share/zoneinfo/Europe/London /etc/localtime   # London, Europe   #ln -sf /usr/share/zoneinfo/Etc/GMT
+[[ -z "$timezone" ]] || ln -sf /usr/share/zoneinfo/$timezone /etc/localtime   #ln -sf /usr/share/zoneinfo/Etc/GMT
 #--- Installing ntp to help keep time in sync (helpful when resuming VMs)
 apt-get -y -qq install ntp
 #--- Start service
@@ -436,13 +438,16 @@ rm -f /root/.cache/sessions/*
 #--- Set XFCE as default desktop manager
 file=/root/.xsession; [ -e $file ] && cp -n $file{,.bkup}       #~/.xsession
 echo xfce4-session > $file
-#--- Create Conky refresh script
+#--- Add keyboard shortcut (ctrl + alt + t) to start a terminal window
+file=/root/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortcuts.xml   #; [ -e $file ] && cp -n $file{,.bkup}
+grep -q '<property name="&lt;Primary&gt;&lt;Alt&gt;t" type="string" value="/usr/bin/exo-open --launch TerminalEmulator"/>' $file || sed -i 's#<property name="\&lt;Alt\&gt;F2" type="string" value="xfrun4"/>#<property name="\&lt;Alt\&gt;F2" type="string" value="xfrun4"/>\n      <property name="\&lt;Primary\&gt;\&lt;Alt\&gt;t" type="string" value="/usr/bin/exo-open --launch TerminalEmulator"/>#' $file
+#--- Create Conky refresh script (it gets installed later)
 file=/usr/local/bin/conky_refresh.sh; [ -e $file ] && cp -n $file{,.bkup}
 echo -e '#!/bin/bash\nkillall -q conky\nconky &' > $file
 chmod 0500 $file
-#--- Add keyboard shortcut (Ctrl + R)
+#--- Add keyboard shortcut (ctrl + r) to run the conky refresh script
 file=/root/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortcuts.xml   #; [ -e $file ] && cp -n $file{,.bkup}
-grep -q  '<property name="&lt;Primary&gt;r" type="string" value="/usr/local/bin/conky_refresh.sh"/>' $file || sed -i 's#<property name="\&lt;Alt\&gt;F2" type="string" value="xfrun4"/>#<property name="\&lt;Alt\&gt;F2" type="string" value="xfrun4"/>\n      <property name="\&lt;Primary\&gt;r" type="string" value="/usr/local/bin/conky_refresh.sh"/>#' $file
+grep -q '<property name="&lt;Primary&gt;r" type="string" value="/usr/local/bin/conky_refresh.sh"/>' $file || sed -i 's#<property name="\&lt;Alt\&gt;F2" type="string" value="xfrun4"/>#<property name="\&lt;Alt\&gt;F2" type="string" value="xfrun4"/>\n      <property name="\&lt;Primary\&gt;r" type="string" value="/usr/local/bin/conky_refresh.sh"/>#' $file
 
 
 ##### Configuring file browser (need to restart xserver for effect)
@@ -599,7 +604,7 @@ chsh -s $(which zsh)
 #  chown -R $username\:$group /home/$username/.zshrc /home/$username/.oh-my-zsh/
 #  chsh $username -s $(which zsh)
 #fi
-#--- Remove any left over programs/files
+#--- Remove any leftovers
 #apt-get -y -qq remove git curl
 
 
@@ -688,7 +693,6 @@ touch /tmp/iceweasel.sql
 echo "UPDATE 'main'.'addon'  SET 'active' = 1, 'userDisabled' = 0;" > /tmp/iceweasel.sql    # Force every addons!
 killall -q -w iceweasel >/dev/null     #fuser extensions.sqlite
 sqlite3 /root/.mozilla/firefox/n52jqts1.default/extensions.sqlite < /tmp/iceweasel.sql
-rm -f /tmp/iceweasel.sql
 #--- Wipe session (due to force close)
 find /root/.mozilla/firefox/*.default/ -maxdepth 1 -type f -name 'sessionstore.*' -delete
 #--- Configure foxyproxy
@@ -705,6 +709,8 @@ else
 fi
 #--- Restore to folder
 cd - &>/dev/null
+#--- Remove any leftovers
+rm -f /tmp/iceweasel.sql
 
 
 ##### Installing conky ~ gui desktop monitor
@@ -749,7 +755,7 @@ msfconsole -r /tmp/msf.rc
 #--- Setup GUI
 #bash /opt/metasploit/scripts/launchui.sh    #*** #<--- Doesn't automate. May take a little while to kick in
 #xdg-open https://127.0.0.1:3790/
-#--- Clean up
+#--- Remove any leftovers
 rm -f /tmp/msf.rc
 
 
@@ -796,6 +802,11 @@ gconftool-2 --type bool --set /apps/meld/use_syntax_highlighting true
 gconftool-2 --type int --set /apps/meld/edit_wrap_lines 2
 
 
+##### Installing bless ~ gui hex editor
+echo -e "\e[01;32m[+]\e[00m Installing bless"
+apt-get -y -qq install bless
+
+
 ##### Installing nessus ~ vulnerability scanner   *** Doesn't automate ***
 #echo -e "\e[01;32m[+]\e[00m Installing nessus"
 #--- Get download link
@@ -822,15 +833,20 @@ apt-get -y -qq install openvas
 
 
 ##### Installing libreoffice ~ gui office suite
-#echo -e "\e[01;32m[+]\e[00m Installing libreoffice"
-#apt-get -y -qq install libreoffice
+echo -e "\e[01;32m[+]\e[00m Installing libreoffice"
+apt-get -y -qq install libreoffice
 
 
 ##### Installing recordmydesktop ~ gui video screen capture
-#echo -e "\e[01;32m[+]\e[00m Installing recordmydesktop"
-#apt-get -y -qq install recordmydesktop
+echo -e "\e[01;32m[+]\e[00m Installing recordmydesktop"
+apt-get -y -qq install recordmydesktop
 #--- Installing GUI front end
-#apt-get -y -qq install gtk-recordmydesktop
+apt-get -y -qq install gtk-recordmydesktop
+
+
+##### Installing gimp ~ gui image editing
+#echo -e "\e[01;32m[+]\e[00m Installing gimp"
+#apt-get -y -qq install gimp
 
 
 ##### Installing shutter ~ gui screenshot
@@ -839,8 +855,8 @@ apt-get -y -qq install shutter
 
 
 ##### Installing gdebi ~ gui package installer
-#echo -e "\e[01;32m[+]\e[00m Installing gdebi"
-#apt-get -y -qq install gdebi
+echo -e "\e[01;32m[+]\e[00m Installing gdebi"
+apt-get -y -qq install gdebi
 
 
 ##### Installing psmisc ~ allows for 'killall command' to be used
@@ -1019,7 +1035,7 @@ git clone git://github.com/b374k/b374k.git /usr/share/b374k/
 
 ##### Installing jsp file browser ~ (JSP) web shell
 echo -e "\e[01;32m[+]\e[00m Installing jsp file browser"
-wget http://www.vonloesch.de/files/browser.zip -O /tmp/jsp.zip && unzip -o -d /usr/share/webshells_jsp/ /tmp/jsp.zip && rm -f /tmp/jsp.zip
+wget http://www.vonloesch.de/files/browser.zip -O /tmp/jsp.zip && unzip -o -d /usr/share/webshells_jsp/ /tmp/jsp.zip; rm -f /tmp/jsp.zip
 
 
 ##### Installing htshells ~ (htdocs/apache) web shells
@@ -1083,15 +1099,15 @@ apt-get -y -qq install gcc-multilib libc6-dev-i386
 
 ##### Installing mingw ~ cross compiling tools
 echo -e "\e[01;32m[+]\e[00m Installing mingw"
-apt-get -y -qq install mingw-w64 binutils-mingw-w64 gcc-mingw-w64 mingw-w64-dev mingw-w64-tools
+apt-get -y -qq install mingw-w64 binutils-mingw-w64 gcc-mingw-w64 mingw-w64-dev mingw-w64-tools  cmake
 
 
 ##### Installing OP packers ~ anti-virus bypass
 echo -e "\e[01;32m[+]\e[00m Installing OP packers"
-apt-get -y -qq install upx-ucl   #wget http://upx.sourceforge.net/download/upx309w.zip -P /usr/share/packers/ && unzip -o -d /usr/share/packers/ /usr/share/packers/upx309w.zip && rm -f /usr/share/packers/upx309w.zip
+apt-get -y -qq install upx-ucl   #wget http://upx.sourceforge.net/download/upx309w.zip -P /usr/share/packers/ && unzip -o -d /usr/share/packers/ /usr/share/packers/upx309w.zip; rm -f /usr/share/packers/upx309w.zip
 mkdir -p /usr/share/packers/
 wget "http://www.eskimo.com/~scottlu/win/cexe.exe" -P /usr/share/packers/
-wget "http://www.farbrausch.de/~fg/kkrunchy/kkrunchy_023a2.zip" -P /usr/share/packers/ && unzip -o -d /usr/share/packers/ /usr/share/packers/kkrunchy_023a2.zip && rm -f /usr/share/packers/kkrunchy_023a2.zip
+wget "http://www.farbrausch.de/~fg/kkrunchy/kkrunchy_023a2.zip" -P /usr/share/packers/ && unzip -o -d /usr/share/packers/ /usr/share/packers/kkrunchy_023a2.zip; rm -f /usr/share/packers/kkrunchy_023a2.zip
 #--- Setup hyperion
 unzip -o -d /usr/share/windows-binaries/ /usr/share/windows-binaries/Hyperion-1.0.zip
 #rm -f /usr/share/windows-binaries/Hyperion-1.0.zip
@@ -1117,7 +1133,7 @@ gzip -dc < /usr/share/wordlists/rockyou.txt.gz > /usr/share/wordlists/rockyou.tx
 #--- Extract sqlmap wordlist
 #unzip -o -d /usr/share/sqlmap/txt/ /usr/share/sqlmap/txt/wordlist.zip
 #--- Add 10,000 Top/Worst/Common Passwords
-wget http://xato.net/files/10k%20most%20common.zip -O /tmp/10kcommon.zip && unzip -o -d /usr/share/wordlists/ /tmp/10kcommon.zip && mv -f /usr/share/wordlists/10k{\ most\ ,_most_}common.txt && rm -f /tmp/10kcommon.zip
+wget http://xato.net/files/10k%20most%20common.zip -O /tmp/10kcommon.zip && unzip -o -d /usr/share/wordlists/ /tmp/10kcommon.zip && mv -f /usr/share/wordlists/10k{\ most\ ,_most_}common.txt; rm -f /tmp/10kcommon.zip
 #--- Linking to more - folders
 #ln -sf /usr/share/dirb/wordlists /usr/share/wordlists/dirb
 #ln -sf /usr/share/dirbuster/wordlists /usr/share/wordlists/dirbuster
@@ -1201,8 +1217,7 @@ cd ~/ &>/dev/null
 #--- Remove any history files (as they could contain sensitive info)
 history -c    # Will not work with ZSH
 for i in $(cut -d: -f6 /etc/passwd | sort | uniq); do
-  FILE="$i/.*_history"
-  ls $FILE &> /dev/null && rm -f $FILE   #[ -f $i/.*_history ] && rm -rf $i/.*_history
+  [ -e "$i" ] && find "$i" -type f -name '.*_history' -delete
 done
 
 
