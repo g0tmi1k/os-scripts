@@ -1,22 +1,18 @@
 #!/bin/bash
 #-Metadata------------------------------------------------#
-#  Filename: kali.sh                 (Update: 2014-11-19) #
+#  Filename: kali.sh                 (Update: 2014-11-26) #
 #-Info----------------------------------------------------#
 #  Personal post install script for Kali Linux.           #
 #-Author(s)-----------------------------------------------#
 #  g0tmilk ~ https://blog.g0tmi1k.com                     #
 #-Operating System----------------------------------------#
-#  Designed for: Kali Linux 1.0.9 [x64] (VM - VMware)     #
+#  Designed for: Kali Linux 1.0.9a [x64] (VM - VMware)    #
 #     Tested on: Kali Linux 1.0.0 - 1.0.9a [x64 & x84]    #
 #-Notes---------------------------------------------------#
 #  Run as root, after a fresh/clean install of Kali.      #
 #                           ---                           #
-#  Auto set time zone & keyboard layout to UK & GB.       #
-#                                                         #
-#  Check if a VM, then install guest addons/tools.        #
-#                                                         #
-#  Skips installing Nessus, MSF Community & OpenVAS.      #
-#                                                         #
+#  It will set the time zone & keyboard to UK/GB.         #
+#                           ---                           #
 #  Skips making the NIC MAC & hostname random on boot.    #
 #                           ---                           #
 #  Incomplete stuff/buggy search for '***'.               #
@@ -29,14 +25,15 @@
 
 if [ 1 -eq 0 ]; then        # This is never true, thus it acts as block comments ;)
 ### One liner - Grab the latest version and execute! #####################################
-wget -qO- https://raw.github.com/g0tmi1k/os-scripts/master/kali.sh | nohup bash
+wget -qO- https://raw.github.com/g0tmi1k/os-scripts/master/kali.sh | bash
 #curl -s -L -k https://raw.github.com/g0tmi1k/kali-postinstall/master/kali_postinstall.sh | nohup bash
 ###########################################################################################
 fi
 
 
-##### Location Information
+##### Location information
 keyboardlayout="gb"         # Great Britain
+keyboardApple=false         # Using a Apple/Macintosh keyboard? (anything other than 'false' will enable)
 timezone="Europe/London"    # London, Europe
 
 
@@ -58,7 +55,7 @@ if [[ $EUID -ne 0 ]]; then
   echo -e "\e[01;31m[!]\e[00m This script must be run as root" 1>&2
   exit 1
 else
-  echo -e "\e[01;34m[*]\e[00m Kali Linux Post-Install Script" 1>&2
+  echo -e "\e[01;34m[*]\e[00m Kali Linux post-install script" 1>&2
 fi
 
 
@@ -78,19 +75,19 @@ rm -f /var/lib/NetworkManager/NetworkManager.state
 #--- Wait a little while before trying to connect out again (just to make sure)
 service network-manager restart
 sleep 10
-for i in {1..60}; do ping -c1 www.google.com &> /dev/null && break || sleep 1; done
+for i in {1..60}; do ping -c 1 www.google.com &> /dev/null && break || sleep 1; done
 
 
-##### Fixing base repositories (enable network repositories if it wasn't selected during install) ~ http://docs.kali.org/general-use/kali-linux-sources-list-repositories
-echo -e "\n\e[01;32m[+]\e[00m Fixing base repositories"
+##### Fixing default repositories ~ http://docs.kali.org/general-use/kali-linux-sources-list-repositories
+echo -e "\n\e[01;32m[+]\e[00m Fixing default repositories ~ enabling network repositories if it wasn't selected during install"
 file=/etc/apt/sources.list; [ -e $file ] && cp -n $file{,.bkup}
 grep -q 'kali main non-free contrib' $file 2>/dev/null || echo "deb http://http.kali.org/kali kali main non-free contrib" >> $file
 grep -q 'kali/updates main contrib non-free' $file 2>/dev/null || echo "deb http://security.kali.org/kali-security kali/updates main contrib non-free" >> $file
 apt-get update
 
 
-##### (Optional) Installing kernel headers
-echo -e "\n\e[01;32m[+]\e[00m (Optional) Installing kernel headers"
+##### Installing kernel headers
+echo -e "\n\e[01;32m[+]\e[00m Installing kernel headers"
 apt-get -y -qq install gcc make linux-headers-$(uname -r)
 
 
@@ -152,7 +149,7 @@ elif $(dmidecode | grep -iq virtualbox); then
 fi
 
 
-##### Checking to see if there is a second ethernet card
+##### Checking to see if there is a second ethernet card (if so, set an static IP address)
 ifconfig eth1 &>/devnull
 if [[ $? == 0 ]]; then
   ##### Setting a static IP address (192.168.155.175/24) on eth1
@@ -184,21 +181,19 @@ echo -e 'nameserver 8.8.8.8\nnameserver 8.8.4.4' > $file
 chattr +i $file 2>/dev/null
 
 
-if [ 1 -eq 0 ]; then        # This is never true, thus it acts as block comments ;)
 ##### Updating hostname (to 'kali') - but not domain name
-echo -e "\n\e[01;32m[+]\e[00m Updating hostname (to 'kali')"
-hostname="kali"
-#--- Change it now
-hostname "$hostname"
-#--- Make sure it sticks after reboot
-file=/etc/hostname; [ -e $file ] && cp -n $file{,.bkup}
-echo "$(hostname)" > $file
-#--- Set host file
-file=/etc/hosts; [ -e $file ] && cp -n $file{,.bkup}
-sed -i 's/127.0.1.1.*/127.0.1.1  '$hostname'/' $file    #echo -e "127.0.0.1  localhost.localdomain localhost\n127.0.0.1  $hostname.$domainname $hostname" > $file    #$(hostname) $domainname
-#--- Check
-#hostname; hostname -f
-fi
+#echo -e "\n\e[01;32m[+]\e[00m Updating hostname (to 'kali')"
+#hostname="kali"
+##--- Change it now
+#hostname "$hostname"
+##--- Make sure it sticks after reboot
+#file=/etc/hostname; [ -e $file ] && cp -n $file{,.bkup}
+#echo "$(hostname)" > $file
+##--- Set host file
+#file=/etc/hosts; [ -e $file ] && cp -n $file{,.bkup}
+#sed -i 's/127.0.1.1.*/127.0.1.1  '$hostname'/' $file    #echo -e "127.0.0.1  localhost.localdomain localhost\n127.0.0.1  $hostname.$domainname $hostname" > $file    #$(hostname) $domainname
+##--- Check
+##hostname; hostname -f
 
 
 ##### Updating location information (keyboard layout & time zone) - set either value to "" to skip.
@@ -207,8 +202,9 @@ echo -e "\n\e[01;32m[+]\e[00m Updating location information (keyboard layout & t
 #timezone="Europe/London"    # London, Europe
 #--- Configure keyboard layout
 if [ ! -z "$keyboardlayout" ]; then
-  file=/etc/default/keyboard; [ -e $file ] && cp -n $file{,.bkup}
+  file=/etc/default/keyboard; #[ -e $file ] && cp -n $file{,.bkup}
   sed -i 's/XKBLAYOUT=".*"/XKBLAYOUT="'$keyboardlayout'"/' $file
+  [ "$keyboardApple" != "false" ] && sed -i 's/XKBVARIANT=".*"/XKBVARIANT="mac"/' $file   ## Enable if you are using Apple based products.
   #dpkg-reconfigure -f noninteractive keyboard-configuration   #dpkg-reconfigure console-setup   #dpkg-reconfigure keyboard-configuration -u    #need to restart xserver for effect
 fi
 #--- Changing time zone
@@ -277,7 +273,7 @@ amixer set Master 50% >/dev/null
 
 
 ##### Configuring grub
-echo -e "\n\e[01;32m[+]\e[00m Configuring grub"
+echo -e "\n\e[01;32m[+]\e[00m Configuring grub ~ boot manager"
 (dmidecode | grep -iq virtual) && grubTimeout=1 || timeout=5
 file=/etc/default/grub; [ -e $file ] && cp -n $file{,.bkup}
 sed -i 's/^GRUB_TIMEOUT=.*/GRUB_TIMEOUT='$grubTimeout'/' $file                   # Time out (lower if in a virtual machine, else possible dual booting)
@@ -854,7 +850,7 @@ apt-get -y -qq install xdg-user-dirs
 xdg-user-dirs-update
 file=/etc/xdg/user-dirs.conf; [ -e $file ] && cp -n $file{,.bkup}
 sed -i 's/^enable=.*/enable=False/' $file   #sed -i 's/^XDG_/#XDG_/; s/^#XDG_DESKTOP/XDG_DESKTOP/;' /root/.config/user-dirs.dirs
-rm -rf /root/{Documents,Downloads,Music,Pictures,Public,Templates,Videos}/
+rm -rf /root/{Documents,Music,Pictures,Public,Templates,Videos}/
 xdg-user-dirs-update
 #--- Get new desktop wallpaper
 wget -q "http://www.kali.org/images/wallpapers-01/kali-wp-june-2014_1920x1080_A.png" -O /usr/share/wallpapers/kali_blue_3d_a.png
@@ -932,25 +928,26 @@ rm -f /root/.cache/sessions/*
 #--- Set XFCE as default desktop manager
 file=/root/.xsession; [ -e $file ] && cp -n $file{,.bkup}       #~/.xsession
 echo xfce4-session > $file
-#--- Add keyboard shortcut (ctrl + alt + t) to start a terminal window
+#--- Add keyboard shortcut (CTRL + ALT + t) to start a terminal window
 file=/root/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortcuts.xml   #; [ -e $file ] && cp -n $file{,.bkup}
 grep -q '<property name="&lt;Primary&gt;&lt;Alt&gt;t" type="string" value="/usr/bin/exo-open --launch TerminalEmulator"/>' $file || sed -i 's#<property name="\&lt;Alt\&gt;F2" type="string" value="xfrun4"/>#<property name="\&lt;Alt\&gt;F2" type="string" value="xfrun4"/>\n      <property name="\&lt;Primary\&gt;\&lt;Alt\&gt;t" type="string" value="/usr/bin/exo-open --launch TerminalEmulator"/>#' $file
 #--- Create Conky refresh script (it gets installed later)
 file=/usr/local/bin/conky_refresh.sh; [ -e $file ] && cp -n $file{,.bkup}
 echo -e '#!/bin/bash\ntimeout 5 killall -9 -q -w conky\nconky &' > $file
 chmod -f 0500 $file
-#--- Add keyboard shortcut (ctrl + r) to run the conky refresh script
+#--- Add keyboard shortcut (CTRL + r) to run the conky refresh script
 file=/root/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortcuts.xml   #; [ -e $file ] && cp -n $file{,.bkup}
 grep -q '<property name="&lt;Primary&gt;r" type="string" value="/usr/local/bin/conky_refresh.sh"/>' $file || sed -i 's#<property name="\&lt;Alt\&gt;F2" type="string" value="xfrun4"/>#<property name="\&lt;Alt\&gt;F2" type="string" value="xfrun4"/>\n      <property name="\&lt;Primary\&gt;r" type="string" value="/usr/local/bin/conky_refresh.sh"/>#' $file
 
 
-##### Configuring file browser (need to restart xserver for effect)
-echo -e "\n\e[01;32m[+]\e[00m Configuring file browser (need to restart xserver for effect)"
+##### Configuring file browser   Note: need to restart xserver for effect
+echo -e "\n\e[01;32m[+]\e[00m Configuring file browser"
 mkdir -p /root/.config/gtk-2.0/
 file=/root/.config/gtk-2.0/gtkfilechooser.ini; [ -e $file ] && cp -n $file{,.bkup}
 sed -i 's/^.*ShowHidden.*/ShowHidden=true/' $file 2>/dev/null || echo -e "\n[Filechooser Settings]\nLocationMode=path-bar\nShowHidden=true\nExpandFolders=false\nShowSizeColumn=true\nGeometryX=66\nGeometryY=39\nGeometryWidth=780\nGeometryHeight=618\nSortColumn=name\nSortOrder=ascending" > $file    #Open/save Window -> Right click -> Show Hidden Files: Enabled
 dconf write /org/gnome/nautilus/preferences/show-hidden-files true
 file=/root/.gtk-bookmarks; [ -e $file ] && cp -n $file{,.bkup}
+#grep -q '^file:///mnt/hgfs ' $file 2>/dev/null || echo 'file:///mnt/hgfs vmshare' >> $file
 grep -q '^file:///tmp ' $file 2>/dev/null || echo 'file:///tmp tmp' >> $file
 grep -q '^file:///usr/local/src ' $file 2>/dev/null || echo 'file:///usr/local/src src' >> $file
 grep -q '^file:///usr/share ' $file 2>/dev/null || echo 'file:///usr/share apps' >> $file
@@ -960,8 +957,8 @@ grep -q '^file:///var/tftp ' $file 2>/dev/null || echo 'file:///var/tftp tftp' >
 grep -q '^file:///var/www ' $file 2>/dev/null || echo 'file:///var/www www' >> $file
 
 
-##### Configuring terminal (need to restart xserver for effect)
-echo -e "\n\e[01;32m[+]\e[00m Configuring terminal (need to restart xserver for effect)"
+##### Configuring terminal   Note: need to restart xserver for effect
+echo -e "\n\e[01;32m[+]\e[00m Configuring terminal"
 gconftool-2 --type bool --set /apps/gnome-terminal/profiles/Default/scrollback_unlimited true                   # Terminal -> Edit -> Profile Preferences -> Scrolling -> Scrollback: Unlimited -> Close
 gconftool-2 --type string --set /apps/gnome-terminal/profiles/Default/background_darkness 0.85611499999999996   # Not working 100%!
 gconftool-2 --type string --set /apps/gnome-terminal/profiles/Default/background_type transparent
@@ -1066,7 +1063,7 @@ cat <<EOF > $file
       parent = ""
 [plugins]
 EOF
-#--- XFCE fix for terminator
+#--- xfce fix for terminator
 mkdir -p /root/.local/share/xfce4/helpers/
 file=/root/.local/share/xfce4/helpers/custom-TerminalEmulator.desktop; [ -e $file ] && cp -n $file{,.bkup}
 sed -i 's#^X-XFCE-CommandsWithParameter=.*#X-XFCE-CommandsWithParameter=/usr/bin/terminator --command="%s"#' $file 2>/dev/null || cat <<EOF > $file
@@ -1087,7 +1084,7 @@ grep -q '^TerminalEmulator=custom-TerminalEmulator' $file 2>/dev/null || echo -e
 
 
 ##### Installing zsh & oh-my-zsh - root user.   Note: If you use thurar, 'Open terminal here', will not work.
-echo -e "\n\e[01;32m[+]\e[00m Installing zsh & oh-my-zsh"
+echo -e "\n\e[01;32m[+]\e[00m Installing zsh & oh-my-zsh ~ unix shell"
 group="sudo"
 apt-get -y -qq install zsh git curl
 #--- Setup oh-my-zsh
@@ -1120,7 +1117,7 @@ chsh -s $(which zsh)
 
 
 ##### Installing tmux - all users
-echo -e "\n\e[01;32m[+]\e[00m Installing tmux"
+echo -e "\n\e[01;32m[+]\e[00m Installing tmux ~ multiplex virtual consoles"
 group="sudo"
 #apt-get -y -qq remove screen   # Optional: If we're going to have/use tmux, why have screen?
 apt-get -y -qq install tmux
@@ -1132,13 +1129,13 @@ cat <<EOF > $file
 unbind C-b
 set -g prefix C-a
 
-## Pane switching (ALT+Arrow)
+## Pane switching (ALT+ARROWS)
 bind -n M-Left select-pane -L
 bind -n M-Right select-pane -R
 bind -n M-Up select-pane -U
 bind -n M-Down select-pane -D
 
-## Windows re-ording (CTRL+SHIFT+Arrow)
+## Windows re-ording (CTRL+SHIFT+ARROWS)
 bind-key -n C-S-Left swap-window -t -1
 bind-key -n C-S-Right swap-window -t +1
 
@@ -1209,8 +1206,8 @@ grep -q '^alias tmux' $file 2>/dev/null || echo -e '## tmux\nalias tmux="tmux at
 #tmux
 
 
-##### Configuring screen
-echo -e "\n\e[01;32m[+]\e[00m Configuring screen ~ if possible, use tmux instead!"
+##### Configuring screen ~ if possible, use tmux instead!
+echo -e "\n\e[01;32m[+]\e[00m Configuring screen ~ multiplex virtual consoles"
 #apt-get -y -qq install screen
 #--- Configure screen
 file=/root/.screenrc; [ -e $file ] && cp -n $file{,.bkup}
@@ -1242,7 +1239,7 @@ EOF
 
 
 ##### Configuring vim - all users
-echo -e "\n\e[01;32m[+]\e[00m Configuring vim"
+echo -e "\n\e[01;32m[+]\e[00m Configuring vim ~ cli text editor"
 apt-get -y -qq install vim
 #--- Configure vim
 file=/etc/vim/vimrc; [ -e $file ] && cp -n $file{,.bkup}   #/root/.vimrc
@@ -1279,10 +1276,12 @@ git config --global mergetool.prompt false
 
 
 ##### Setting up iceweasel
-echo -e "\n\e[01;32m[+]\e[00m Setting up iceweasel"
-apt-get install -y -qq unzip curl wget
+echo -e "\n\e[01;32m[+]\e[00m Setting up iceweasel ~ gui web browser"
+apt-get install -y -qq unzip curl wget iceweasel
 #--- Configure iceweasel
+#export DISPLAY=:0.0   #[[ -z $SSH_CONNECTION ]] || export DISPLAY=:0.0
 timeout 15 iceweasel   #iceweasel & sleep 15; killall -q -w iceweasel >/dev/null   # Start and kill. Files needed for first time run
+timeout 5 killall -9 -q -w iceweasel >/dev/null
 file=$(find /root/.mozilla/firefox/*.default/ -maxdepth 1 -type f -name 'prefs.js' -print -quit) && [ -e $file ] && cp -n $file{,.bkup}   #/etc/iceweasel/pref/*.js
 sed -i 's/^.*browser.startup.page.*/user_pref("browser.startup.page", 0);' $file 2>/dev/null || echo 'user_pref("browser.startup.page", 0);' >> $file                                              # Iceweasel -> Edit -> Preferences -> General -> When firefox starts: Show a blank page
 sed -i 's/^.*privacy.donottrackheader.enabled.*/user_pref("privacy.donottrackheader.enabled", true);' $file 2>/dev/null || echo 'user_pref("privacy.donottrackheader.enabled", true);' >> $file    # Privacy -> Enable: Tell websites I do not want to be tracked
@@ -1294,9 +1293,9 @@ find /root/.mozilla/firefox/*.default/ -maxdepth 1 -mindepth 1 -type f -name pla
 find /root/.mozilla/firefox/*.default/bookmarkbackups/ -type f -delete
 #--- Configure bookmarks
 awk '!a[$0]++' /tmp/bookmarks_new.html | egrep -v ">(Latest Headlines|Getting Started|Recently Bookmarked|Recent Tags|Mozilla Firefox|Help and Tutorials|Customize Firefox|Get Involved|About Us|Hacker Media|Bookmarks Toolbar|Most Visited)</" | egrep -v "^    </DL><p>" | egrep -v "^<DD>Add" > $file
-sed -i 's#^</DL><p>#        </DL><p>\n    </DL><p>\n    <DT><A HREF="https://127.0.0.1:8834">Nessus</A>\n    <DT><A HREF="https://127.0.0.1:3790">MSF Community</A>\n    <DT><A HREF="https://127.0.0.1:9392">OpenVAS</A>\n</DL><p>#' $file    # Add in Nessus, MSF, OpenVAS shortcuts
+sed -i 's#^</DL><p>#        </DL><p>\n    </DL><p>\n    <DT><A HREF="https://127.0.0.1:8834">Nessus</A>\n    <DT><A HREF="https://127.0.0.1:3790">MSF Community</A>\n    <DT><A HREF="https://127.0.0.1:9392">OpenVAS</A>\n</DL><p>#' $file    # Add in Nessus, MSF & OpenVAS shortcuts
 sed -i 's#<HR>#<DT><H3 ADD_DATE="1303667175" LAST_MODIFIED="1303667175" PERSONAL_TOOLBAR_FOLDER="true">Bookmarks Toolbar</H3>\n<DD>Add bookmarks to this folder to see them displayed on the Bookmarks Toolbar#' $file
-#--- Download addons
+#--- Download extensions
 ffpath="$(find /root/.mozilla/firefox/*.default/ -maxdepth 0 -mindepth 0 -type d -print -quit)/extensions"
 mkdir -p $ffpath/
 curl --progress -k -L https://addons.mozilla.org/firefox/downloads/latest/5817/addon-5817-latest.xpi?src=dp-btn-primary -o $ffpath/SQLiteManager@mrinalkant.blogspot.com.xpi           # SQLite Manager
@@ -1309,35 +1308,45 @@ curl --progress -k -L https://www.eff.org/files/https-everywhere-latest.xpi -o $
 curl --progress -k -L https://addons.mozilla.org/firefox/downloads/latest/3829/addon-3829-latest.xpi?src=dp-btn-primary -o $ffpath/{8f8fe09b-0bd3-4470-bc1b-8cad42b8203a}.xpi          # Live HTTP Headers
 curl --progress -k -L https://addons.mozilla.org/firefox/downloads/file/79565/tamper_data-11.0.1-fx.xpi?src=dp-btn-primary -o $ffpath/{9c51bd27-6ed8-4000-a2bf-36cb95c0c947}.xpi       # Tamper Data - not working 100%
 curl --progress -k -L https://addons.mozilla.org/firefox/downloads/latest/300254/addon-300254-latest.xpi?src=dp-btn-primary -o $ffpath/check-compatibility@dactyl.googlecode.com.xpi   # Disable Add-on Compatibility Checks
-#--- Install addons
+#--- Install extensions
 for FILE in $(find $ffpath -maxdepth 1 -type f -name '*.xpi'); do
   d="$(basename $FILE .xpi)"
   mkdir -p $ffpath/$d/
   unzip -q -o -d $ffpath/$d/ $FILE && rm -f $FILE
 done
-#--- Enable addons
+#--- Enable Iceweasel's addons/plugins/extensions
 timeout 15 iceweasel   #iceweasel & sleep 15; killall -q -w iceweasel >/dev/null
 file=$(find /root/.mozilla/firefox/*.default/ -maxdepth 1 -type f -name 'extensions.sqlite' -print -quit)   #&& [ -e $file ] && cp -n $file{,.bkup}
 if [ ! -e $file ] || [ -z $file ]; then
-  echo -e "\e[01;31m[!]\e[00m Something went wrong with Iceweasel's extensions. Skipping..."
+  #echo -e "\e[01;31m[!]\e[00m Something went wrong enabling iceweasel's extensions via method #1. Trying method #2..."
+  false
 else
+  echo -e "\e[01;33m[i]\e[00m Enabling iceweasel's extensions via method #2: Success!"
   apt-get install -y -qq sqlite3
   rm -f /tmp/iceweasel.sql; touch /tmp/iceweasel.sql
-  #for FILE in $(find /root/.mozilla/firefox/*.default/extensions/ -maxdepth 1 -mindepth 1 -type d); do
-  #  xpi="$(basename $FILE)"
-  #  echo "UPDATE 'main'.'addon' SET 'active' = 1, 'userDisabled' = 0  WHERE 'id' = '"$xpi"';" >> /tmp/iceweasel.sql
-  #done
-  echo "UPDATE 'main'.'addon' SET 'active' = 1, 'userDisabled' = 0;" > /tmp/iceweasel.sql    # Force every addons!
-  timeout 10 killall -q -w iceweasel >/dev/null     #fuser extensions.sqlite
-  sqlite3 $file < /tmp/iceweasel.sql
+  echo "UPDATE 'main'.'addon' SET 'active' = 1, 'userDisabled' = 0;" > /tmp/iceweasel.sql    # Force them all!
+  sqlite3 $file < /tmp/iceweasel.sql      #fuser extensions.sqlite
 fi
+file=$(find /root/.mozilla/firefox/*.default/ -maxdepth 1 -type f -name 'extensions.json' -print -quit)   #&& [ -e $file ] && cp -n $file{,.bkup}
+if [ ! -e $file ] || [ -z $file ]; then
+  #echo -e "\e[01;31m[!]\e[00m Something went wrong enabling iceweasel's extensions via method #2. Did method #1 also fail?"
+  false
+else
+  echo -e "\e[01;33m[i]\e[00m Enabling iceweasel's extensions via method #2: Success!"
+  sed -i 's/"active":false,/"active":true,/g' $file                # Force them all!
+  sed -i 's/"userDisabled":true,/"userDisabled":false,/g' $file    # Force them all!
+fi
+file=$(find /root/.mozilla/firefox/*.default/ -maxdepth 1 -type f -name 'prefs.js' -print -quit)   #&& [ -e $file ] && cp -n $file{,.bkup}
+[ ! -z $file ] && sed -i '/extensions.installCache/d' $file
+timeout 15 iceweasel >/dev/null   # For extensions that just work without restarting
+timeout 15 iceweasel >/dev/null   # ...for (most) extensions, as they need iceweasel to restart
 #--- Configure foxyproxy
-file=$(find /root/.mozilla/firefox/*.default/ -maxdepth 1 -type f -name 'foxyproxy.xml' -print -quit) && [ -e $file ] && cp -n $file{,.bkup}
+file=$(find /root/.mozilla/firefox/*.default/ -maxdepth 1 -type f -name 'foxyproxy.xml' -print -quit)   #&& [ -e $file ] && cp -n $file{,.bkup}
 if [ -z $file ]; then
-  echo -e "\e[01;31m[!]\e[00m Something went wrong with Iceweasel/FoxyProxy. Skipping..."
+  echo -e "\e[01;31m[!]\e[00m Something went wrong with the foxyproxy iceweasel extension (did extensions install?). Skipping..."
 elif [ -e $file ]; then
-  grep -q 'localhost:8080' $file 2>/dev/null || sed -i 's#<proxy name="Default"#<proxy name="localhost:8080" id="1145138293" notes="e.g. Burp" fromSubscription="false" enabled="true" mode="manual" selectedTabIndex="0" lastresort="false" animatedIcons="true" includeInCycle="false" color="\#05FC81" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="true" clearCookiesBeforeUse="false" rejectCookies="false"><matches/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="127.0.0.1" port="8080" socksversion="5" isSocks="false" username="" password="" domain=""/></proxy><proxy name="Default"#' $file            # localhost:8080
-  grep -q 'localhost:8081' $file 2>/dev/null || sed -i 's#<proxy name="Default"#<proxy name="localhost:8081 (socket5)" id="212586674" notes="e.g. SSH" fromSubscription="false" enabled="true" mode="manual" selectedTabIndex="0" lastresort="false" animatedIcons="true" includeInCycle="false" color="\##FCCB05" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="true" clearCookiesBeforeUse="false" rejectCookies="false"><matches/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="127.0.0.1" port="8081" socksversion="5" isSocks="true" username="" password="" domain=""/></proxy><proxy name="Default"#' $file   # localhost:8081 (socket5)
+  grep -q 'localhost:8080' $file 2>/dev/null || sed -i 's#<proxy name="Default"#<proxy name="localhost:8080" id="1145138293" notes="e.g. Burp" fromSubscription="false" enabled="true" mode="manual" selectedTabIndex="0" lastresort="false" animatedIcons="true" includeInCycle="false" color="\#05FC81" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="true" clearCookiesBeforeUse="false" rejectCookies="false"><matches/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="127.0.0.1" port="8080" socksversion="5" isSocks="false" username="" password="" domain=""/></proxy><proxy name="Default"#' $file          # localhost:8080
+  grep -q 'localhost:8081' $file 2>/dev/null || sed -i 's#<proxy name="Default"#<proxy name="localhost:8081 (socket5)" id="212586674" notes="e.g. SSH" fromSubscription="false" enabled="true" mode="manual" selectedTabIndex="0" lastresort="false" animatedIcons="true" includeInCycle="false" color="\#FCCB05" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="true" clearCookiesBeforeUse="false" rejectCookies="false"><matches/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="127.0.0.1" port="8081" socksversion="5" isSocks="true" username="" password="" domain=""/></proxy><proxy name="Default"#' $file   # localhost:8081 (socket5)
 else
   echo -ne '<?xml version="1.0" encoding="UTF-8"?>\n<foxyproxy mode="disabled" selectedTabIndex="0" toolbaricon="true" toolsMenu="true" contextMenu="true" advancedMenus="false" previousMode="disabled" resetIconColors="true" useStatusBarPrefix="true" excludePatternsFromCycling="false" excludeDisabledFromCycling="false" ignoreProxyScheme="false" apiDisabled="false" proxyForVersionCheck=""><random includeDirect="false" includeDisabled="false"/><statusbar icon="true" text="false" left="options" middle="cycle" right="contextmenu" width="0"/><toolbar left="options" middle="cycle" right="contextmenu"/><logg enabled="false" maxSize="500" noURLs="false" header="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;\n&lt;!DOCTYPE html PUBLIC &quot;-//W3C//DTD XHTML 1.0 Strict//EN&quot; &quot;http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd&quot;&gt;\n&lt;html xmlns=&quot;http://www.w3.org/1999/xhtml&quot;&gt;&lt;head&gt;&lt;title&gt;&lt;/title&gt;&lt;link rel=&quot;icon&quot; href=&quot;http://getfoxyproxy.org/favicon.ico&quot;/&gt;&lt;link rel=&quot;shortcut icon&quot; href=&quot;http://getfoxyproxy.org/favicon.ico&quot;/&gt;&lt;link rel=&quot;stylesheet&quot; href=&quot;http://getfoxyproxy.org/styles/log.css&quot; type=&quot;text/css&quot;/&gt;&lt;/head&gt;&lt;body&gt;&lt;table class=&quot;log-table&quot;&gt;&lt;thead&gt;&lt;tr&gt;&lt;td class=&quot;heading&quot;&gt;${timestamp-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${url-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${proxy-name-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${proxy-notes-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-name-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-case-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-type-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-color-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pac-result-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${error-msg-heading}&lt;/td&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tfoot&gt;&lt;tr&gt;&lt;td/&gt;&lt;/tr&gt;&lt;/tfoot&gt;&lt;tbody&gt;" row="&lt;tr&gt;&lt;td class=&quot;timestamp&quot;&gt;${timestamp}&lt;/td&gt;&lt;td class=&quot;url&quot;&gt;&lt;a href=&quot;${url}&quot;&gt;${url}&lt;/a&gt;&lt;/td&gt;&lt;td class=&quot;proxy-name&quot;&gt;${proxy-name}&lt;/td&gt;&lt;td class=&quot;proxy-notes&quot;&gt;${proxy-notes}&lt;/td&gt;&lt;td class=&quot;pattern-name&quot;&gt;${pattern-name}&lt;/td&gt;&lt;td class=&quot;pattern&quot;&gt;${pattern}&lt;/td&gt;&lt;td class=&quot;pattern-case&quot;&gt;${pattern-case}&lt;/td&gt;&lt;td class=&quot;pattern-type&quot;&gt;${pattern-type}&lt;/td&gt;&lt;td class=&quot;pattern-color&quot;&gt;${pattern-color}&lt;/td&gt;&lt;td class=&quot;pac-result&quot;&gt;${pac-result}&lt;/td&gt;&lt;td class=&quot;error-msg&quot;&gt;${error-msg}&lt;/td&gt;&lt;/tr&gt;" footer="&lt;/tbody&gt;&lt;/table&gt;&lt;/body&gt;&lt;/html&gt;"/><warnings/><autoadd enabled="false" temp="false" reload="true" notify="true" notifyWhenCanceled="true" prompt="true"><match enabled="true" name="Dynamic AutoAdd Pattern" pattern="*://${3}${6}/*" isRegEx="false" isBlackList="false" isMultiLine="false" caseSensitive="false" fromSubscription="false"/><match enabled="true" name="" pattern="*You are not authorized to view this page*" isRegEx="false" isBlackList="false" isMultiLine="true" caseSensitive="false" fromSubscription="false"/></autoadd><quickadd enabled="false" temp="false" reload="true" notify="true" notifyWhenCanceled="true" prompt="true"><match enabled="true" name="Dynamic QuickAdd Pattern" pattern="*://${3}${6}/*" isRegEx="false" isBlackList="false" isMultiLine="false" caseSensitive="false" fromSubscription="false"/></quickadd><defaultPrefs origPrefetch="null"/><proxies>' > $file
   echo -ne '<proxy name="localhost:8080" id="1145138293" notes="e.g. Burp" fromSubscription="false" enabled="true" mode="manual" selectedTabIndex="0" lastresort="false" animatedIcons="true" includeInCycle="false" color="#05FC81" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="true" clearCookiesBeforeUse="false" rejectCookies="false"><matches/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="127.0.0.1" port="8080" socksversion="5" isSocks="false" username="" password="" domain=""/></proxy>' >> $file
@@ -1405,7 +1414,7 @@ TEXT
 
 \${color dodgerblue3}CPU \${hr 2}\$color
 #\${font Arial:bold:size=8}\${execi 99999 grep "model name" -m1 /proc/cpuinfo | cut -d":" -f2 | cut -d" " -f2- | sed "s#Processor ##"}\$font\$color
-\${color white}MHz\$color: \${freq} \${alignr}\${color white}Load\$color: \${exec uptime | awk -F "load average: " {print \$2}}
+\${color white}MHz\$color: \${freq} \${alignr}\${color white}Load\$color: \${exec uptime | awk -F "load average: "  '{print \$2}'}
 \${color white}Tasks\$color: \$running_processes/\$processes \${alignr}\${color white}CPU0\$color: \${cpu cpu0}% \${color white}CPU1\$color: \${cpu cpu1}%
 #\${color #c0ff3e}\${acpitemp}C
 #\${execi 20 sensors |grep "Core0 Temp" | cut -d" " -f4}\$font\$color\${alignr}\${freq_g 2} \${execi 20 sensors |grep "Core1 Temp" | cut -d" " -f4}
@@ -1422,7 +1431,7 @@ TEXT
 
 \${color dodgerblue3}MEMORY & SWAP \${hr 2}\$color
 \${color white}RAM\$color   \$memperc%  \${membar 6}\$color
-\${color white}Swap\$color  \$swapperc%  \${swapbar 6}\$color
+\${color white}Swap\$color   \$swapperc%  \${swapbar 6}\$color
 
 \${color dodgerblue3}FILESYSTEM \${hr 2}\$color
 \${color white}root\$color \${fs_free_perc /}% free\${alignr}\${fs_free /}/ \${fs_size /}
@@ -1442,7 +1451,7 @@ ifconfig eth1 &>/devnull && cat <<EOF >> $file
 \${downspeedgraph eth1 25,120 000000 00ff00} \${alignr}\${upspeedgraph eth1 25,120 000000 ff0000}\$color
 EOF
 cat <<EOF >> $file
-\${color dodgerblue3}WiFi (\${addr wlan0}) \${hr 2}\$color
+\${color dodgerblue3}Wi-Fi (\${addr wlan0}) \${hr 2}\$color
 \${color white}Down\$color:  \${downspeed wlan0} KB/s\${alignr}\${color white}Up\$color: \${upspeed wlan0} KB/s
 \${color white}Downloaded\$color: \${totaldown wlan0} \${alignr}\${color white}Uploaded\$color: \${totalup wlan0}
 \${downspeedgraph wlan0 25,120 000000 00ff00} \${alignr}\${upspeedgraph wlan0 25,120 000000 ff0000}\$color
@@ -1481,7 +1490,7 @@ EOF
 
 
 ##### Configuring metasploit ~ http://docs.kali.org/general-use/starting-metasploit-framework-in-kali
-echo -e "\n\e[01;32m[+]\e[00m Configuring metasploit ~ Exploit framework"
+echo -e "\n\e[01;32m[+]\e[00m Configuring metasploit ~ exploit framework"
 #--- Start services
 service postgresql start
 service metasploit start
@@ -1493,7 +1502,8 @@ export GOCOW=1   # Always a cow logo ;)
 file=/root/.bashrc; [ -e $file ] && cp -n $file{,.bkup}
 grep -q '^GOCOW' $file 2>/dev/null || echo 'GOCOW=1' >> $file
 #--- Metasploit 4.10.x+ database fix #1 ~ https://community.rapid7.com/community/metasploit/blog/2014/08/25/not-reinventing-the-wheel
-[ -e /opt/metasploit/apps/pro/ui/config/database.yml ] && ln -sf /opt/metasploit/apps/pro/ui/config/database.yml /root/.msf4/database.yml   #cp -f   #find / -name database.yml -type f | grep metasploit | grep -v gems   # /usr/share/metasploit-framework/config/database.yml
+mkdir -p /root/.msf4/
+ln -sf /opt/metasploit/apps/pro/ui/config/database.yml /root/.msf4/database.yml   #cp -f   #find / -name database.yml -type f | grep metasploit | grep -v gems   # /usr/share/metasploit-framework/config/database.yml
 #--- Metasploit 4.10.x+ database fix #2 ~ Using method #1, so this isn't needed
 #file=/root/.bash_aliases; [ -e $file ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliasesa
 #grep -q '^alias msfconsole' $file 2>/dev/null || echo -e '## Metasploit Framework\nalias msfconsole="msfconsole db_connect -y /opt/metasploit/apps/pro/ui/config/database.yml"\n\n' >> $file
@@ -1502,8 +1512,6 @@ grep -q '^GOCOW' $file 2>/dev/null || echo 'GOCOW=1' >> $file
 #--- First time run
 echo -e 'sleep 10\ndb_rebuild_cache\nsleep 300\nexit' > /tmp/msf.rc   #echo -e 'go_pro' > /tmp/msf.rc
 msfconsole -r /tmp/msf.rc
-#--- ...Double checking
-[ -e /opt/metasploit/apps/pro/ui/config/database.yml ] && ln -sf /opt/metasploit/apps/pro/ui/config/database.yml /root/.msf4/database.yml   #cp -f   #find / -name database.yml -type f | grep metasploit | grep -v gems   # /usr/share/metasploit-framework/config/database.yml
 #--- Setup GUI
 #bash /opt/metasploit/scripts/launchui.sh    #*** Doesn't automate ***. Takes a little while to kick in...
 #xdg-open https://127.0.0.1:3790/
@@ -1625,7 +1633,7 @@ apt-get -y -qq install gtk-recordmydesktop
 
 
 ##### Installing shutter
-echo -e "\n\e[01;32m[+]\e[00m Installing shutter ~ gui screenshot"
+echo -e "\n\e[01;32m[+]\e[00m Installing shutter ~ gui still screen capture"
 apt-get -y -qq install shutter
 
 
@@ -1635,7 +1643,7 @@ apt-get -y -qq install gdebi
 
 
 ##### Installing psmisc ~ allows for 'killall command' to be used
-echo -e "\n\e[01;32m[+]\e[00m Installing psmisc"
+echo -e "\n\e[01;32m[+]\e[00m Installing psmisc ~ tools to help with running processes"
 apt-get -y -qq install psmisc
 
 
@@ -1680,7 +1688,7 @@ apt-get -y -qq install filezilla
 #--- Configure filezilla
 timeout 15 filezilla   #filezilla & sleep 5; killall -q -w filezilla >/dev/null     # Start and kill. Files needed for first time run
 file=/root/.filezilla/filezilla.xml; [ -e $file ] && cp -n $file{,.bkup}
-sed -i 's#^.*"Default editor".*#\t<Setting name="Default editor" type="string">2/usr/bin/geany</Setting>#' > $file
+sed -i 's#^.*"Default editor".*#\t<Setting name="Default editor" type="string">2/usr/bin/geany</Setting>#' $file
 
 
 ##### Installing remmina
@@ -1688,8 +1696,8 @@ echo -e "\n\e[01;32m[+]\e[00m Installing remmina ~ gui remote desktop"
 apt-get -y -qq install remmina
 
 
-##### Setting up tftp client &  server
-echo -e "\n\e[01;32m[+]\e[00m Setting up tftp client & server ~ file transfer method"
+##### Setting up tftp client & server
+echo -e "\n\e[01;32m[+]\e[00m Setting up tftp client & server ~ file transfer methods"
 apt-get -y -qq install tftp      # tftp client
 apt-get -y -qq install atftpd    # tftp Server
 #--- Configure atftpd
@@ -1745,15 +1753,15 @@ apt-get -y -qq install p7zip-full
 
 
 ##### Installing zip & unzip
-echo -e "\n\e[01;32m[+]\e[00m Installing zip & unzip ~ cli file extractor"
+echo -e "\n\e[01;32m[+]\e[00m Installing zip & unzip ~ cli file extractors"
 apt-get -y -qq install zip      # Compress
 apt-get -y -qq install unzip    # Decompress
 
 
 ##### Installing file roller
 echo -e "\n\e[01;32m[+]\e[00m Installing file roller ~ gui file extractor"
-apt-get -y -qq install file-roller                                      # gui program
-apt-get -y -qq unrar unace unzip rar zip p7zip p7zip-full p7zip-rar     # supported file compressions
+apt-get -y -qq install file-roller                                            # gui program
+apt-get -y -qq install unace unrar rar unzip zip p7zip p7zip-full p7zip-rar   # supported file compressions
 
 
 ##### Installing PPTP VPN support
@@ -1773,7 +1781,7 @@ update-flashplugin-nonfree --install
 
 
 ##### Installing bully
-echo -e "\n\e[01;32m[+]\e[00m Installing bully ~ WPS brute force"
+echo -e "\n\e[01;32m[+]\e[00m Installing bully ~ wps pin brute force"
 apt-get -y -qq install bully
 
 
@@ -1830,12 +1838,12 @@ apt-get -y -qq install bridge-utils
 
 
 ##### Installing mana
-echo -e "\n\e[01;32m[+]\e[00m Installing mana ~ rogue ap & mitm"
+echo -e "\n\e[01;32m[+]\e[00m Installing mana ~ rogue AP / mitm Wi-Fi"
 apt-get -y -qq install mana-toolkit
 
 
 ##### Installing httptunnel
-echo -e "\n\e[01;32m[+]\e[00m Installing httptunnel ~ tunnels a data stream in HTTP requests"
+echo -e "\n\e[01;32m[+]\e[00m Installing httptunnel ~ tunnels data streams in HTTP requests"
 apt-get -y -qq install http-tunnel
 
 
@@ -1867,7 +1875,7 @@ apt-get -y -qq install ptunnel
 
 
 ##### Installing zerofree
-echo -e "\n\e[01;32m[+]\e[00m Installing zerofree ~ cli nulls free blocks on HDD"
+echo -e "\n\e[01;32m[+]\e[00m Installing zerofree ~ cli nulls free blocks on a HDD"
 apt-get -y -qq install zerofree
 #fdisk -l
 #zerofree -v /dev/sda1   #for i in $(mount | grep sda | grep ext | cut -b 9); do  mount -o remount,ro /dev/sda$i && zerofree -v /dev/sda$i && mount -o remount,rw /dev/sda$i; done
@@ -1875,7 +1883,10 @@ apt-get -y -qq install zerofree
 
 ##### Installing gcc & multilib
 echo -e "\n\e[01;32m[+]\e[00m Installing gcc & multilib ~ compiling libraries"
-apt-get -y -qq install gcc-multilib libc6-dev-i386
+apt-get -y -qq install gcc-multilib libc6 libc6-dev
+apt-get -y -qq install libc6-amd64 libc6-dev-amd64
+apt-get -y -qq install libc6-i386 libc6-dev-i386
+apt-get -y -qq install libc6-i686 libc6-dev-i686
 
 
 ##### Installing mingw & cross compiling tools
@@ -1884,7 +1895,7 @@ apt-get -y -qq install mingw-w64 binutils-mingw-w64 gcc-mingw-w64 mingw-w64-dev 
 
 
 ##### Installing wine
-echo -e "\n\e[01;32m[+]\e[00m Installing wine"
+echo -e "\n\e[01;32m[+]\e[00m Installing wine ~ run windows programs on *nix"
 apt-get -y -qq install wine
 #--- x64?
 if [[ "$(uname -m)" == 'x86_64' ]]; then
@@ -1902,8 +1913,8 @@ echo -e "\n\e[01;32m[+]\e[00m Installing backdoor factory ~ anti-virus bypass"
 apt-get -y -qq install backdoor-factory
 
 
-##### Installing veil
-echo -e "\n\e[01;32m[+]\e[00m Installing veil ~ anti-virus bypass framework"
+##### Installing veil framework
+echo -e "\n\e[01;32m[+]\e[00m Installing veil framework ~ anti-virus bypass framework"
 apt-get -y -qq install veil
 
 
@@ -1916,7 +1927,7 @@ wget -q "http://www.farbrausch.de/~fg/kkrunchy/kkrunchy_023a2.zip" -P /usr/share
 
 
 ##### Installing hyperion
-echo -e "\n\e[01;32m[+]\e[00m Installing hyperion"
+echo -e "\n\e[01;32m[+]\e[00m Installing hyperion ~ anti-virus bypass"
 unzip -q -o -d /usr/share/windows-binaries/ /usr/share/windows-binaries/Hyperion-1.0.zip
 #rm -f /usr/share/windows-binaries/Hyperion-1.0.zip
 i686-w64-mingw32-g++ -static-libgcc -static-libstdc++ /usr/share/windows-binaries/Hyperion-1.0/Src/Crypter/*.cpp -o /usr/share/windows-binaries/Hyperion-1.0/Src/Crypter/bin/crypter.exe
@@ -1936,26 +1947,26 @@ BWD="?"
 ## Relative path?
 [ -e "./\${1}" ] && BWD="\${CWD}"
 
-## Can't find!
+## Can't find files!
 [[ "\${BWD}" == "?" ]] && echo -e '\e[01;31m[!]\e[00m Cant find \$1. Quitting...' && exit
 
-## Magic
+## The magic!
 cd /usr/share/windows-binaries/Hyperion-1.0/
 $(which wine) ./Src/Crypter/bin/crypter.exe \${BWD}\${1} \${BWD}\${2}
 
-## Restore
+## Restore path
 cd \${CWD}/
 EOF
 chmod +x $file
 
 
 ##### Installing fuzzdb
-echo -e "\n\e[01;32m[+]\e[00m Installing fuzzdb ~ multiple types of (word)lists (and more)"
+echo -e "\n\e[01;32m[+]\e[00m Installing fuzzdb ~ multiple types of (word)lists and similar things"
 svn -q checkout http://fuzzdb.googlecode.com/svn/trunk/ /usr/share/fuzzdb/
 
 
 ##### Installing seclist
-echo -e "\n\e[01;32m[+]\e[00m Installing seclist ~ multiple types of (word)lists (and more)"
+echo -e "\n\e[01;32m[+]\e[00m Installing seclist ~ multiple types of (word)lists and similar things"
 apt-get -y -qq install seclists
 
 
@@ -2002,7 +2013,6 @@ grep -q '^\[shared\]' $file 2>/dev/null || cat <<EOF >> $file
   read only = no
   guest ok = yes
 EOF
-#grep -q '^\[www\]' $file 2>/dev/null || echo -e '\n[www]\n   comment = WWW\n   path = /var/www/\n   browseable = yes\n   read only = yes\n   guest ok = yes' >> $file
 #--- Create samba path and configure it
 mkdir -p /var/samba/
 chown -R samba\:samba /var/samba/
@@ -2010,7 +2020,9 @@ chmod -R 0770 /var/samba/
 #--- Check result
 #service samba restart
 #smbclient -L \\127.0.0.1 -N
-#service samba stop
+#--- Disable samba at startup
+service samba stop
+update-rc.d -f samba remove
 
 
 ##### Setting up SSH
@@ -2046,9 +2058,9 @@ for i in $(cut -d: -f6 /etc/passwd | sort | uniq); do
 done
 
 
-##### Time taken (roughly)
+##### Time (roughly) taken
 finish_time=$(date +%s)
-echo -e "\n\e[01;33m[i]\e[00m Time taken: $(( $(( finish_time - start_time )) / 60 )) minutes"
+echo -e "\n\e[01;33m[i]\e[00m Time (roughly) taken: $(( $(( finish_time - start_time )) / 60 )) minutes"
 
 
 #-Done--------------------------------------------------#
@@ -2057,8 +2069,10 @@ echo -e "\n\e[01;33m[i]\e[00m Time taken: $(( $(( finish_time - start_time )) / 
 ##### Done!
 echo -e "\n\e[01;33m[i]\e[00m Do not forget to:"
 echo -e "\e[01;33m[i]\e[00m   + Check the above output (hopefully everything installed okay)"
-echo -e "\e[01;33m[i]\e[00m   + Check Iceweasel add-ons"
+echo -e "\e[01;33m[i]\e[00m   + Check that Iceweasel's extensions were enabled"
 echo -e "\e[01;33m[i]\e[00m   + Manually install: Nessus, Nexpose, Metasploit Community and/or OpenVAS"
+echo -e "\e[01;33m[i]\e[00m   + Manually agree to: Burp, Wireshark etc"
+echo -e "\e[01;33m[i]\e[00m   + Change time zone & keyboard layout"
 echo -e "\e[01;33m[i]\e[00m   + Reboot"
 echo -e "\e[01;33m[i]\e[00m   + Take a snapshot (...if you are using a VM)"
 
