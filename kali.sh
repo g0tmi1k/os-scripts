@@ -1,6 +1,6 @@
 #!/bin/bash
 #-Metadata------------------------------------------------#
-#  Filename: kali.sh                 (Update: 2014-11-26) #
+#  Filename: kali.sh                 (Update: 2014-11-27) #
 #-Info----------------------------------------------------#
 #  Personal post install script for Kali Linux.           #
 #-Author(s)-----------------------------------------------#
@@ -1239,7 +1239,7 @@ EOF
 
 
 ##### Configuring vim - all users
-echo -e "\n\e[01;32m[+]\e[00m Configuring vim ~ cli text editor"
+echo -e "\n\e[01;32m[+]\e[00m Configuring vim ~ CLI text editor"
 apt-get -y -qq install vim
 #--- Configure vim
 file=/etc/vim/vimrc; [ -e $file ] && cp -n $file{,.bkup}   #/root/.vimrc
@@ -1276,7 +1276,7 @@ git config --global mergetool.prompt false
 
 
 ##### Setting up iceweasel
-echo -e "\n\e[01;32m[+]\e[00m Setting up iceweasel ~ gui web browser"
+echo -e "\n\e[01;32m[+]\e[00m Setting up iceweasel ~ GUI web browser"
 apt-get install -y -qq unzip curl wget iceweasel
 #--- Configure iceweasel
 #export DISPLAY=:0.0   #[[ -z $SSH_CONNECTION ]] || export DISPLAY=:0.0
@@ -1363,7 +1363,7 @@ rm -f /tmp/iceweasel.sql
 
 
 ##### Installing conky
-echo -e "\n\e[01;32m[+]\e[00m Installing conky ~ gui desktop monitor"
+echo -e "\n\e[01;32m[+]\e[00m Installing conky ~ GUI desktop monitor"
 apt-get -y -qq install conky
 #--- Configure conky
 file=/root/.conkyrc; [ -e $file ] && cp -n $file{,.bkup}
@@ -1520,7 +1520,7 @@ rm -f /tmp/msf.rc
 
 
 ##### Installing geany
-echo -e "\n\e[01;32m[+]\e[00m Installing geany ~ gui text editor"
+echo -e "\n\e[01;32m[+]\e[00m Installing geany ~ GUI text editor"
 apt-get -y -qq install geany
 #--- Add to panel
 dconf load /org/gnome/gnome-panel/layout/objects/geany/ << EOF
@@ -1571,7 +1571,7 @@ EOF
 
 
 ##### Installing meld
-echo -e "\n\e[01;32m[+]\e[00m Installing meld ~ gui text compare"
+echo -e "\n\e[01;32m[+]\e[00m Installing meld ~ GUI text compare"
 apt-get -y -qq install meld
 #--- Configure meld
 gconftool-2 --type bool --set /apps/meld/show_line_numbers true
@@ -1581,7 +1581,7 @@ gconftool-2 --type int --set /apps/meld/edit_wrap_lines 2
 
 
 ##### Installing bless
-echo -e "\n\e[01;32m[+]\e[00m Installing bless ~ gui hex editor"
+echo -e "\n\e[01;32m[+]\e[00m Installing bless ~ GUI hex editor"
 apt-get -y -qq install bless
 
 
@@ -1611,34 +1611,34 @@ apt-get -y -qq install openvas
 
 
 ##### Installing libreoffice
-echo -e "\n\e[01;32m[+]\e[00m Installing libreoffice ~ gui office suite"
+echo -e "\n\e[01;32m[+]\e[00m Installing libreoffice ~ GUI office suite"
 apt-get -y -qq install libreoffice
 
 
 ##### Installing cherrytree
-echo -e "\n\e[01;32m[+]\e[00m Installing cherrytree ~ gui note taking"
+echo -e "\n\e[01;32m[+]\e[00m Installing cherrytree ~ GUI note taking"
 apt-get -y -qq install cherrytree
 
 
 ##### Installing recordmydesktop
-echo -e "\n\e[01;32m[+]\e[00m Installing recordmydesktop ~ gui video screen capture"
+echo -e "\n\e[01;32m[+]\e[00m Installing recordmydesktop ~ GUI video screen capture"
 apt-get -y -qq install recordmydesktop
 #--- Installing GUI front end
 apt-get -y -qq install gtk-recordmydesktop
 
 
 ##### Installing gimp
-#echo -e "\n\e[01;32m[+]\e[00m Installing gimp ~ gui image editing"
+#echo -e "\n\e[01;32m[+]\e[00m Installing gimp ~ GUI image editing"
 #apt-get -y -qq install gimp
 
 
 ##### Installing shutter
-echo -e "\n\e[01;32m[+]\e[00m Installing shutter ~ gui still screen capture"
+echo -e "\n\e[01;32m[+]\e[00m Installing shutter ~ GUI still screen capture"
 apt-get -y -qq install shutter
 
 
 ##### Installing gdebi
-echo -e "\n\e[01;32m[+]\e[00m Installing gdebi ~ gui package installer"
+echo -e "\n\e[01;32m[+]\e[00m Installing gdebi ~ GUI package installer"
 apt-get -y -qq install gdebi
 
 
@@ -1648,22 +1648,22 @@ apt-get -y -qq install psmisc
 
 
 ##### Installing midnight commander
-#echo -e "\n\e[01;32m[+]\e[00m Installing midnight commander ~ cli file manager"
+#echo -e "\n\e[01;32m[+]\e[00m Installing midnight commander ~ CLI file manager"
 #apt-get -y -qq install mc
 
 
 ##### Installing htop
-echo -e "\n\e[01;32m[+]\e[00m Installing htop ~ cli process viewer"
+echo -e "\n\e[01;32m[+]\e[00m Installing htop ~ CLI process viewer"
 apt-get -y -qq install htop
 
 
 ##### Installing glance
-#echo -e "\n\e[01;32m[+]\e[00m Installing glance ~ cli process viewer"
+#echo -e "\n\e[01;32m[+]\e[00m Installing glance ~ CLI process viewer"
 #apt-get -y -qq install glance
 
 
 ##### Installing axel
-echo -e "\n\e[01;32m[+]\e[00m Installing axel ~ cli download manager"
+echo -e "\n\e[01;32m[+]\e[00m Installing axel ~ CLI download manager"
 apt-get -y -qq install axel
 #--- Setup alias
 file=/root/.bash_aliases; [ -e $file ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
@@ -1673,17 +1673,17 @@ grep -q '^alias axel' $file 2>/dev/null || echo -e '## axel\nalias axel="axel -a
 
 
 ##### Installing gparted
-echo -e "\n\e[01;32m[+]\e[00m Installing gparted ~ gui partition manager"
+echo -e "\n\e[01;32m[+]\e[00m Installing gparted ~ GUI partition manager"
 apt-get -y -qq install gparted
 
 
 ##### Installing daemonfs
-echo -e "\n\e[01;32m[+]\e[00m Installing daemonfs ~ gui file monitor"
+echo -e "\n\e[01;32m[+]\e[00m Installing daemonfs ~ GUI file monitor"
 apt-get -y -qq install daemonfs
 
 
 ##### Installing filezilla
-echo -e "\n\e[01;32m[+]\e[00m Installing filezilla ~ gui file transfer"
+echo -e "\n\e[01;32m[+]\e[00m Installing filezilla ~ GUI file transfer"
 apt-get -y -qq install filezilla
 #--- Configure filezilla
 timeout 15 filezilla   #filezilla & sleep 5; killall -q -w filezilla >/dev/null     # Start and kill. Files needed for first time run
@@ -1692,7 +1692,7 @@ sed -i 's#^.*"Default editor".*#\t<Setting name="Default editor" type="string">2
 
 
 ##### Installing remmina
-echo -e "\n\e[01;32m[+]\e[00m Installing remmina ~ gui remote desktop"
+echo -e "\n\e[01;32m[+]\e[00m Installing remmina ~ GUI remote desktop"
 apt-get -y -qq install remmina
 
 
@@ -1714,7 +1714,7 @@ update-rc.d -f atftpd remove
 
 
 ##### Installing pure-ftpd
-echo -e "\n\e[01;32m[+]\e[00m Installing pure-ftpd ~ file transfer method"
+echo -e "\n\e[01;32m[+]\e[00m Installing pure-ftpd ~ FTP server/file transfer method"
 apt-get -y -qq install pure-ftpd
 #--- Setup pure-ftpd
 mkdir -p /var/ftp/
@@ -1743,23 +1743,23 @@ update-rc.d -f pure-ftpd remove
 
 
 ##### Installing lynx
-echo -e "\n\e[01;32m[+]\e[00m Installing lynx ~ cli web browser"
+echo -e "\n\e[01;32m[+]\e[00m Installing lynx ~ CLI web browser"
 apt-get -y -qq install lynx
 
 
 ##### Installing p7zip
-echo -e "\n\e[01;32m[+]\e[00m Installing p7zip ~ cli file extractor"
+echo -e "\n\e[01;32m[+]\e[00m Installing p7zip ~ CLI file extractor"
 apt-get -y -qq install p7zip-full
 
 
 ##### Installing zip & unzip
-echo -e "\n\e[01;32m[+]\e[00m Installing zip & unzip ~ cli file extractors"
+echo -e "\n\e[01;32m[+]\e[00m Installing zip & unzip ~ CLI file extractors"
 apt-get -y -qq install zip      # Compress
 apt-get -y -qq install unzip    # Decompress
 
 
 ##### Installing file roller
-echo -e "\n\e[01;32m[+]\e[00m Installing file roller ~ gui file extractor"
+echo -e "\n\e[01;32m[+]\e[00m Installing file roller ~ GUI file extractor"
 apt-get -y -qq install file-roller                                            # gui program
 apt-get -y -qq install unace unrar rar unzip zip p7zip p7zip-full p7zip-rar   # supported file compressions
 
@@ -1770,7 +1770,7 @@ apt-get -y -qq install network-manager-pptp-gnome network-manager-pptp
 
 
 ##### Installing flash
-echo -e "\n\e[01;32m[+]\e[00m Installing flash ~ web plugin"
+echo -e "\n\e[01;32m[+]\e[00m Installing flash ~ multimedia web plugin"
 apt-get -y -qq install flashplugin-nonfree
 update-flashplugin-nonfree --install
 
@@ -1781,12 +1781,12 @@ update-flashplugin-nonfree --install
 
 
 ##### Installing bully
-echo -e "\n\e[01;32m[+]\e[00m Installing bully ~ wps pin brute force"
+echo -e "\n\e[01;32m[+]\e[00m Installing bully ~ WPS pin brute force"
 apt-get -y -qq install bully
 
 
 ##### Installing httprint
-echo -e "\n\e[01;32m[+]\e[00m Installing httprint ~ gui web server fingerprint"
+echo -e "\n\e[01;32m[+]\e[00m Installing httprint ~ GUI web server fingerprint"
 apt-get -y -qq install httprint
 
 
@@ -1875,14 +1875,14 @@ apt-get -y -qq install ptunnel
 
 
 ##### Installing zerofree
-echo -e "\n\e[01;32m[+]\e[00m Installing zerofree ~ cli nulls free blocks on a HDD"
+echo -e "\n\e[01;32m[+]\e[00m Installing zerofree ~ CLI nulls free blocks on a HDD"
 apt-get -y -qq install zerofree
 #fdisk -l
 #zerofree -v /dev/sda1   #for i in $(mount | grep sda | grep ext | cut -b 9); do  mount -o remount,ro /dev/sda$i && zerofree -v /dev/sda$i && mount -o remount,rw /dev/sda$i; done
 
 
 ##### Installing gcc & multilib
-echo -e "\n\e[01;32m[+]\e[00m Installing gcc & multilib ~ compiling libraries"
+echo -e "\n\e[01;32m[+]\e[00m Installing gcc & multilibc ~ compiling libraries"
 apt-get -y -qq install gcc-multilib libc6 libc6-dev
 apt-get -y -qq install libc6-amd64 libc6-dev-amd64
 apt-get -y -qq install libc6-i386 libc6-dev-i386
@@ -1905,21 +1905,21 @@ if [[ "$(uname -m)" == 'x86_64' ]]; then
   apt-get -y -qq install wine-bin:i386
 fi
 #--- First time run...
-wine 2>/dev/null
+[ -e /usr/share/windows-binaries/whoami.exe ] && wine /usr/share/windows-binaries/whoami.exe &>/dev/null
 
 
 ##### Installing the backdoor factory
-echo -e "\n\e[01;32m[+]\e[00m Installing backdoor factory ~ anti-virus bypass"
+echo -e "\n\e[01;32m[+]\e[00m Installing backdoor factory ~ bypassing anti-virus"
 apt-get -y -qq install backdoor-factory
 
 
 ##### Installing veil framework
-echo -e "\n\e[01;32m[+]\e[00m Installing veil framework ~ anti-virus bypass framework"
+echo -e "\n\e[01;32m[+]\e[00m Installing veil framework ~ bypassing anti-virus"
 apt-get -y -qq install veil
 
 
 ##### Installing OP packers
-echo -e "\n\e[01;32m[+]\e[00m Installing OP packers ~ anti-virus bypass"
+echo -e "\n\e[01;32m[+]\e[00m Installing OP packers ~ bypassing anti-virus"
 apt-get -y -qq install upx-ucl   #wget -q "http://upx.sourceforge.net/download/upx309w.zip" -P /usr/share/packers/ && unzip -q -o -d /usr/share/packers/ /usr/share/packers/upx309w.zip; rm -f /usr/share/packers/upx309w.zip
 mkdir -p /usr/share/packers/
 wget -q "http://www.eskimo.com/~scottlu/win/cexe.exe" -P /usr/share/packers/
@@ -1927,7 +1927,7 @@ wget -q "http://www.farbrausch.de/~fg/kkrunchy/kkrunchy_023a2.zip" -P /usr/share
 
 
 ##### Installing hyperion
-echo -e "\n\e[01;32m[+]\e[00m Installing hyperion ~ anti-virus bypass"
+echo -e "\n\e[01;32m[+]\e[00m Installing hyperion ~ bypassing anti-virus"
 unzip -q -o -d /usr/share/windows-binaries/ /usr/share/windows-binaries/Hyperion-1.0.zip
 #rm -f /usr/share/windows-binaries/Hyperion-1.0.zip
 i686-w64-mingw32-g++ -static-libgcc -static-libstdc++ /usr/share/windows-binaries/Hyperion-1.0/Src/Crypter/*.cpp -o /usr/share/windows-binaries/Hyperion-1.0/Src/Crypter/bin/crypter.exe
@@ -1938,35 +1938,44 @@ cat <<EOF > $file
 
 ## Note: This is far from perfect...
 
-CWD=\$(pwd)
+CWD=\$(pwd)/
 BWD="?"
 
-## Full path?
+## Using full path?
 [ -e "/\${1}" ] && BWD=""
 
-## Relative path?
+## Using relative path?
 [ -e "./\${1}" ] && BWD="\${CWD}"
 
-## Can't find files!
+## Can't find input file!
 [[ "\${BWD}" == "?" ]] && echo -e '\e[01;31m[!]\e[00m Cant find \$1. Quitting...' && exit
 
 ## The magic!
 cd /usr/share/windows-binaries/Hyperion-1.0/
-$(which wine) ./Src/Crypter/bin/crypter.exe \${BWD}\${1} \${BWD}\${2}
+$(which wine) ./Src/Crypter/bin/crypter.exe \${BWD}\${1} output.exe
 
-## Restore path
+## Restore our path
 cd \${CWD}/
+
+## Move the output file
+sleep 1
+mv -f /usr/share/windows-binaries/Hyperion-1.0/output.exe \${2}
+
+## Generate file hashes
+for FILE in \${1} \${2}; do
+  echo "[i] \$(md5sum \${FILE})"
+done
 EOF
 chmod +x $file
 
 
 ##### Installing fuzzdb
-echo -e "\n\e[01;32m[+]\e[00m Installing fuzzdb ~ multiple types of (word)lists and similar things"
+echo -e "\n\e[01;32m[+]\e[00m Installing fuzzdb ~ multiple types of (word)lists (and similar things)"
 svn -q checkout http://fuzzdb.googlecode.com/svn/trunk/ /usr/share/fuzzdb/
 
 
 ##### Installing seclist
-echo -e "\n\e[01;32m[+]\e[00m Installing seclist ~ multiple types of (word)lists and similar things"
+echo -e "\n\e[01;32m[+]\e[00m Installing seclist ~ multiple types of (word)lists (and similar things)"
 apt-get -y -qq install seclists
 
 
@@ -2068,11 +2077,11 @@ echo -e "\n\e[01;33m[i]\e[00m Time (roughly) taken: $(( $(( finish_time - start_
 
 ##### Done!
 echo -e "\n\e[01;33m[i]\e[00m Do not forget to:"
-echo -e "\e[01;33m[i]\e[00m   + Check the above output (hopefully everything installed okay)"
-echo -e "\e[01;33m[i]\e[00m   + Check that Iceweasel's extensions were enabled"
+echo -e "\e[01;33m[i]\e[00m   + Check the above output (everything installed okay/no errors)"
+echo -e "\e[01;33m[i]\e[00m   + Check that Iceweasel's extensions are enabled"
 echo -e "\e[01;33m[i]\e[00m   + Manually install: Nessus, Nexpose, Metasploit Community and/or OpenVAS"
 echo -e "\e[01;33m[i]\e[00m   + Manually agree to: Burp, Wireshark etc"
-echo -e "\e[01;33m[i]\e[00m   + Change time zone & keyboard layout"
+echo -e "\e[01;33m[i]\e[00m   + Change time zone & keyboard layout (...if different to $timezone/$keyboardlayout)"
 echo -e "\e[01;33m[i]\e[00m   + Reboot"
 echo -e "\e[01;33m[i]\e[00m   + Take a snapshot (...if you are using a VM)"
 
