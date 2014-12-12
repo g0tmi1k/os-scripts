@@ -1620,6 +1620,11 @@ echo -e "\n\e[01;32m[+]\e[00m Installing cherrytree ~ GUI note taking"
 apt-get -y -qq install cherrytree
 
 
+##### Installing sipcalc
+echo -e "\n\e[01;32m[+]\e[00m Installing sipcalc ~ Command line subnet calculator"
+apt-get install sipcalc
+
+
 ##### Installing recordmydesktop
 echo -e "\n\e[01;32m[+]\e[00m Installing recordmydesktop ~ GUI video screen capture"
 apt-get -y -qq install recordmydesktop
