@@ -1622,7 +1622,7 @@ apt-get -y -qq install cherrytree
 
 ##### Installing sipcalc
 echo -e "\n\e[01;32m[+]\e[00m Installing sipcalc ~ Command line subnet calculator"
-apt-get install sipcalc
+apt-get -y -qq install sipcalc
 
 
 ##### Installing recordmydesktop
