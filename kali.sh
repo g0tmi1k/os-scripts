@@ -31,25 +31,6 @@ wget -qO- https://raw.github.com/g0tmi1k/os-scripts/master/kali.sh | bash
 fi
 
 
-##### Location information
-keyboardlayout="gb"         # Great Britain
-keyboardApple=false         # Using a Apple/Macintosh keyboard? (anything other than 'false' will enable)
-timezone="Europe/London"    # London, Europe
-
-
-##### (Optional) Enable debug mode
-#set -x
-
-
-if [ 1 -eq 0 ]; then        # This is never true, thus it acts as block comments ;)
-##### (Optional) Remote connection via SSH
-services ssh start          # Start SSH to allow for remote connection to Kali
-ifconfig eth0               # Get the IP of the network interface to SSH into (guessing the interface is eth0)
-#--- Use the local computer (non Kali) from here on out via SSH (You may wish to copy/paste selected commands into prompt. Tip: Do only a few lines at once)
-ssh root@*ip*               # Replace '*ip*' with the value from before (ifconfig)
-fi
-
-
 ##### Check if we are running as root - else this script will fail (hard!)
 if [[ $EUID -ne 0 ]]; then
   echo -e "\e[01;31m[!]\e[00m This script must be run as root" 1>&2
