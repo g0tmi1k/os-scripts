@@ -1,6 +1,6 @@
 #!/bin/bash
 #-Metadata------------------------------------------------#
-#  Filename: kali.sh                 (Update: 2014-11-27) #
+#  Filename: kali.sh                 (Update: 2014-12-23) #
 #-Info----------------------------------------------------#
 #  Personal post install script for Kali Linux.           #
 #-Author(s)-----------------------------------------------#
@@ -105,8 +105,6 @@ elif $(dmidecode | grep -iq vmware); then
   file=$(find /mnt/cdrom/ -maxdepth 1 -type f -name 'VMwareTools-*.tar.gz' -print -quit)
   if [[ $_mount == 0 ]] && [[ -z $file ]]; then
     echo -e "\e[01;31m[!]\e[00m Incorrect CD/ISO mounted. Skipping..."
-    #read -p "Press the [enter] key to once the disk/iso has been manually mounted"   # Virtualbox loops. This would be a 'one time' notice.
-  #fi
   elif [[ $_mount == 0 ]]; then                         # If there is a CD in (and its right!), try to install native Guest Additions
     apt-get -y -qq install gcc make linux-headers-$(uname -r)
     # Kernel 3.14+ - so it doesn't need patching any more
@@ -131,26 +129,26 @@ elif $(dmidecode | grep -iq virtualbox); then
   echo -e "\n\e[01;32m[+]\e[00m (Optional) Installing Virtualbox Guest Additions"
   #--- Devices -> Install Guest Additions CD image...
   mkdir -p /mnt/cdrom/
-  while [[ ! -e /mnt/cdrom/VBoxLinuxAdditions.run ]]; do       # Let's force them to have the correct CD in... (WARNING: breaks unattended install!)
-    umount -f /mnt/cdrom 2>/dev/null
-    sleep 1
-    mount -o ro /dev/cdrom /mnt/cdrom 2>/dev/null;             # Only checks first CD drive (if multiple)
-    if [[ ! -e /mnt/cdrom/VBoxLinuxAdditions.run ]]; then
-      echo -e "\e[01;31m[!]\e[00m Incorrect CD/ISO mounted"
-      echo -e "\e[01;33m[i]\e[00m   To Mount: 'Devices -> Install Guest Additions CD image'"
-      echo -ne "\e[01;33m[i]\e[00m "; read -p "Press the [ENTER] key to once the CD/ISO has been manually mounted"
-    fi
-  done
-  apt-get -y -qq install gcc make linux-headers-$(uname -r)
-  cp -f /mnt/cdrom/VBoxLinuxAdditions.run /tmp/
-  chmod -f 0755 /tmp/VBoxLinuxAdditions.run
-  /tmp/VBoxLinuxAdditions.run --nox11
   umount -f /mnt/cdrom 2>/dev/null
+  sleep 1
+  mount -o ro /dev/cdrom /mnt/cdrom 2>/dev/null; _mount=$?   # Only checks first CD drive (if multiple)
+  if [[ $_mount == 0 ]] && [[ -e /mnt/cdrom/VBoxLinuxAdditions.run ]]; then
+    echo -e "\e[01;31m[!]\e[00m Incorrect CD/ISO mounted. Skipping..."
+  elif [[ $_mount == 0 ]]; then
+    apt-get -y -qq install gcc make linux-headers-$(uname -r)
+    cp -f /mnt/cdrom/VBoxLinuxAdditions.run /tmp/
+    chmod -f 0755 /tmp/VBoxLinuxAdditions.run
+    /tmp/VBoxLinuxAdditions.run --nox11
+    umount -f /mnt/cdrom 2>/dev/null
+  else
+    echo -e "\e[01;31m[!]\e[00m Virtualbox Guest Additions CD/ISO isn't mounted. Skipping 'native guest additions', switching to 'repositories version' instead"
+    apt-get -y -qq install virtualbox-guest-additions virtualbox-guest-additions-iso virtualbox-ose-guest-x11
+  fi
 fi
 
 
 ##### Checking to see if there is a second ethernet card (if so, set an static IP address)
-ifconfig eth1 &>/devnull
+ifconfig eth1 &>/dev/null
 if [[ $? == 0 ]]; then
   ##### Setting a static IP address (192.168.155.175/24) on eth1
   echo -e "\n\e[01;32m[+]\e[00m Setting a static IP address (192.168.155.175/24) on eth1"
@@ -524,10 +522,12 @@ cat <<EOF > /root/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortc
     <property name="custom" type="empty">
       <property name="XF86Display" type="string" value="xfce4-display-settings --minimal"/>
       <property name="&lt;Alt&gt;F2" type="string" value="xfrun4"/>
+      <property name="&lt;Primary&gt;&lt;Alt&gt;t" type="string" value="/usr/bin/exo-open --launch TerminalEmulator"/>
       <property name="&lt;Primary&gt;&lt;Alt&gt;Delete" type="string" value="xflock4"/>
       <property name="&lt;Primary&gt;Escape" type="string" value="xfdesktop --menu"/>
       <property name="&lt;Super&gt;p" type="string" value="xfce4-display-settings --minimal"/>
       <property name="override" type="bool" value="true"/>
+      <property name="&lt;Primary&gt;space" type="string" value="xfce4-appfinder"/>
     </property>
   </property>
   <property name="xfwm4" type="empty">
@@ -928,14 +928,17 @@ rm -f /root/.cache/sessions/*
 #--- Set XFCE as default desktop manager
 file=/root/.xsession; [ -e $file ] && cp -n $file{,.bkup}       #~/.xsession
 echo xfce4-session > $file
-#--- Add keyboard shortcut (CTRL + ALT + t) to start a terminal window
+#--- Add keyboard shortcut (CTRL+SPACE) to open Application Finder
+file=/root/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortcuts.xml   #; [ -e $file ] && cp -n $file{,.bkup}
+grep -q '<property name="&lt;Primary&gt;space" type="string" value="xfce4-appfinder"/>' $file || sed -i 's#<property name="\&lt;Alt\&gt;F2" type="string" value="xfrun4"/>#<property name="\&lt;Alt\&gt;F2" type="string" value="xfrun4"/>\n      <property name="\&lt;Primary\&gt;space" type="string" value="xfce4-appfinder"/>#' $file
+#--- Add keyboard shortcut (CTRL+ALT+t) to start a terminal window
 file=/root/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortcuts.xml   #; [ -e $file ] && cp -n $file{,.bkup}
 grep -q '<property name="&lt;Primary&gt;&lt;Alt&gt;t" type="string" value="/usr/bin/exo-open --launch TerminalEmulator"/>' $file || sed -i 's#<property name="\&lt;Alt\&gt;F2" type="string" value="xfrun4"/>#<property name="\&lt;Alt\&gt;F2" type="string" value="xfrun4"/>\n      <property name="\&lt;Primary\&gt;\&lt;Alt\&gt;t" type="string" value="/usr/bin/exo-open --launch TerminalEmulator"/>#' $file
-#--- Create Conky refresh script (it gets installed later)
+#--- Create Conky refresh script (conky gets installed later)
 file=/usr/local/bin/conky_refresh.sh; [ -e $file ] && cp -n $file{,.bkup}
-echo -e '#!/bin/bash\ntimeout 5 killall -9 -q -w conky\nconky &' > $file
+echo -e '#!/bin/bash\n/usr/bin/timeout 5 /usr/bin/killall -9 -q -w conky\n/usr/bin/conky &' > $file
 chmod -f 0500 $file
-#--- Add keyboard shortcut (CTRL + r) to run the conky refresh script
+#--- Add keyboard shortcut (CTRL+r) to run the conky refresh script
 file=/root/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortcuts.xml   #; [ -e $file ] && cp -n $file{,.bkup}
 grep -q '<property name="&lt;Primary&gt;r" type="string" value="/usr/local/bin/conky_refresh.sh"/>' $file || sed -i 's#<property name="\&lt;Alt\&gt;F2" type="string" value="xfrun4"/>#<property name="\&lt;Alt\&gt;F2" type="string" value="xfrun4"/>\n      <property name="\&lt;Primary\&gt;r" type="string" value="/usr/local/bin/conky_refresh.sh"/>#' $file
 
@@ -950,7 +953,7 @@ file=/root/.gtk-bookmarks; [ -e $file ] && cp -n $file{,.bkup}
 #grep -q '^file:///mnt/hgfs ' $file 2>/dev/null || echo 'file:///mnt/hgfs vmshare' >> $file
 grep -q '^file:///tmp ' $file 2>/dev/null || echo 'file:///tmp tmp' >> $file
 grep -q '^file:///usr/local/src ' $file 2>/dev/null || echo 'file:///usr/local/src src' >> $file
-grep -q '^file:///usr/share ' $file 2>/dev/null || echo 'file:///usr/share apps' >> $file
+grep -q '^file:///usr/share ' $file 2>/dev/null || echo 'file:///usr/share kali' >> $file
 grep -q '^file:///var/ftp ' $file 2>/dev/null || echo 'file:///var/ftp ftp' >> $file
 grep -q '^file:///var/samba ' $file 2>/dev/null || echo 'file:///var/samba samba' >> $file
 grep -q '^file:///var/tftp ' $file 2>/dev/null || echo 'file:///var/tftp tftp' >> $file
@@ -1050,9 +1053,11 @@ cat <<EOF > $file
 [profiles]
   [[default]]
     background_darkness = 0.9
+    scroll_on_output = False
     copy_on_selection = True
     background_type = transparent
     scrollback_infinite = True
+    show_titlebar = False
 [layouts]
   [[default]]
     [[[child1]]]
@@ -1088,7 +1093,7 @@ echo -e "\n\e[01;32m[+]\e[00m Installing zsh & oh-my-zsh ~ unix shell"
 group="sudo"
 apt-get -y -qq install zsh git curl
 #--- Setup oh-my-zsh
-curl --progress -k -L https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh | sh     #curl -s -L https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh
+curl --progress -k -L https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh | bash     #curl -s -L https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh
 #--- Configure zsh
 file=/root/.zshrc; [ -e $file ] && cp -n $file{,.bkup}   #/etc/zsh/zshrc
 grep -q 'interactivecomments' $file 2>/dev/null || echo 'setopt interactivecomments' >> $file
@@ -1285,34 +1290,40 @@ timeout 5 killall -9 -q -w iceweasel >/dev/null
 file=$(find /root/.mozilla/firefox/*.default/ -maxdepth 1 -type f -name 'prefs.js' -print -quit) && [ -e $file ] && cp -n $file{,.bkup}   #/etc/iceweasel/pref/*.js
 sed -i 's/^.*browser.startup.page.*/user_pref("browser.startup.page", 0);' $file 2>/dev/null || echo 'user_pref("browser.startup.page", 0);' >> $file                                              # Iceweasel -> Edit -> Preferences -> General -> When firefox starts: Show a blank page
 sed -i 's/^.*privacy.donottrackheader.enabled.*/user_pref("privacy.donottrackheader.enabled", true);' $file 2>/dev/null || echo 'user_pref("privacy.donottrackheader.enabled", true);' >> $file    # Privacy -> Enable: Tell websites I do not want to be tracked
-sed -i 's/^.*browser.showQuitWarning.*/user_pref("browser.showQuitWarning", true);' $file 2>/dev/null || echo 'user_pref("browser.showQuitWarning", true);' >> $file                               # Stop Ctrl + Q from quitting without warning
-#--- Replace bookmarks
+sed -i 's/^.*browser.showQuitWarning.*/user_pref("browser.showQuitWarning", true);' $file 2>/dev/null || echo 'user_pref("browser.showQuitWarning", true);' >> $file                               # Stop Ctrl+Q from quitting without warning
+#--- Replace bookmarks (base: http://pentest-bookmarks.googlecode.com)
 file=$(find /root/.mozilla/firefox/*.default/ -maxdepth 1 -type f -name 'bookmarks.html' -print -quit) && [ -e $file ] && cp -n $file{,.bkup}   #/etc/iceweasel/profile/bookmarks.html
-wget -q "http://pentest-bookmarks.googlecode.com/files/bookmarksv1.5.html" -O /tmp/bookmarks_new.html     # ***!!! hardcoded version! Need to manually check for updates
+wget -q "http://pentest-bookmarks.googlecode.com/files/bookmarksv1.5.html" -O /tmp/bookmarks_new.html     #***!!! hardcoded version! Need to manually check for updates
+#--- Configure bookmarks
+awk '!a[$0]++' /tmp/bookmarks_new.html | \egrep -v ">(Latest Headlines|Getting Started|Recently Bookmarked|Recent Tags|Mozilla Firefox|Help and Tutorials|Customize Firefox|Get Involved|About Us|Hacker Media|Bookmarks Toolbar|Most Visited)</" | \egrep -v "^    </DL><p>" | \egrep -v "^<DD>Add" > $file
+sed -i 's#^</DL><p>#        </DL><p>\n    </DL><p>\n</DL><p>#' $file                                                                                                                                              # Fix import issues
+sed -i 's#^    <DL><p>#    <DL><p>\n    <DT><A HREF="http://127.0.0.1/">localhost</A>#' $file                                                                                                                     # Add localhost to bookmark toolbar
+sed -i 's#^</DL><p>#    <DT><A HREF="https://127.0.0.1:8834/">Nessus</A>\n    <DT><A HREF="https://127.0.0.1:3790/">MSF Community</A>\n    <DT><A HREF="https://127.0.0.1:9392/">OpenVAS</A>\n</DL><p>#' $file    # Add in Nessus, MSF & OpenVAS to bookmark toolbar
+sed -i 's#^</DL><p>#    <DT><A HREF="http://127.0.0.1/rips/">RIPS</A>\n</DL><p>#' $file                                                                                                                           # Add in RIPs to bookmark toolbar
+sed -i 's#<HR>#<DT><H3 ADD_DATE="1303667175" LAST_MODIFIED="1303667175" PERSONAL_TOOLBAR_FOLDER="true">Bookmarks Toolbar</H3>\n<DD>Add bookmarks to this folder to see them displayed on the Bookmarks Toolbar#' $file
+#--- Clear bookmark cache
 find /root/.mozilla/firefox/*.default/ -maxdepth 1 -mindepth 1 -type f -name places.sqlite -delete
 find /root/.mozilla/firefox/*.default/bookmarkbackups/ -type f -delete
-#--- Configure bookmarks
-awk '!a[$0]++' /tmp/bookmarks_new.html | egrep -v ">(Latest Headlines|Getting Started|Recently Bookmarked|Recent Tags|Mozilla Firefox|Help and Tutorials|Customize Firefox|Get Involved|About Us|Hacker Media|Bookmarks Toolbar|Most Visited)</" | egrep -v "^    </DL><p>" | egrep -v "^<DD>Add" > $file
-sed -i 's#^</DL><p>#        </DL><p>\n    </DL><p>\n    <DT><A HREF="https://127.0.0.1:8834">Nessus</A>\n    <DT><A HREF="https://127.0.0.1:3790">MSF Community</A>\n    <DT><A HREF="https://127.0.0.1:9392">OpenVAS</A>\n</DL><p>#' $file    # Add in Nessus, MSF & OpenVAS shortcuts
-sed -i 's#<HR>#<DT><H3 ADD_DATE="1303667175" LAST_MODIFIED="1303667175" PERSONAL_TOOLBAR_FOLDER="true">Bookmarks Toolbar</H3>\n<DD>Add bookmarks to this folder to see them displayed on the Bookmarks Toolbar#' $file
 #--- Download extensions
 ffpath="$(find /root/.mozilla/firefox/*.default/ -maxdepth 0 -mindepth 0 -type d -print -quit)/extensions"
 mkdir -p $ffpath/
 curl --progress -k -L https://addons.mozilla.org/firefox/downloads/latest/5817/addon-5817-latest.xpi?src=dp-btn-primary -o $ffpath/SQLiteManager@mrinalkant.blogspot.com.xpi           # SQLite Manager
 curl --progress -k -L https://addons.mozilla.org/firefox/downloads/latest/1865/addon-1865-latest.xpi?src=dp-btn-primary -o $ffpath/{d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d}.xpi          # Adblock Plus
 curl --progress -k -L https://addons.mozilla.org/firefox/downloads/latest/92079/addon-92079-latest.xpi?src=dp-btn-primary -o $ffpath/{bb6bc1bb-f824-4702-90cd-35e2fb24f25d}.xpi        # Cookies Manager+
-curl --progress -k -L https://addons.mozilla.org/firefox/downloads/latest/1843/addon-1843-latest.xpi?src=dp-btn-primary -o $ffpath/firebug@software.joehewitt.com.xpi                  # Firebug - not working 100%
+curl --progress -k -L https://addons.mozilla.org/firefox/downloads/latest/1843/addon-1843-latest.xpi?src=dp-btn-primary -o $ffpath/firebug@software.joehewitt.com.xpi                  # Firebug
 curl --progress -k -L https://addons.mozilla.org/firefox/downloads/file/150692/foxyproxy_basic-2.6.2-fx+tb+sm.xpi?src=search -o /tmp/FoxyProxyBasic.zip && unzip -q -o -d $ffpath/foxyproxy-basic@eric.h.jung/ /tmp/FoxyProxyBasic.zip; rm -f /tmp/FoxyProxyBasic.zip   # FoxyProxy Basic
+curl --progress -k -L https://addons.cdn.mozilla.net/user-media/addons/429678/user_agent_overrider-0.2.4-fx.xpi -o $ffpath/useragentoverrider@qixinglu.com.xpi                         # User Agent Overrider
 #curl --progress -k -L https://addons.mozilla.org/firefox/downloads/latest/284030/addon-284030-latest.xpi?src=dp-btn-primary -o $ffpath/{6bdc61ae-7b80-44a3-9476-e1d121ec2238}.xpi     # HTTPS Finder
 curl --progress -k -L https://www.eff.org/files/https-everywhere-latest.xpi -o $ffpath/https-everywhere@eff.org.xpi                                                                    # HTTPS Everywhere
 curl --progress -k -L https://addons.mozilla.org/firefox/downloads/latest/3829/addon-3829-latest.xpi?src=dp-btn-primary -o $ffpath/{8f8fe09b-0bd3-4470-bc1b-8cad42b8203a}.xpi          # Live HTTP Headers
-curl --progress -k -L https://addons.mozilla.org/firefox/downloads/file/79565/tamper_data-11.0.1-fx.xpi?src=dp-btn-primary -o $ffpath/{9c51bd27-6ed8-4000-a2bf-36cb95c0c947}.xpi       # Tamper Data - not working 100%
+curl --progress -k -L https://addons.mozilla.org/firefox/downloads/file/79565/tamper_data-11.0.1-fx.xpi?src=dp-btn-primary -o $ffpath/{9c51bd27-6ed8-4000-a2bf-36cb95c0c947}.xpi       # Tamper Data
 curl --progress -k -L https://addons.mozilla.org/firefox/downloads/latest/300254/addon-300254-latest.xpi?src=dp-btn-primary -o $ffpath/check-compatibility@dactyl.googlecode.com.xpi   # Disable Add-on Compatibility Checks
 #--- Install extensions
 for FILE in $(find $ffpath -maxdepth 1 -type f -name '*.xpi'); do
   d="$(basename $FILE .xpi)"
   mkdir -p $ffpath/$d/
-  unzip -q -o -d $ffpath/$d/ $FILE && rm -f $FILE
+  unzip -q -o -d $ffpath/$d/ $FILE
+  rm -f $FILE
 done
 #--- Enable Iceweasel's addons/plugins/extensions
 timeout 15 iceweasel   #iceweasel & sleep 15; killall -q -w iceweasel >/dev/null
@@ -1345,11 +1356,11 @@ file=$(find /root/.mozilla/firefox/*.default/ -maxdepth 1 -type f -name 'foxypro
 if [ -z $file ]; then
   echo -e "\e[01;31m[!]\e[00m Something went wrong with the foxyproxy iceweasel extension (did extensions install?). Skipping..."
 elif [ -e $file ]; then
-  grep -q 'localhost:8080' $file 2>/dev/null || sed -i 's#<proxy name="Default"#<proxy name="localhost:8080" id="1145138293" notes="e.g. Burp" fromSubscription="false" enabled="true" mode="manual" selectedTabIndex="0" lastresort="false" animatedIcons="true" includeInCycle="false" color="\#05FC81" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="true" clearCookiesBeforeUse="false" rejectCookies="false"><matches/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="127.0.0.1" port="8080" socksversion="5" isSocks="false" username="" password="" domain=""/></proxy><proxy name="Default"#' $file          # localhost:8080
+  grep -q 'localhost:8080' $file 2>/dev/null || sed -i 's#<proxy name="Default"#<proxy name="localhost:8080" id="1145138293" notes="e.g. Burp, w3af" fromSubscription="false" enabled="true" mode="manual" selectedTabIndex="0" lastresort="false" animatedIcons="true" includeInCycle="false" color="\#05FC81" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="true" clearCookiesBeforeUse="false" rejectCookies="false"><matches/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="127.0.0.1" port="8080" socksversion="5" isSocks="false" username="" password="" domain=""/></proxy><proxy name="Default"#' $file          # localhost:8080
   grep -q 'localhost:8081' $file 2>/dev/null || sed -i 's#<proxy name="Default"#<proxy name="localhost:8081 (socket5)" id="212586674" notes="e.g. SSH" fromSubscription="false" enabled="true" mode="manual" selectedTabIndex="0" lastresort="false" animatedIcons="true" includeInCycle="false" color="\#FCCB05" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="true" clearCookiesBeforeUse="false" rejectCookies="false"><matches/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="127.0.0.1" port="8081" socksversion="5" isSocks="true" username="" password="" domain=""/></proxy><proxy name="Default"#' $file   # localhost:8081 (socket5)
 else
   echo -ne '<?xml version="1.0" encoding="UTF-8"?>\n<foxyproxy mode="disabled" selectedTabIndex="0" toolbaricon="true" toolsMenu="true" contextMenu="true" advancedMenus="false" previousMode="disabled" resetIconColors="true" useStatusBarPrefix="true" excludePatternsFromCycling="false" excludeDisabledFromCycling="false" ignoreProxyScheme="false" apiDisabled="false" proxyForVersionCheck=""><random includeDirect="false" includeDisabled="false"/><statusbar icon="true" text="false" left="options" middle="cycle" right="contextmenu" width="0"/><toolbar left="options" middle="cycle" right="contextmenu"/><logg enabled="false" maxSize="500" noURLs="false" header="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;\n&lt;!DOCTYPE html PUBLIC &quot;-//W3C//DTD XHTML 1.0 Strict//EN&quot; &quot;http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd&quot;&gt;\n&lt;html xmlns=&quot;http://www.w3.org/1999/xhtml&quot;&gt;&lt;head&gt;&lt;title&gt;&lt;/title&gt;&lt;link rel=&quot;icon&quot; href=&quot;http://getfoxyproxy.org/favicon.ico&quot;/&gt;&lt;link rel=&quot;shortcut icon&quot; href=&quot;http://getfoxyproxy.org/favicon.ico&quot;/&gt;&lt;link rel=&quot;stylesheet&quot; href=&quot;http://getfoxyproxy.org/styles/log.css&quot; type=&quot;text/css&quot;/&gt;&lt;/head&gt;&lt;body&gt;&lt;table class=&quot;log-table&quot;&gt;&lt;thead&gt;&lt;tr&gt;&lt;td class=&quot;heading&quot;&gt;${timestamp-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${url-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${proxy-name-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${proxy-notes-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-name-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-case-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-type-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-color-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pac-result-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${error-msg-heading}&lt;/td&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tfoot&gt;&lt;tr&gt;&lt;td/&gt;&lt;/tr&gt;&lt;/tfoot&gt;&lt;tbody&gt;" row="&lt;tr&gt;&lt;td class=&quot;timestamp&quot;&gt;${timestamp}&lt;/td&gt;&lt;td class=&quot;url&quot;&gt;&lt;a href=&quot;${url}&quot;&gt;${url}&lt;/a&gt;&lt;/td&gt;&lt;td class=&quot;proxy-name&quot;&gt;${proxy-name}&lt;/td&gt;&lt;td class=&quot;proxy-notes&quot;&gt;${proxy-notes}&lt;/td&gt;&lt;td class=&quot;pattern-name&quot;&gt;${pattern-name}&lt;/td&gt;&lt;td class=&quot;pattern&quot;&gt;${pattern}&lt;/td&gt;&lt;td class=&quot;pattern-case&quot;&gt;${pattern-case}&lt;/td&gt;&lt;td class=&quot;pattern-type&quot;&gt;${pattern-type}&lt;/td&gt;&lt;td class=&quot;pattern-color&quot;&gt;${pattern-color}&lt;/td&gt;&lt;td class=&quot;pac-result&quot;&gt;${pac-result}&lt;/td&gt;&lt;td class=&quot;error-msg&quot;&gt;${error-msg}&lt;/td&gt;&lt;/tr&gt;" footer="&lt;/tbody&gt;&lt;/table&gt;&lt;/body&gt;&lt;/html&gt;"/><warnings/><autoadd enabled="false" temp="false" reload="true" notify="true" notifyWhenCanceled="true" prompt="true"><match enabled="true" name="Dynamic AutoAdd Pattern" pattern="*://${3}${6}/*" isRegEx="false" isBlackList="false" isMultiLine="false" caseSensitive="false" fromSubscription="false"/><match enabled="true" name="" pattern="*You are not authorized to view this page*" isRegEx="false" isBlackList="false" isMultiLine="true" caseSensitive="false" fromSubscription="false"/></autoadd><quickadd enabled="false" temp="false" reload="true" notify="true" notifyWhenCanceled="true" prompt="true"><match enabled="true" name="Dynamic QuickAdd Pattern" pattern="*://${3}${6}/*" isRegEx="false" isBlackList="false" isMultiLine="false" caseSensitive="false" fromSubscription="false"/></quickadd><defaultPrefs origPrefetch="null"/><proxies>' > $file
-  echo -ne '<proxy name="localhost:8080" id="1145138293" notes="e.g. Burp" fromSubscription="false" enabled="true" mode="manual" selectedTabIndex="0" lastresort="false" animatedIcons="true" includeInCycle="false" color="#05FC81" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="true" clearCookiesBeforeUse="false" rejectCookies="false"><matches/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="127.0.0.1" port="8080" socksversion="5" isSocks="false" username="" password="" domain=""/></proxy>' >> $file
+  echo -ne '<proxy name="localhost:8080" id="1145138293" notes="e.g. Burp, w3af" fromSubscription="false" enabled="true" mode="manual" selectedTabIndex="0" lastresort="false" animatedIcons="true" includeInCycle="false" color="#05FC81" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="true" clearCookiesBeforeUse="false" rejectCookies="false"><matches/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="127.0.0.1" port="8080" socksversion="5" isSocks="false" username="" password="" domain=""/></proxy>' >> $file
   echo -ne '<proxy name="localhost:8081 (socket5)" id="212586674" notes="e.g. SSH" fromSubscription="false" enabled="true" mode="manual" selectedTabIndex="0" lastresort="false" animatedIcons="true" includeInCycle="false" color="#FCCB05" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="true" clearCookiesBeforeUse="false" rejectCookies="false"><matches/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="127.0.0.1" port="8081" socksversion="5" isSocks="true" username="" password="" domain=""/></proxy>' >> $file
   echo -ne '<proxy name="Default" id="3377581719" notes="" fromSubscription="false" enabled="true" mode="direct" selectedTabIndex="0" lastresort="true" animatedIcons="false" includeInCycle="true" color="#0055E5" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="false" disableCache="false" clearCookiesBeforeUse="false" rejectCookies="false"><matches><match enabled="true" name="All" pattern="*" isRegEx="false" isBlackList="false" isMultiLine="false" caseSensitive="false" fromSubscription="false"/></matches><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="" port="" socksversion="5" isSocks="false" username="" password=""/></proxy>' >> $file
   echo -e '</proxies></foxyproxy>' >> $file
@@ -1359,7 +1370,7 @@ find /root/.mozilla/firefox/*.default/ -maxdepth 1 -type f -name 'sessionstore.*
 #--- Restore to folder
 cd - &>/dev/null
 #--- Remove any leftovers
-rm -f /tmp/iceweasel.sql
+rm -f /tmp/iceweasel.sql /tmp/bookmarks_new.html
 
 
 ##### Installing conky
@@ -1588,7 +1599,7 @@ apt-get -y -qq install bless
 ##### Installing nessus
 #echo -e "\n\e[01;32m[+]\e[00m Installing nessus ~ vulnerability scanner"
 #--- Get download link
-#xdg-open http://www.tenable.com/products/nessus/select-your-operating-system    *** #wget -q "http://downloads.nessus.org/<file>" -O /usr/local/src/nessus.deb   # ***!!! Hardcoded version value
+#xdg-open http://www.tenable.com/products/nessus/select-your-operating-system    *** #wget -q "http://downloads.nessus.org/<file>" -O /usr/local/src/nessus.deb   #***!!! Hardcoded version value
 #dpkg -i /usr/local/src/Nessus-*-debian6_*.deb
 #service nessusd start
 #xdg-open http://www.tenable.com/products/nessus-home
@@ -1610,6 +1621,47 @@ apt-get -y -qq install openvas
 #test -e /var/lib/openvas/users/root || openvasad -c add_user -n root -r Admin   #*** Doesn't automate ***
 
 
+##### Configuring wireshark
+echo -e "\n\e[01;32m[+]\e[00m Configuring wireshark ~ GUI network protocol analyzer"
+mkdir -p /root/.wireshark/
+file=/root/.wireshark/recent_common;   #[ -e $file ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
+[ -e $file ] || echo "privs.warn_if_elevated: FALSE"/ > $file
+
+
+##### Installing vfeed
+echo -e "\n\e[01;32m[+]\e[00m Installing vfeed ~ vulnerability database"
+apt-get -y -qq install vfeed
+
+
+##### Installing checksec
+echo -e "\n\e[01;32m[+]\e[00m Installing checksec ~ check *nix OS for security features"
+apt-get -y -qq install wget
+mkdir -p /usr/share/checksec/
+file=/usr/share/checksec/checksec.sh
+wget -q "http://www.trapkit.de/tools/checksec.sh" -O $file
+chmod +x $file
+
+
+##### Installing rips
+echo -e "\n\e[01;32m[+]\e[00m Installing rips ~ source code review"
+apt-get -y -qq install apache2 php5 wget
+mkdir -p /usr/share/rips/
+wget -q "http://downloads.sourceforge.net/project/rips-scanner/rips-0.54.zip" -O /tmp/rips.zip && unzip -q -o -d /usr/share/rips/ /tmp/rips.zip; rm -f /tmp/rips.zip
+file=/etc/apache2/conf.d/rips.conf
+cat <<EOF > $file
+Alias /rips /usr/share/rips
+
+<Directory /usr/share/rips/ >
+  Options FollowSymLinks
+  AllowOverride None
+  Order deny,allow
+  Deny from all
+  Allow from 127.0.0.0/255.0.0.0 ::1/128
+</Directory>
+EOF
+service apache2 restart
+
+
 ##### Installing libreoffice
 echo -e "\n\e[01;32m[+]\e[00m Installing libreoffice ~ GUI office suite"
 apt-get -y -qq install libreoffice
@@ -1621,7 +1673,7 @@ apt-get -y -qq install cherrytree
 
 
 ##### Installing sipcalc
-echo -e "\n\e[01;32m[+]\e[00m Installing sipcalc ~ Command line subnet calculator"
+echo -e "\n\e[01;32m[+]\e[00m Installing sipcalc ~ CLI subnet calculator"
 apt-get -y -qq install sipcalc
 
 
@@ -1782,7 +1834,12 @@ update-flashplugin-nonfree --install
 
 ##### Installing java
 #echo -e "\n\e[01;32m[+]\e[00m Installing java ~ web plugin"
-# <***insert bash fu here***>
+#*** Insert bash fu here
+
+
+##### Installing hashid
+echo -e "\n\e[01;32m[+]\e[00m Installing hashid ~ identify hash types"
+apt-get -y -qq install hashid
 
 
 ##### Installing bully
@@ -1823,8 +1880,12 @@ git clone git://github.com/chokepoint/azazel.git /usr/share/azazel/
 
 ##### Installing b374k
 echo -e "\n\e[01;32m[+]\e[00m Installing b374k ~ (PHP) web shell"
-apt-get -y -qq install git
+apt-get -y -qq install git php5-cli
 git clone git://github.com/b374k/b374k.git /usr/share/b374k/
+cd /usr/share/b374k/
+php index.php -o b374k.php -s
+cd - &>/dev/null
+ln -sf /usr/share/b374k /usr/share/webshells/php/b374k
 
 
 ##### Installing jsp file browser
@@ -1845,6 +1906,7 @@ apt-get -y -qq install bridge-utils
 ##### Installing mana
 echo -e "\n\e[01;32m[+]\e[00m Installing mana ~ rogue AP / mitm Wi-Fi"
 apt-get -y -qq install mana-toolkit
+mkdir -p /usr/share/mana-toolkit/www/facebook/    #*** BUG FIX: https://bugs.kali.org/view.php?id=1839
 
 
 ##### Installing httptunnel
@@ -1889,6 +1951,7 @@ apt-get -y -qq install zerofree
 ##### Installing gcc & multilib
 echo -e "\n\e[01;32m[+]\e[00m Installing gcc & multilibc ~ compiling libraries"
 apt-get -y -qq install gcc-multilib libc6 libc6-dev
+#*** I know its messy...
 apt-get -y -qq install libc6-amd64 libc6-dev-amd64
 apt-get -y -qq install libc6-i386 libc6-dev-i386
 apt-get -y -qq install libc6-i686 libc6-dev-i686
@@ -1896,7 +1959,7 @@ apt-get -y -qq install libc6-i686 libc6-dev-i686
 
 ##### Installing mingw & cross compiling tools
 echo -e "\n\e[01;32m[+]\e[00m Installing mingw & cross compiling tools"
-apt-get -y -qq install mingw-w64 binutils-mingw-w64 gcc-mingw-w64 mingw-w64-dev mingw-w64-tools  cmake
+apt-get -y -qq install mingw-w64 binutils-mingw-w64 gcc-mingw-w64 mingw-w64-dev mingw-w64-tools cmake
 
 
 ##### Installing wine
@@ -1929,6 +1992,7 @@ apt-get -y -qq install upx-ucl   #wget -q "http://upx.sourceforge.net/download/u
 mkdir -p /usr/share/packers/
 wget -q "http://www.eskimo.com/~scottlu/win/cexe.exe" -P /usr/share/packers/
 wget -q "http://www.farbrausch.de/~fg/kkrunchy/kkrunchy_023a2.zip" -P /usr/share/packers/ && unzip -q -o -d /usr/share/packers/ /usr/share/packers/kkrunchy_023a2.zip; rm -f /usr/share/packers/kkrunchy_023a2.zip
+#*** Need to make a bash script like hyperion...
 
 
 ##### Installing hyperion
@@ -1937,7 +2001,7 @@ unzip -q -o -d /usr/share/windows-binaries/ /usr/share/windows-binaries/Hyperion
 #rm -f /usr/share/windows-binaries/Hyperion-1.0.zip
 i686-w64-mingw32-g++ -static-libgcc -static-libstdc++ /usr/share/windows-binaries/Hyperion-1.0/Src/Crypter/*.cpp -o /usr/share/windows-binaries/Hyperion-1.0/Src/Crypter/bin/crypter.exe
 ln -sf /usr/share/windows-binaries/Hyperion-1.0/Src/Crypter/bin/crypter.exe /usr/share/windows-binaries/Hyperion-1.0/crypter.exe
-file=/usr/bin/hyperion
+file=/usr/local/bin/hyperion
 cat <<EOF > $file
 #!/bin/bash
 
@@ -1961,9 +2025,9 @@ $(which wine) ./Src/Crypter/bin/crypter.exe \${BWD}\${1} output.exe
 
 ## Restore our path
 cd \${CWD}/
+sleep 1
 
 ## Move the output file
-sleep 1
 mv -f /usr/share/windows-binaries/Hyperion-1.0/output.exe \${2}
 
 ## Generate file hashes
@@ -1987,14 +2051,15 @@ apt-get -y -qq install seclists
 ##### Updating wordlists
 echo -e "\n\e[01;32m[+]\e[00m Updating wordlists ~ collection of wordlists"
 #--- Extract rockyou wordlist
-gzip -dc < /usr/share/wordlists/rockyou.txt.gz > /usr/share/wordlists/rockyou.txt   #gunzip rockyou.txt.gz
+[ -e /usr/share/wordlists/rockyou.txt.gz ] && gzip -dc < /usr/share/wordlists/rockyou.txt.gz > /usr/share/wordlists/rockyou.txt   #gunzip rockyou.txt.gz
 #rm -f /usr/share/wordlists/rockyou.txt.gz
 #--- Extract sqlmap wordlist
 #unzip -o -d /usr/share/sqlmap/txt/ /usr/share/sqlmap/txt/wordlist.zip
 #--- Add 10,000 Top/Worst/Common Passwords
+mkir -p /usr/share/wordlists/
 wget -q "http://xato.net/files/10k most common.zip" -O /tmp/10kcommon.zip && unzip -q -o -d /usr/share/wordlists/ /tmp/10kcommon.zip && mv -f /usr/share/wordlists/10k{\ most\ ,_most_}common.txt; rm -f /tmp/10kcommon.zip
 #--- Linking to more - folders
-#ln -sf /usr/share/dirb/wordlists /usr/share/wordlists/dirb
+[ -e /usr/share/dirb/wordlists ] && ln -sf /usr/share/dirb/wordlists /usr/share/wordlists/dirb
 #--- Linking to more - files
 #ln -sf /usr/share/sqlmap/txt/wordlist.txt /usr/share/wordlists/sqlmap.txt
 ##--- Not enough? Want more? Check below!
@@ -2006,6 +2071,15 @@ wget -q "http://xato.net/files/10k most common.zip" -O /tmp/10kcommon.zip && unz
 echo -e "\n\e[01;32m[+]\e[00m Installing apt-file ~ find which package includes a specific file"
 apt-get -y -qq install apt-file
 apt-file update
+
+
+##### Installing onetwopunch
+echo -e "\n\e[01;32m[+]\e[00m Installing onetwopunch ~ unicornscan & nmap wrapper"
+apt-get -y -qq install git nmap unicornscan
+git clone git://github.com/superkojiman/onetwopunch.git /usr/share/onetwopunch/
+file=/usr/share/onetwopunch/onetwopunch.sh
+chmod +x $file
+ln -sf $file /usr/bin/onetwopunch
 
 
 ##### Configuring samba
@@ -2052,6 +2126,9 @@ ssh-keygen -b 4096 -t rsa -f /etc/ssh/ssh_host_rsa_key -P ""
 ssh-keygen -b 1024 -t dsa -f /etc/ssh/ssh_host_dsa_key -P ""
 ssh-keygen -b 521 -t ecdsa -f /etc/ssh/ssh_host_ecdsa_key -P ""
 ssh-keygen -b 4096 -t rsa -f /root/.ssh/id_rsa -P ""
+#--- Change SSH port
+#file=/etc/ssh/sshd_config; [ -e $file ] && cp -n $file{,.bkup}
+#sed -i 's/^Port .*/Port 2222/g' $file
 #--- Enable ssh at startup
 #update-rc.d -f ssh defaults
 
@@ -2082,10 +2159,10 @@ echo -e "\n\e[01;33m[i]\e[00m Time (roughly) taken: $(( $(( finish_time - start_
 
 ##### Done!
 echo -e "\n\e[01;33m[i]\e[00m Do not forget to:"
-echo -e "\e[01;33m[i]\e[00m   + Check the above output (everything installed okay/no errors)"
-echo -e "\e[01;33m[i]\e[00m   + Check that Iceweasel's extensions are enabled"
+echo -e "\e[01;33m[i]\e[00m   + Check the above output (everything installed/no errors?)"
+echo -e "\e[01;33m[i]\e[00m   + Check that Iceweasel's extensions are enabled (as well as FoxyProxy profiles)"
 echo -e "\e[01;33m[i]\e[00m   + Manually install: Nessus, Nexpose, Metasploit Community and/or OpenVAS"
-echo -e "\e[01;33m[i]\e[00m   + Manually agree to: Burp, Wireshark etc"
+echo -e "\e[01;33m[i]\e[00m   + Agree/Accept to: Burp, Maltego, OWASP ZAP, w3af etc"
 echo -e "\e[01;33m[i]\e[00m   + Change time zone & keyboard layout (...if different to $timezone/$keyboardlayout)"
 echo -e "\e[01;33m[i]\e[00m   + Reboot"
 echo -e "\e[01;33m[i]\e[00m   + Take a snapshot (...if you are using a VM)"
