@@ -1,6 +1,6 @@
 #!/bin/bash
 #-Metadata------------------------------------------------#
-#  Filename: kali.sh                 (Update: 2014-12-23) #
+#  Filename: kali.sh                 (Update: 2014-12-27) #
 #-Info----------------------------------------------------#
 #  Personal post install script for Kali Linux.           #
 #-Author(s)-----------------------------------------------#
@@ -950,7 +950,7 @@ file=/root/.config/gtk-2.0/gtkfilechooser.ini; [ -e $file ] && cp -n $file{,.bku
 sed -i 's/^.*ShowHidden.*/ShowHidden=true/' $file 2>/dev/null || echo -e "\n[Filechooser Settings]\nLocationMode=path-bar\nShowHidden=true\nExpandFolders=false\nShowSizeColumn=true\nGeometryX=66\nGeometryY=39\nGeometryWidth=780\nGeometryHeight=618\nSortColumn=name\nSortOrder=ascending" > $file    #Open/save Window -> Right click -> Show Hidden Files: Enabled
 dconf write /org/gnome/nautilus/preferences/show-hidden-files true
 file=/root/.gtk-bookmarks; [ -e $file ] && cp -n $file{,.bkup}
-#grep -q '^file:///mnt/hgfs ' $file 2>/dev/null || echo 'file:///mnt/hgfs vmshare' >> $file
+$(dmidecode | grep -iq vmware) && (grep -q '^file:///mnt/hgfs ' $file 2>/dev/null || echo 'file:///mnt/hgfs vmshare' >> $file)
 grep -q '^file:///tmp ' $file 2>/dev/null || echo 'file:///tmp tmp' >> $file
 grep -q '^file:///usr/local/src ' $file 2>/dev/null || echo 'file:///usr/local/src src' >> $file
 grep -q '^file:///usr/share ' $file 2>/dev/null || echo 'file:///usr/share kali' >> $file
@@ -1093,7 +1093,7 @@ echo -e "\n\e[01;32m[+]\e[00m Installing zsh & oh-my-zsh ~ unix shell"
 group="sudo"
 apt-get -y -qq install zsh git curl
 #--- Setup oh-my-zsh
-curl --progress -k -L https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh | bash     #curl -s -L https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh
+curl --progress -k -L https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh | sh     #curl -s -L https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh
 #--- Configure zsh
 file=/root/.zshrc; [ -e $file ] && cp -n $file{,.bkup}   #/etc/zsh/zshrc
 grep -q 'interactivecomments' $file 2>/dev/null || echo 'setopt interactivecomments' >> $file
@@ -1300,6 +1300,7 @@ sed -i 's#^</DL><p>#        </DL><p>\n    </DL><p>\n</DL><p>#' $file            
 sed -i 's#^    <DL><p>#    <DL><p>\n    <DT><A HREF="http://127.0.0.1/">localhost</A>#' $file                                                                                                                     # Add localhost to bookmark toolbar
 sed -i 's#^</DL><p>#    <DT><A HREF="https://127.0.0.1:8834/">Nessus</A>\n    <DT><A HREF="https://127.0.0.1:3790/">MSF Community</A>\n    <DT><A HREF="https://127.0.0.1:9392/">OpenVAS</A>\n</DL><p>#' $file    # Add in Nessus, MSF & OpenVAS to bookmark toolbar
 sed -i 's#^</DL><p>#    <DT><A HREF="http://127.0.0.1/rips/">RIPS</A>\n</DL><p>#' $file                                                                                                                           # Add in RIPs to bookmark toolbar
+sed -i 's#^</DL><p>#    <DT><A HREF="https://paulschou.com/tools/xlate/">XLATE</A>\n</DL><p>#' $file                                                                                                              # Add in XLATE to bookmark toolbar
 sed -i 's#<HR>#<DT><H3 ADD_DATE="1303667175" LAST_MODIFIED="1303667175" PERSONAL_TOOLBAR_FOLDER="true">Bookmarks Toolbar</H3>\n<DD>Add bookmarks to this folder to see them displayed on the Bookmarks Toolbar#' $file
 #--- Clear bookmark cache
 find /root/.mozilla/firefox/*.default/ -maxdepth 1 -mindepth 1 -type f -name places.sqlite -delete
@@ -1712,6 +1713,11 @@ apt-get -y -qq install psmisc
 ##### Installing htop
 echo -e "\n\e[01;32m[+]\e[00m Installing htop ~ CLI process viewer"
 apt-get -y -qq install htop
+
+
+##### Installing iotop
+echo -e "\n\e[01;32m[+]\e[00m Installing iotop ~ CLI I/O usage"
+apt-get -y -qq install iotop
 
 
 ##### Installing glance
