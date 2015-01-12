@@ -1,6 +1,6 @@
 #!/bin/bash
 #-Metadata------------------------------------------------#
-#  Filename: kali.sh                 (Update: 2014-12-28) #
+#  Filename: kali.sh                 (Update: 2015-01-12) #
 #-Info----------------------------------------------------#
 #  Personal post install script for Kali Linux.           #
 #-Author(s)-----------------------------------------------#
@@ -41,18 +41,9 @@ timezone="Europe/London"    # London, Europe
 #set -x
 
 
-if [ 1 -eq 0 ]; then        # This is never true, thus it acts as block comments ;)
-##### (Optional) Remote connection via SSH
-services ssh start          # Start SSH to allow for remote connection to Kali
-ifconfig eth0               # Get the IP of the network interface to SSH into (guessing the interface is eth0)
-#--- Use the local computer (non Kali) from here on out via SSH (You may wish to copy/paste selected commands into prompt. Tip: Do only a few lines at once)
-ssh root@*ip*               # Replace '*ip*' with the value from before (ifconfig)
-fi
-
-
 ##### Check if we are running as root - else this script will fail (hard!)
 if [[ $EUID -ne 0 ]]; then
-  echo -e "\e[01;31m[!]\e[00m This script must be run as root" 1>&2
+  echo -e '\e[01;31m[!]\e[00m This script must be run as root' 1>&2
   exit 1
 else
   echo -e "\e[01;34m[*]\e[00m Kali Linux post-install script" 1>&2
@@ -63,8 +54,8 @@ fi
 export DISPLAY=:0.0   #[[ -z $SSH_CONNECTION ]] || export DISPLAY=:0.0
 
 
-##### Fixing networkmanager issues
-echo -e "\n\e[01;32m[+]\e[00m Fixing networkmanager issues"
+##### Fixing NetworkManager issues
+echo -e "\n\e[01;32m[+]\e[00m Fixing NetworkManager issues"
 service network-manager stop
 #--- Fix 'device not managed' issue
 file=/etc/network/interfaces; [ -e $file ] && cp -n $file{,.bkup}                   # ...or: /etc/NetworkManager/NetworkManager.conf
@@ -93,10 +84,10 @@ apt-get -y -qq install gcc make linux-headers-$(uname -r)
 
 ##### (Optional) Checking to see if Kali is in a VM. If so, install "Virtual Machine Addons/Tools" for a "better" virtual experiment
 if [ -e "/etc/vmware-tools" ]; then
-  echo -e "\n\e[01;31m[!]\e[00m VMware Tools is already installed. Skipping..."
+  echo -e '\n\e[01;31m[!]\e[00m VMware Tools is already installed. Skipping...'
 elif $(dmidecode | grep -iq vmware); then
-  ##### Installing Virtual Machines tools ~ http://docs.kali.org/general-use/install-vmware-tools-kali-guest
-  echo -e "\n\e[01;32m[+]\e[00m Installing Virtual Machines tools"
+  ##### Installing virtual machines tools ~ http://docs.kali.org/general-use/install-vmware-tools-kali-guest
+  echo -e "\n\e[01;32m[+]\e[00m Installing virtual machines tools"
   #--- VM -> Install VMware Tools.    Note: you may need to apply a patch: https://github.com/offensive-security/kali-vmware-tools-patches
   mkdir -p /mnt/cdrom/
   umount -f /mnt/cdrom 2>/dev/null
@@ -104,7 +95,7 @@ elif $(dmidecode | grep -iq vmware); then
   mount -o ro /dev/cdrom /mnt/cdrom 2>/dev/null; _mount=$?   # Only checks first CD drive (if multiple)
   file=$(find /mnt/cdrom/ -maxdepth 1 -type f -name 'VMwareTools-*.tar.gz' -print -quit)
   if [[ $_mount == 0 ]] && [[ -z $file ]]; then
-    echo -e "\e[01;31m[!]\e[00m Incorrect CD/ISO mounted. Skipping..."
+    echo -e '\e[01;31m[!]\e[00m Incorrect CD/ISO mounted. Skipping...'
   elif [[ $_mount == 0 ]]; then                         # If there is a CD in (and its right!), try to install native Guest Additions
     apt-get -y -qq install gcc make linux-headers-$(uname -r)
     # Kernel 3.14+ - so it doesn't need patching any more
@@ -119,11 +110,13 @@ elif $(dmidecode | grep -iq vmware); then
     cd - &>/dev/null
     umount -f /mnt/cdrom 2>/dev/null
   else                                             # The fallback is 'open vm tools' ~ http://open-vm-tools.sourceforge.net/about.php
-    echo -e "\e[01;31m[!]\e[00m VMware Tools CD/ISO isn't mounted. Skipping 'native VMware tools', switching to 'open VM tools' instead"
+    echo -e '\e[01;31m[!]\e[00m VMware Tools CD/ISO isnt mounted. Skipping "Native VMware Tools", switching to "Open VM Tools" instead'
     apt-get -y -qq install open-vm-toolbox
   fi
   #--- Slow mouse? ~ http://docs.kali.org/general-use/install-vmware-tools-kali-guest
   #apt-get -y -qq install xserver-xorg-input-vmmouse
+#elif [ -e "/path/to/vbox" ]; then
+#  echo -e '\n\e[01;31m[!]\e[00m Virtualbox Guest Additions is already installed. Skipping...'
 elif $(dmidecode | grep -iq virtualbox); then
   ##### (Optional) Installing Virtualbox Guest Additions.   Note: Need VirtualBox 4.2.xx+ (http://docs.kali.org/general-use/kali-linux-virtual-box-guest)
   echo -e "\n\e[01;32m[+]\e[00m (Optional) Installing Virtualbox Guest Additions"
@@ -133,16 +126,13 @@ elif $(dmidecode | grep -iq virtualbox); then
   sleep 1
   mount -o ro /dev/cdrom /mnt/cdrom 2>/dev/null; _mount=$?   # Only checks first CD drive (if multiple)
   if [[ $_mount == 0 ]] && [[ -e /mnt/cdrom/VBoxLinuxAdditions.run ]]; then
-    echo -e "\e[01;31m[!]\e[00m Incorrect CD/ISO mounted. Skipping..."
+    echo -e '\e[01;31m[!]\e[00m Incorrect CD/ISO mounted. Skipping...'
   elif [[ $_mount == 0 ]]; then
     apt-get -y -qq install gcc make linux-headers-$(uname -r)
     cp -f /mnt/cdrom/VBoxLinuxAdditions.run /tmp/
     chmod -f 0755 /tmp/VBoxLinuxAdditions.run
     /tmp/VBoxLinuxAdditions.run --nox11
     umount -f /mnt/cdrom 2>/dev/null
-  else
-    echo -e "\e[01;31m[!]\e[00m Virtualbox Guest Additions CD/ISO isn't mounted. Skipping 'native guest additions', switching to 'repositories version' instead"
-    apt-get -y -qq install virtualbox-guest-additions virtualbox-guest-additions-iso virtualbox-ose-guest-x11
   fi
 fi
 
@@ -271,8 +261,8 @@ amixer set Master unmute >/dev/null
 amixer set Master 50% >/dev/null
 
 
-##### Configuring grub
-echo -e "\n\e[01;32m[+]\e[00m Configuring grub ~ boot manager"
+##### Configuring GRUB
+echo -e "\n\e[01;32m[+]\e[00m Configuring GRUB ~ boot manager"
 (dmidecode | grep -iq virtual) && grubTimeout=1 || timeout=5
 file=/etc/default/grub; [ -e $file ] && cp -n $file{,.bkup}
 sed -i 's/^GRUB_TIMEOUT=.*/GRUB_TIMEOUT='$grubTimeout'/' $file                   # Time out (lower if in a virtual machine, else possible dual booting)
@@ -299,7 +289,7 @@ update-grub
 #file=/etc/rc.local; [ -e $file ] && cp -n $file{,.bkup}
 #grep -q "macchanger" $file 2>/dev/null || sed -i 's#^exit 0#for INT in eth0 wlan0; do\n  ifconfig $INT down\n  '$(whereis macchanger)' -r $INT \&\& sleep 3\n  ifconfig $INT up\ndone\n\n\nexit 0#' $file
 #grep -q "hostname" $file 2>/dev/null || sed -i 's#^exit 0#'$(whereis hostname)' $(cat /dev/urandom | tr -dc "A-Za-z" | head -c8)\nexit 0#' $file
-#--- On demand (***kinda broken***)
+#--- On demand (*** kinda broken)
 ##file=/etc/init.d/macchanger; [ -e $file ] && cp -n $file{,.bkup}
 ##echo -e '#!/bin/bash\nfor INT in eth0 wlan0; do\n  echo "Randomizing: $INT"\n  ifconfig $INT down\n  macchanger -r $INT\n  sleep 3\n  ifconfig $INT up\n  echo "--------------------"\ndone\nexit 0' > $file
 ##chmod -f 0500 $file
@@ -309,8 +299,8 @@ update-grub
 ##chmod -f 0500 $file
 
 
-##### Configuring gnome 3
-echo -e "\n\e[01;32m[+]\e[00m Configuring gnome 3 ~ desktop environment"
+##### Configuring GNOME 3
+echo -e "\n\e[01;32m[+]\e[00m Configuring GNOME 3 ~ desktop environment"
 #--- Move bottom panel to top panel
 gsettings set org.gnome.gnome-panel.layout toplevel-id-list "['top-panel']"
 dconf write /org/gnome/gnome-panel/layout/objects/workspace-switcher/toplevel-id "'top-panel'"
@@ -381,8 +371,8 @@ grep -q '^/usr/bin/numlockx' $file 2>/dev/null || sed -i 's#exit 0#if [ -x /usr/
 #timeout 30 killall -q -w gnome-panel >/dev/null && gnome-panel&   # Still need to logoff!
 
 
-##### Installing & configuring xfce 4
-echo -e "\n\e[01;32m[+]\e[00m Installing & configuring xfce 4 ~ desktop environment"
+##### Installing & configuring XFCE 4
+echo -e "\n\e[01;32m[+]\e[00m Installing & configuring XFCE 4 ~ desktop environment"
 apt-get -y -qq install wget
 apt-get -y -qq install xfce4 xfce4-places-plugin
 #apt-get -y -qq install shiki-colors-xfwm-theme    # theme
@@ -846,6 +836,9 @@ xfconf-query -c xsettings -p /Net/ThemeName -s "Shiki-Colors-Light-Menus"
 xfconf-query -c xsettings -p /Net/IconThemeName -s "gnome-brave"
 #--- Enable compositing
 xfconf-query -c xfwm4 -p /general/use_compositing -s true
+#--- Fix gnome keyring issue
+file=/etc/xdg/autostart/gnome-keyring-pkcs11.desktop;   #[ -e $file ] && cp -n $file{,.bkup}
+grep -q XFCE $file || sed 's/^OnlyShowIn=*/OnlyShowIn=XFCE;/' $file | grep OnlyShowIn
 #--- Disable user folders
 apt-get -y -qq install xdg-user-dirs
 xdg-user-dirs-update
@@ -872,6 +865,7 @@ cp -f $wallpaper /usr/share/images/desktop-base/login-background.png
 file=/usr/local/bin/wallpaper.sh; [ -e $file ] && cp -n $file{,.bkup}
 cat <<EOF > $file
 #!/bin/bash
+
 wallpaper=$(shuf -n1 -e /usr/share/wallpapers/kali_*)
 xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitor0/image-path -s $wallpaper
 cp -f $wallpaper /usr/share/images/desktop-base/login-background.png
@@ -937,7 +931,7 @@ file=/root/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortcuts.xml
 grep -q '<property name="&lt;Primary&gt;&lt;Alt&gt;t" type="string" value="/usr/bin/exo-open --launch TerminalEmulator"/>' $file || sed -i 's#<property name="\&lt;Alt\&gt;F2" type="string" value="xfrun4"/>#<property name="\&lt;Alt\&gt;F2" type="string" value="xfrun4"/>\n      <property name="\&lt;Primary\&gt;\&lt;Alt\&gt;t" type="string" value="/usr/bin/exo-open --launch TerminalEmulator"/>#' $file
 #--- Create Conky refresh script (conky gets installed later)
 file=/usr/local/bin/conky_refresh.sh; [ -e $file ] && cp -n $file{,.bkup}
-echo -e '#!/bin/bash\n/usr/bin/timeout 5 /usr/bin/killall -9 -q -w conky\n/usr/bin/conky &' > $file
+echo -e '#!/bin/bash\n\n/usr/bin/timeout 5 /usr/bin/killall -9 -q -w conky\n/usr/bin/conky &' > $file
 chmod -f 0500 $file
 #--- Add keyboard shortcut (CTRL+r) to run the conky refresh script
 file=/root/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortcuts.xml   #; [ -e $file ] && cp -n $file{,.bkup}
@@ -951,7 +945,7 @@ file=/root/.config/gtk-2.0/gtkfilechooser.ini; [ -e $file ] && cp -n $file{,.bku
 sed -i 's/^.*ShowHidden.*/ShowHidden=true/' $file 2>/dev/null || echo -e "\n[Filechooser Settings]\nLocationMode=path-bar\nShowHidden=true\nExpandFolders=false\nShowSizeColumn=true\nGeometryX=66\nGeometryY=39\nGeometryWidth=780\nGeometryHeight=618\nSortColumn=name\nSortOrder=ascending" > $file    #Open/save Window -> Right click -> Show Hidden Files: Enabled
 dconf write /org/gnome/nautilus/preferences/show-hidden-files true
 file=/root/.gtk-bookmarks; [ -e $file ] && cp -n $file{,.bkup}
-$(dmidecode | grep -iq vmware) && (grep -q '^file:///mnt/hgfs ' $file 2>/dev/null || echo 'file:///mnt/hgfs vmshare' >> $file)
+$(dmidecode | grep -iq vmware) && (mkdir -p /mnt/hgfs/; grep -q '^file:///mnt/hgfs ' $file 2>/dev/null || echo 'file:///mnt/hgfs vmshare' >> $file)
 grep -q '^file:///tmp ' $file 2>/dev/null || echo 'file:///tmp tmp' >> $file
 grep -q '^file:///usr/local/src ' $file 2>/dev/null || echo 'file:///usr/local/src src' >> $file
 grep -q '^file:///usr/share ' $file 2>/dev/null || echo 'file:///usr/share kali' >> $file
@@ -1089,8 +1083,8 @@ sed -i 's#^TerminalEmulator=.*#TerminalEmulator=custom-TerminalEmulator#' $file
 grep -q '^TerminalEmulator=custom-TerminalEmulator' $file 2>/dev/null || echo -e 'TerminalEmulator=custom-TerminalEmulator' >> $file
 
 
-##### Installing zsh & oh-my-zsh - root user.   Note: If you use thurar, 'Open terminal here', will not work.
-echo -e "\n\e[01;32m[+]\e[00m Installing zsh & oh-my-zsh ~ unix shell"
+##### Installing ZSH & Oh-My-ZSH - root user.   Note: If you use thurar, 'Open terminal here', will not work.
+echo -e "\n\e[01;32m[+]\e[00m Installing ZSH & Oh-My-ZSH ~ unix shell"
 group="sudo"
 apt-get -y -qq install zsh git curl
 #--- Setup oh-my-zsh
@@ -1128,7 +1122,7 @@ group="sudo"
 #apt-get -y -qq remove screen   # Optional: If we're going to have/use tmux, why have screen?
 apt-get -y -qq install tmux
 #--- Configure tmux
-file=/etc/tmux.conf; [ -e $file ] && cp -n $file{,.bkup}   #/root/.tmux.conf
+file=/root/.tmux.conf; [ -e $file ] && cp -n $file{,.bkup}   #/etc/tmux.conf
 cat <<EOF > $file
 #-Settings---------------------------------------------------------------------
 ## Make it like screen (use CTRL+a)
@@ -1149,13 +1143,6 @@ bind-key -n C-S-Right swap-window -t +1
 setw -g monitor-activity on
 set -g visual-activity on
 
-## Reload settings (CTRL+a -> r)
-unbind r
-bind r source-file /etc/tmux.conf
-
-## Load custom sources
-source ~/.bashrc
-
 ## Set defaults
 set -g default-terminal screen-256color
 set -g history-limit 5000
@@ -1166,6 +1153,13 @@ set -g set-titles-string '#(whoami)@#H - #I:#W'
 
 ## Last window switch
 bind-key C-a last-window
+
+## Reload settings (CTRL+a -> r)
+unbind r
+bind r source-file /etc/tmux.conf
+
+## Load custom sources
+#source ~/.bashrc   #(issues if you use /bin/bash & Debian)
 
 EOF
 [ -e /bin/zsh ] && echo -e '## Use ZSH as default shell\nset-option -g default-shell /bin/zsh\n' >> $file      # Need to have ZSH installed before running this command/line
@@ -1315,12 +1309,13 @@ curl --progress -k -L https://addons.mozilla.org/firefox/downloads/latest/92079/
 curl --progress -k -L https://addons.mozilla.org/firefox/downloads/latest/1843/addon-1843-latest.xpi?src=dp-btn-primary -o $ffpath/firebug@software.joehewitt.com.xpi                  # Firebug
 curl --progress -k -L https://addons.mozilla.org/firefox/downloads/latest/15023/addon-15023-latest.xpi?src=dp-btn-primary -o /tmp/FoxyProxyBasic.zip && unzip -q -o -d $ffpath/foxyproxy-basic@eric.h.jung/ /tmp/FoxyProxyBasic.zip; rm -f /tmp/FoxyProxyBasic.zip   # FoxyProxy Basic
 curl --progress -k -L https://addons.mozilla.org/firefox/downloads/latest/429678/addon-429678-latest.xpi?src=dp-btn-primary -o $ffpath/useragentoverrider@qixinglu.com.xpi             # User Agent Overrider
+#curl --progress -k -L https://github.com/mozmark/ringleader/blob/master/fx_pnh.xpi?raw=true                                                                                           # plug-n-hack
 #curl --progress -k -L https://addons.mozilla.org/firefox/downloads/latest/284030/addon-284030-latest.xpi?src=dp-btn-primary -o $ffpath/{6bdc61ae-7b80-44a3-9476-e1d121ec2238}.xpi     # HTTPS Finder
 curl --progress -k -L https://www.eff.org/files/https-everywhere-latest.xpi -o $ffpath/https-everywhere@eff.org.xpi                                                                    # HTTPS Everywhere
 curl --progress -k -L https://addons.mozilla.org/firefox/downloads/latest/3829/addon-3829-latest.xpi?src=dp-btn-primary -o $ffpath/{8f8fe09b-0bd3-4470-bc1b-8cad42b8203a}.xpi          # Live HTTP Headers
 curl --progress -k -L https://addons.mozilla.org/firefox/downloads/latest/966/addon-966-latest.xpi?src=dp-btn-primary -o $ffpath/{9c51bd27-6ed8-4000-a2bf-36cb95c0c947}.xpi        # Tamper Data
 curl --progress -k -L https://addons.mozilla.org/firefox/downloads/latest/300254/addon-300254-latest.xpi?src=dp-btn-primary -o $ffpath/check-compatibility@dactyl.googlecode.com.xpi   # Disable Add-on Compatibility Checks
-#--- Install extensions
+#--- Installing extensions
 for FILE in $(find $ffpath -maxdepth 1 -type f -name '*.xpi'); do
   d="$(basename $FILE .xpi)"
   mkdir -p $ffpath/$d/
@@ -1331,7 +1326,7 @@ done
 timeout 15 iceweasel   #iceweasel & sleep 15; killall -q -w iceweasel >/dev/null
 file=$(find /root/.mozilla/firefox/*.default/ -maxdepth 1 -type f -name 'extensions.sqlite' -print -quit)   #&& [ -e $file ] && cp -n $file{,.bkup}
 if [ ! -e $file ] || [ -z $file ]; then
-  #echo -e "\e[01;31m[!]\e[00m Something went wrong enabling iceweasel's extensions via method #1. Trying method #2..."
+  #echo -e '\e[01;31m[!]\e[00m Something went wrong enabling iceweasels extensions via method #1. Trying method #2...'
   false
 else
   echo -e "\e[01;33m[i]\e[00m Enabling iceweasel's extensions via method #2: Success!"
@@ -1342,7 +1337,7 @@ else
 fi
 file=$(find /root/.mozilla/firefox/*.default/ -maxdepth 1 -type f -name 'extensions.json' -print -quit)   #&& [ -e $file ] && cp -n $file{,.bkup}
 if [ ! -e $file ] || [ -z $file ]; then
-  #echo -e "\e[01;31m[!]\e[00m Something went wrong enabling iceweasel's extensions via method #2. Did method #1 also fail?"
+  #echo -e '\e[01;31m[!]\e[00m Something went wrong enabling iceweasels extensions via method #2. Did method #1 also fail?''
   false
 else
   echo -e "\e[01;33m[i]\e[00m Enabling iceweasel's extensions via method #2: Success!"
@@ -1356,7 +1351,7 @@ timeout 15 iceweasel >/dev/null   # ...for (most) extensions, as they need icewe
 #--- Configure foxyproxy
 file=$(find /root/.mozilla/firefox/*.default/ -maxdepth 1 -type f -name 'foxyproxy.xml' -print -quit)   #&& [ -e $file ] && cp -n $file{,.bkup}
 if [ -z $file ]; then
-  echo -e "\e[01;31m[!]\e[00m Something went wrong with the foxyproxy iceweasel extension (did extensions install?). Skipping..."
+  echo -e '\e[01;31m[!]\e[00m Something went wrong with the foxyproxy iceweasel extension (did extensions install?). Skipping...'
 elif [ -e $file ]; then
   grep -q 'localhost:8080' $file 2>/dev/null || sed -i 's#<proxy name="Default"#<proxy name="localhost:8080" id="1145138293" notes="e.g. Burp, w3af" fromSubscription="false" enabled="true" mode="manual" selectedTabIndex="0" lastresort="false" animatedIcons="true" includeInCycle="false" color="\#07753E" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="true" clearCookiesBeforeUse="false" rejectCookies="false"><matches/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="127.0.0.1" port="8080" socksversion="5" isSocks="false" username="" password="" domain=""/></proxy><proxy name="Default"#' $file          # localhost:8080
   grep -q 'localhost:8081' $file 2>/dev/null || sed -i 's#<proxy name="Default"#<proxy name="localhost:8081 (socket5)" id="212586674" notes="e.g. SSH" fromSubscription="false" enabled="true" mode="manual" selectedTabIndex="0" lastresort="false" animatedIcons="true" includeInCycle="false" color="\#917504" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="true" clearCookiesBeforeUse="false" rejectCookies="false"><matches/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="127.0.0.1" port="8081" socksversion="5" isSocks="true" username="" password="" domain=""/></proxy><proxy name="Default"#' $file         # localhost:8081 (socket5)
@@ -1484,7 +1479,7 @@ cat <<EOF >> $file
 EOF
 #--- Add to startup (each login)
 file=/usr/local/bin/conky.sh; [ -e $file ] && cp -n $file{,.bkup}
-echo -e '#!/bin/bash\ntimeout 10 killall -q conky\nsleep 15\nconky &' > $file
+echo -e '#!/bin/bash\n\ntimeout 10 killall -q conky\nsleep 15\nconky &' > $file
 chmod -f 0500 $file
 mkdir -p /root/.config/autostart/
 file=/root/.config/autostart/conkyscript.sh.desktop; [ -e $file ] && cp -n $file{,.bkup}
@@ -1528,7 +1523,7 @@ ln -sf /opt/metasploit/apps/pro/ui/config/database.yml /root/.msf4/database.yml 
 echo -e 'sleep 10\ndb_rebuild_cache\nsleep 300\nexit' > /tmp/msf.rc   #echo -e 'go_pro' > /tmp/msf.rc
 msfconsole -r /tmp/msf.rc
 #--- Setup GUI
-#bash /opt/metasploit/scripts/launchui.sh    #*** Doesn't automate ***. Takes a little while to kick in...
+#bash /opt/metasploit/scripts/launchui.sh    #*** Doesn't automate. Takes a little while to kick in...
 #xdg-open https://127.0.0.1:3790/
 #--- Remove any leftovers
 rm -f /tmp/msf.rc
@@ -1607,10 +1602,10 @@ apt-get -y -qq install bless
 #dpkg -i /usr/local/src/Nessus-*-debian6_*.deb
 #service nessusd start
 #xdg-open http://www.tenable.com/products/nessus-home
-#/opt/nessus/sbin/nessus-adduser   #*** Doesn't automate ***
+#/opt/nessus/sbin/nessus-adduser   #*** Doesn't automate
 ##rm -f /usr/local/src/Nessus-*-debian6_*.deb
 #--- Check email
-# /opt/nessus/bin/nessus-fetch --register <key>   #*** Doesn't automate ***
+# /opt/nessus/bin/nessus-fetch --register <key>   #*** Doesn't automate
 #xdg-open https://127.0.0.1:8834/
 #--- Remove from start up
 #update-rc.d -f nessusd remove
@@ -1619,17 +1614,78 @@ apt-get -y -qq install bless
 ##### Installing openvas
 echo -e "\n\e[01;32m[+]\e[00m Installing openvas ~ vulnerability scanner"
 apt-get -y -qq install openvas
-#openvas-setup   #*** Doesn't automate ***
+#openvas-setup   #*** Doesn't automate
 #--- Remove 'default' user (admin), and create a new admin user (root).
 #test -e /var/lib/openvas/users/admin && openvasad -c remove_user -n admin
-#test -e /var/lib/openvas/users/root || openvasad -c add_user -n root -r Admin   #*** Doesn't automate ***
+#test -e /var/lib/openvas/users/root || openvasad -c add_user -n root -r Admin   #*** Doesn't automate
+
+
+##### Configuring burp suite
+echo -e "\n\e[01;32m[+]\e[00m Configuring burp suite ~ web application proxy"
+mkdir -p /root/.java/.userPrefs/burp/
+file=/root/.java/.userPrefs/burp/prefs.xml;   #[ -e $file ] && cp -n $file{,.bkup}
+[ -e $file ] || cat <<EOF > $file
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE map SYSTEM "http://java.sun.com/dtd/preferences.dtd" >
+<map MAP_XML_VERSION="1.0">
+  <entry key="eulafree" value="2"/>
+  <entry key="free.suite.feedbackReportingEnabled" value="false"/>
+</map>
+EOF
+#--- Extract CA
+find /tmp/ -maxdepth 1 -name 'burp*.tmp' -delete
+timeout 60 burpsuite &
+PID=$!
+sleep 10
+#echo "-----BEGIN CERTIFICATE-----" > /tmp/PortSwiggerCA && grep caCert /root/.java/.userPrefs/burp/prefs.xml | awk -F '"' '{print $4}' | fold -w 64 >> /tmp/PortSwiggerCA && echo "-----END CERTIFICATE-----" >> /tmp/PortSwiggerCA
+export http_proxy="http://127.0.0.1:8080"
+rm -f /tmp/burp.crt
+while test -d /proc/$PID; do
+  sleep 1
+  curl --progress -k -L http://burp/cert -o /tmp/burp.crt 2>/dev/null
+  [ -f /tmp/burp.crt ] && break
+done
+timeout 5 kill $PID 2>/dev/null
+unset http_proxy
+#--- Installing CA
+if [ -f /tmp/burp.crt ]; then
+  apt-get -y -qq install libnss3-tools
+  folder=$(find /root/.mozilla/firefox/ -maxdepth 1 -type d -name '*.default' -print -quit)
+  certutil -A -n Burp -t "CT,c,c" -d $folder -i /tmp/burp.crt
+  timeout 15 iceweasel
+  #mkdir -p /usr/share/ca-certificates/burp/
+  #cp -f /tmp/burp.crt /usr/share/ca-certificates/burp/
+  #dpkg-reconfigure ca-certificates
+  #cp -f /tmp/burp.crt /root/Desktop/burp.crt
+else
+  echo -e '\e[01;31m[!]\e[00m Didnt extract burp suite Certificate Authority (CA). Skipping...'
+fi
+#--- Remove any leftovers
+sleep 1
+find /tmp/ -maxdepth 1 -name 'burp*.tmp' -delete
+find /root/.mozilla/firefox/*.default/ -maxdepth 1 -type f -name 'sessionstore.*' -delete
+rm -f /tmp/burp.crt
+unset http_proxy
+
+
+##### Installing sparta
+echo -e "\n\e[01;32m[+]\e[00m Installing sparta ~ GUI automatic wrapper"
+apt-get -y -qq install git
+git clone git://github.com/secforce/sparta.git /usr/share/sparta_git/
+file=/usr/local/bin/sparta_git
+cat <<EOF > $file
+#!/bin/bash
+
+cd /usr/share/sparta_git/ && ./sparta.py "$@"
+EOF
+chmod +x $file
 
 
 ##### Configuring wireshark
 echo -e "\n\e[01;32m[+]\e[00m Configuring wireshark ~ GUI network protocol analyzer"
 mkdir -p /root/.wireshark/
-file=/root/.wireshark/recent_common;   #[ -e $file ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
-[ -e $file ] || echo "privs.warn_if_elevated: FALSE"/ > $file
+file=/root/.wireshark/recent_common;   #[ -e $file ] && cp -n $file{,.bkup}
+[ -e $file ] || echo "privs.warn_if_elevated: FALSE" > $file
 
 
 ##### Installing vfeed
@@ -1866,9 +1922,30 @@ echo -e "\n\e[01;32m[+]\e[00m Installing lbd ~ load balancing detector"
 apt-get -y -qq install lbd
 
 
+##### Installing wafw00f
+echo -e "\n\e[01;32m[+]\e[00m Installing wafw00f ~ WAF detector"
+apt-get -y -qq install git
+git clone git://github.com/sandrogauci/wafw00f.git /usr/share/wafw00f_git/
+#pip install --upgrade pip==1.5 && cd /usr/share/wafw00f_git/ && python setup.py install
+#pip install setuptools --no-use-wheel --upgrade && pip install wafw00f
+
+
 ##### Installing unicornscan
 echo -e "\n\e[01;32m[+]\e[00m Installing unicornscan ~ fast port scanner"
 apt-get -y -qq install unicornscan
+
+
+##### Installing onetwopunch
+echo -e "\n\e[01;32m[+]\e[00m Installing onetwopunch ~ unicornscan & nmap wrapper"
+apt-get -y -qq install git nmap unicornscan
+git clone git://github.com/superkojiman/onetwopunch.git /usr/share/onetwopunch_git/
+file=/usr/local/bin/onetwopunch
+cat <<EOF > $file
+#!/bin/bash
+
+cd /usr/share/onetwopunch_git/ && ./onetwopunch.sh "$@"
+EOF
+chmod +x $file
 
 
 ##### Installing clusterd
@@ -1884,17 +1961,17 @@ apt-get -y -qq install webhandler
 ##### Installing azazel
 echo -e "\n\e[01;32m[+]\e[00m Installing azazel ~ linux userland rootkit"
 apt-get -y -qq install git
-git clone git://github.com/chokepoint/azazel.git /usr/share/azazel/
+git clone git://github.com/chokepoint/azazel.git /usr/share/azazel_git/
 
 
 ##### Installing b374k
 echo -e "\n\e[01;32m[+]\e[00m Installing b374k ~ (PHP) web shell"
 apt-get -y -qq install git php5-cli
-git clone git://github.com/b374k/b374k.git /usr/share/b374k/
-cd /usr/share/b374k/
+git clone git://github.com/b374k/b374k.git /usr/share/b374k_git/
+cd /usr/share/b374k_git/
 php index.php -o b374k.php -s
 cd - &>/dev/null
-ln -sf /usr/share/b374k /usr/share/webshells/php/b374k
+ln -sf /usr/share/b374k_git /usr/share/webshells/php/b374k
 
 
 ##### Installing jsp file browser
@@ -1913,9 +1990,28 @@ apt-get -y -qq install bridge-utils
 
 
 ##### Installing mana
-echo -e "\n\e[01;32m[+]\e[00m Installing mana ~ rogue AP / mitm Wi-Fi"
+echo -e "\n\e[01;32m[+]\e[00m Installing mana ~ rogue AP todo MITM Wi-Fi"
 apt-get -y -qq install mana-toolkit
 mkdir -p /usr/share/mana-toolkit/www/facebook/    #*** BUG FIX: https://bugs.kali.org/view.php?id=1839
+
+
+##### Installing wifiphisher
+echo -e "\n\e[01;32m[+]\e[00m Installing wifiphisher ~ automated WiFi phishing"
+apt-get -y -qq install git
+git clone git://github.com/sophron/wifiphisher.git /usr/share/wifiphisher_git/
+file=/usr/local/bin/wifiphisher_git
+cat <<EOF > $file
+#!/bin/bash
+
+cd /usr/share/wifiphisher_git/ && python wifiphisher.py "$@"
+EOF
+chmod +x $file
+
+
+##### Installing hostapd-wpe-extended
+echo -e "\n\e[01;32m[+]\e[00m Installing hostapd-wpe-extended ~ rogue AP for WPA-Enterprise"
+apt-get -y -qq install git
+git clone git://github.com/NerdyProjects/hostapd-wpe-extended.git /usr/share/hostapd-wpe-extended_git/
 
 
 ##### Installing httptunnel
@@ -1981,7 +2077,7 @@ if [[ "$(uname -m)" == 'x86_64' ]]; then
   apt-get update
   apt-get -y -qq install wine-bin:i386
 fi
-#--- First time run...
+#--- Run WINE for the first time
 [ -e /usr/share/windows-binaries/whoami.exe ] && wine /usr/share/windows-binaries/whoami.exe &>/dev/null
 
 
@@ -2065,7 +2161,7 @@ echo -e "\n\e[01;32m[+]\e[00m Updating wordlists ~ collection of wordlists"
 #--- Extract sqlmap wordlist
 #unzip -o -d /usr/share/sqlmap/txt/ /usr/share/sqlmap/txt/wordlist.zip
 #--- Add 10,000 Top/Worst/Common Passwords
-mkir -p /usr/share/wordlists/
+mkdir -p /usr/share/wordlists/
 wget -q "http://xato.net/files/10k most common.zip" -O /tmp/10kcommon.zip && unzip -q -o -d /usr/share/wordlists/ /tmp/10kcommon.zip && mv -f /usr/share/wordlists/10k{\ most\ ,_most_}common.txt; rm -f /tmp/10kcommon.zip
 #--- Linking to more - folders
 [ -e /usr/share/dirb/wordlists ] && ln -sf /usr/share/dirb/wordlists /usr/share/wordlists/dirb
@@ -2082,22 +2178,90 @@ apt-get -y -qq install apt-file
 apt-file update
 
 
-##### Installing onetwopunch
-echo -e "\n\e[01;32m[+]\e[00m Installing onetwopunch ~ unicornscan & nmap wrapper"
-apt-get -y -qq install git nmap unicornscan
-git clone git://github.com/superkojiman/onetwopunch.git /usr/share/onetwopunch/
-file=/usr/share/onetwopunch/onetwopunch.sh
+##### Installing sqlmap (GIT)
+echo -e "\n\e[01;32m[+]\e[00m Installing sqlmap (GIT) ~ automatic SQL injection"
+apt-get -y -qq install git
+git clone git://github.com/sqlmapproject/sqlmap.git /usr/share/sqlmap_git/
+file=/usr/local/bin/sqlmap_git
+cat <<EOF > $file
+#!/bin/bash
+
+cd /usr/share/sqlmap_git/ && ./sqlmap.py "$@"
+EOF
 chmod +x $file
-ln -sf $file /usr/bin/onetwopunch
+
+
+##### Installing Babel scripts
+echo -e "\n\e[01;32m[+]\e[00m Installing Babel scripts ~ post exploitation scripts"
+apt-get -y -qq install git
+git clone git://github.com/attackdebris/babel-sf.git /usr/share/babel-sf_git/
+
+
+##### Installing python-pty-shells
+echo -e "\n\e[01;32m[+]\e[00m Installing python-pty-shells ~ PTY shells"
+apt-get -y -qq install git
+git clone git://github.com/infodox/python-pty-shells.git /usr/share/python-pty-shells_git/
+
+
+##### Installing pwntools
+echo -e "\n\e[01;32m[+]\e[00m Installing pwntools ~ handy CTF tools"
+apt-get -y -qq install git
+git clone git://github.com/Gallopsled/pwntools.git /usr/share/pwntools_git/
+
+
+##### Installing CMSmap
+echo -e "\n\e[01;32m[+]\e[00m Installing CMSmap ~ CMS detection"
+apt-get -y -qq install git
+git clone git://github.com/Dionach/CMSmap.git /usr/share/cmsmap_git/
+cat <<EOF > $file
+#!/bin/bash
+
+cd /usr/share/cmsmap_git/ && ./cmsmap.py "$@"
+EOF
+chmod +x $file
+
+
+##### Installing CMSScanner
+#echo -e "\n\e[01;32m[+]\e[00m Installing CMSScanner ~ CMS detection"
+#apt-get -y -qq install git
+#git clone git://github.com/wpscanteam/CMSScanner.git /usr/share/cmsscanner_git/
+#cd /usr/share/cmsscanner_git/
+#bundle install
+
+
+##### Installing droopescan (GIT)
+echo -e "\n\e[01;32m[+]\e[00m Installing droopescan (GIT) ~ Drupal vulnerability scanner"
+apt-get -y -qq install git
+git clone git://github.com/droope/droopescan.git /usr/share/droopescan_git/
+file=/usr/local/bin/droopescan_git
+cat <<EOF > $file
+#!/bin/bash
+
+cd /usr/share/droopescan_git/ && ./droopescan "$@"
+EOF
+chmod +x $file
+
+
+##### Installing wpscan (GIT)
+echo -e "\n\e[01;32m[+]\e[00m Installing wpscan (GIT) ~ WordPress vulnerability scanner"
+apt-get -y -qq install git
+git clone git://github.com/wpscanteam/wpscan.git /usr/share/wpscan_git/
+file=/usr/local/bin/wpscan_git
+cat <<EOF > $file
+#!/bin/bash
+
+cd /usr/share/wpscan_git/ && ./wpscan.rb "$@"
+EOF
+chmod +x $file
 
 
 ##### Configuring samba
 echo -e "\n\e[01;32m[+]\e[00m Configuring samba ~ file transfer method"
-#--- Install samba
+#--- Installing samba
 apt-get -y -qq install samba
 #--- Create samba user
 useradd -M -d /nonexistent -s /bin/false samba
-#--- Use samba user
+#--- Use the samba user
 file=/etc/samba/smb.conf; [ -e $file ] && cp -n $file{,.bkup}
 sed -i 's/guest account = .*/guest account = samba/' $file 2>/dev/null || sed -i 's#\[global\]#\[global\]\n   guest account = samba#' $file
 #--- Setup samba paths
@@ -2120,6 +2284,11 @@ chmod -R 0770 /var/samba/
 #--- Disable samba at startup
 service samba stop
 update-rc.d -f samba remove
+
+
+##### Installing rsh-client
+echo -e "\n\e[01;32m[+]\e[00m Installing rsh-client ~ remote shell connections"
+apt-get -y -qq install rsh-client
 
 
 ##### Setting up SSH
@@ -2152,7 +2321,7 @@ updatedb
 #--- Reset folder location
 cd ~/ &>/dev/null
 #--- Remove any history files (as they could contain sensitive info)
-[ $SHELL == "/bin/zsh" ] || history -c   # Will not work with ZSH
+[ $SHELL == "/bin/zsh" ] || history -c
 for i in $(cut -d: -f6 /etc/passwd | sort | uniq); do
   [ -e "$i" ] && find "$i" -type f -name '.*_history' -delete
 done
@@ -2171,10 +2340,11 @@ echo -e "\n\e[01;33m[i]\e[00m Do not forget to:"
 echo -e "\e[01;33m[i]\e[00m   + Check the above output (everything installed/no errors?)"
 echo -e "\e[01;33m[i]\e[00m   + Check that Iceweasel's extensions are enabled (as well as FoxyProxy profiles)"
 echo -e "\e[01;33m[i]\e[00m   + Manually install: Nessus, Nexpose, Metasploit Community and/or OpenVAS"
-echo -e "\e[01;33m[i]\e[00m   + Agree/Accept to: Burp, Maltego, OWASP ZAP, w3af etc"
+echo -e "\e[01;33m[i]\e[00m   + Agree/Accept to: Maltego, OWASP ZAP, w3af etc"
 echo -e "\e[01;33m[i]\e[00m   + Change time zone & keyboard layout (...if different to $timezone/$keyboardlayout)"
 echo -e "\e[01;33m[i]\e[00m   + Reboot"
 echo -e "\e[01;33m[i]\e[00m   + Take a snapshot (...if you are using a VM)"
 
 echo -e '\n\e[01;34m[*]\e[00m Done!\n'
 #reboot
+exit 0
