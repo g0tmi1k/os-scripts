@@ -1,6 +1,6 @@
 #!/bin/bash
 #-Metadata------------------------------------------------#
-#  Filename: kali.sh                 (Update: 2015-01-12) #
+#  Filename: kali.sh                 (Update: 2015-01-19) #
 #-Info----------------------------------------------------#
 #  Personal post install script for Kali Linux.           #
 #-Author(s)-----------------------------------------------#
@@ -1279,15 +1279,15 @@ git config --global mergetool.prompt false
 echo -e "\n\e[01;32m[+]\e[00m Setting up iceweasel ~ GUI web browser"
 apt-get install -y -qq unzip curl wget iceweasel
 #--- Configure iceweasel
-#export DISPLAY=:0.0   #[[ -z $SSH_CONNECTION ]] || export DISPLAY=:0.0
+export DISPLAY=:0.0   #[[ -z $SSH_CONNECTION ]] || export DISPLAY=:0.0
 timeout 15 iceweasel   #iceweasel & sleep 15; killall -q -w iceweasel >/dev/null   # Start and kill. Files needed for first time run
 timeout 5 killall -9 -q -w iceweasel >/dev/null
-file=$(find /root/.mozilla/firefox/*.default/ -maxdepth 1 -type f -name 'prefs.js' -print -quit) && [ -e $file ] && cp -n $file{,.bkup}   #/etc/iceweasel/pref/*.js
+file=$(find /root/.mozilla/firefox/*.default*/ -maxdepth 1 -type f -name 'prefs.js' -print -quit) && [ -e $file ] && cp -n $file{,.bkup}   #/etc/iceweasel/pref/*.js
 sed -i 's/^.*browser.startup.page.*/user_pref("browser.startup.page", 0);' $file 2>/dev/null || echo 'user_pref("browser.startup.page", 0);' >> $file                                              # Iceweasel -> Edit -> Preferences -> General -> When firefox starts: Show a blank page
 sed -i 's/^.*privacy.donottrackheader.enabled.*/user_pref("privacy.donottrackheader.enabled", true);' $file 2>/dev/null || echo 'user_pref("privacy.donottrackheader.enabled", true);' >> $file    # Privacy -> Enable: Tell websites I do not want to be tracked
 sed -i 's/^.*browser.showQuitWarning.*/user_pref("browser.showQuitWarning", true);' $file 2>/dev/null || echo 'user_pref("browser.showQuitWarning", true);' >> $file                               # Stop Ctrl+Q from quitting without warning
 #--- Replace bookmarks (base: http://pentest-bookmarks.googlecode.com)
-file=$(find /root/.mozilla/firefox/*.default/ -maxdepth 1 -type f -name 'bookmarks.html' -print -quit) && [ -e $file ] && cp -n $file{,.bkup}   #/etc/iceweasel/profile/bookmarks.html
+file=$(find /root/.mozilla/firefox/*.default*/ -maxdepth 1 -type f -name 'bookmarks.html' -print -quit) && [ -e $file ] && cp -n $file{,.bkup}   #/etc/iceweasel/profile/bookmarks.html
 wget -q "http://pentest-bookmarks.googlecode.com/files/bookmarksv1.5.html" -O /tmp/bookmarks_new.html     #***!!! hardcoded version! Need to manually check for updates
 #--- Configure bookmarks
 awk '!a[$0]++' /tmp/bookmarks_new.html | \egrep -v ">(Latest Headlines|Getting Started|Recently Bookmarked|Recent Tags|Mozilla Firefox|Help and Tutorials|Customize Firefox|Get Involved|About Us|Hacker Media|Bookmarks Toolbar|Most Visited)</" | \egrep -v "^    </DL><p>" | \egrep -v "^<DD>Add" > $file
@@ -1298,10 +1298,10 @@ sed -i 's#^</DL><p>#    <DT><A HREF="http://127.0.0.1/rips/">RIPS</A>\n</DL><p>#
 sed -i 's#^</DL><p>#    <DT><A HREF="https://paulschou.com/tools/xlate/">XLATE</A>\n</DL><p>#' $file                                                                                                              # Add in XLATE to bookmark toolbar
 sed -i 's#<HR>#<DT><H3 ADD_DATE="1303667175" LAST_MODIFIED="1303667175" PERSONAL_TOOLBAR_FOLDER="true">Bookmarks Toolbar</H3>\n<DD>Add bookmarks to this folder to see them displayed on the Bookmarks Toolbar#' $file
 #--- Clear bookmark cache
-find /root/.mozilla/firefox/*.default/ -maxdepth 1 -mindepth 1 -type f -name places.sqlite -delete
-find /root/.mozilla/firefox/*.default/bookmarkbackups/ -type f -delete
+find /root/.mozilla/firefox/*.default*/ -maxdepth 1 -mindepth 1 -type f -name places.sqlite -delete
+find /root/.mozilla/firefox/*.default*/bookmarkbackups/ -type f -delete
 #--- Download extensions
-ffpath="$(find /root/.mozilla/firefox/*.default/ -maxdepth 0 -mindepth 0 -type d -print -quit)/extensions"
+ffpath="$(find /root/.mozilla/firefox/*.default*/ -maxdepth 0 -mindepth 0 -type d -print -quit)/extensions"
 mkdir -p $ffpath/
 curl --progress -k -L https://addons.mozilla.org/firefox/downloads/latest/5817/addon-5817-latest.xpi?src=dp-btn-primary -o $ffpath/SQLiteManager@mrinalkant.blogspot.com.xpi           # SQLite Manager
 curl --progress -k -L https://addons.mozilla.org/firefox/downloads/latest/1865/addon-1865-latest.xpi?src=dp-btn-primary -o $ffpath/{d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d}.xpi          # Adblock Plus
@@ -1324,18 +1324,18 @@ for FILE in $(find $ffpath -maxdepth 1 -type f -name '*.xpi'); do
 done
 #--- Enable Iceweasel's addons/plugins/extensions
 timeout 15 iceweasel   #iceweasel & sleep 15; killall -q -w iceweasel >/dev/null
-file=$(find /root/.mozilla/firefox/*.default/ -maxdepth 1 -type f -name 'extensions.sqlite' -print -quit)   #&& [ -e $file ] && cp -n $file{,.bkup}
+file=$(find /root/.mozilla/firefox/*.default*/ -maxdepth 1 -type f -name 'extensions.sqlite' -print -quit)   #&& [ -e $file ] && cp -n $file{,.bkup}
 if [ ! -e $file ] || [ -z $file ]; then
   #echo -e '\e[01;31m[!]\e[00m Something went wrong enabling iceweasels extensions via method #1. Trying method #2...'
   false
 else
-  echo -e "\e[01;33m[i]\e[00m Enabling iceweasel's extensions via method #2: Success!"
+  echo -e "\e[01;33m[i]\e[00m Enabling iceweasel's extensions via method #1: Success!"
   apt-get install -y -qq sqlite3
   rm -f /tmp/iceweasel.sql; touch /tmp/iceweasel.sql
   echo "UPDATE 'main'.'addon' SET 'active' = 1, 'userDisabled' = 0;" > /tmp/iceweasel.sql    # Force them all!
   sqlite3 $file < /tmp/iceweasel.sql      #fuser extensions.sqlite
 fi
-file=$(find /root/.mozilla/firefox/*.default/ -maxdepth 1 -type f -name 'extensions.json' -print -quit)   #&& [ -e $file ] && cp -n $file{,.bkup}
+file=$(find /root/.mozilla/firefox/*.default*/ -maxdepth 1 -type f -name 'extensions.json' -print -quit)   #&& [ -e $file ] && cp -n $file{,.bkup}
 if [ ! -e $file ] || [ -z $file ]; then
   #echo -e '\e[01;31m[!]\e[00m Something went wrong enabling iceweasels extensions via method #2. Did method #1 also fail?''
   false
@@ -1344,12 +1344,12 @@ else
   sed -i 's/"active":false,/"active":true,/g' $file                # Force them all!
   sed -i 's/"userDisabled":true,/"userDisabled":false,/g' $file    # Force them all!
 fi
-file=$(find /root/.mozilla/firefox/*.default/ -maxdepth 1 -type f -name 'prefs.js' -print -quit)   #&& [ -e $file ] && cp -n $file{,.bkup}
+file=$(find /root/.mozilla/firefox/*.default*/ -maxdepth 1 -type f -name 'prefs.js' -print -quit)   #&& [ -e $file ] && cp -n $file{,.bkup}
 [ ! -z $file ] && sed -i '/extensions.installCache/d' $file
 timeout 15 iceweasel >/dev/null   # For extensions that just work without restarting
 timeout 15 iceweasel >/dev/null   # ...for (most) extensions, as they need iceweasel to restart
 #--- Configure foxyproxy
-file=$(find /root/.mozilla/firefox/*.default/ -maxdepth 1 -type f -name 'foxyproxy.xml' -print -quit)   #&& [ -e $file ] && cp -n $file{,.bkup}
+file=$(find /root/.mozilla/firefox/*.default*/ -maxdepth 1 -type f -name 'foxyproxy.xml' -print -quit)   #&& [ -e $file ] && cp -n $file{,.bkup}
 if [ -z $file ]; then
   echo -e '\e[01;31m[!]\e[00m Something went wrong with the foxyproxy iceweasel extension (did extensions install?). Skipping...'
 elif [ -e $file ]; then
@@ -1365,7 +1365,7 @@ else
   echo -e '</proxies></foxyproxy>' >> $file
 fi
 #--- Wipe session (due to force close)
-find /root/.mozilla/firefox/*.default/ -maxdepth 1 -type f -name 'sessionstore.*' -delete
+find /root/.mozilla/firefox/*.default*/ -maxdepth 1 -type f -name 'sessionstore.*' -delete
 #--- Restore to folder
 cd - &>/dev/null
 #--- Remove any leftovers
@@ -1545,6 +1545,7 @@ toplevel-id='top-panel'
 EOF
 dconf write /org/gnome/gnome-panel/layout/object-id-list "$(dconf read /org/gnome/gnome-panel/layout/object-id-list | sed "s/]/, 'geany']/")"
 #--- Configure geany
+export DISPLAY=:0.0   #[[ -z $SSH_CONNECTION ]] || export DISPLAY=:0.0
 timeout 15 geany   #geany & sleep 5; killall -q -w geany >/dev/null   # Start and kill. Files needed for first time run
 # Geany -> Edit -> Preferences. Editor -> Newline strips trailing spaces: Enable. -> Indentation -> Type: Spaces. -> Files -> Strip trailing spaces and tabs: Enable. Replace tabs by space: Enable. -> Apply -> Ok
 file=/root/.config/geany/geany.conf; [ -e $file ] && cp -n $file{,.bkup}
@@ -1634,6 +1635,7 @@ file=/root/.java/.userPrefs/burp/prefs.xml;   #[ -e $file ] && cp -n $file{,.bku
 EOF
 #--- Extract CA
 find /tmp/ -maxdepth 1 -name 'burp*.tmp' -delete
+export DISPLAY=:0.0   #[[ -z $SSH_CONNECTION ]] || export DISPLAY=:0.0
 timeout 60 burpsuite &
 PID=$!
 sleep 10
@@ -1663,7 +1665,7 @@ fi
 #--- Remove any leftovers
 sleep 1
 find /tmp/ -maxdepth 1 -name 'burp*.tmp' -delete
-find /root/.mozilla/firefox/*.default/ -maxdepth 1 -type f -name 'sessionstore.*' -delete
+find /root/.mozilla/firefox/*.default*/ -maxdepth 1 -type f -name 'sessionstore.*' -delete
 rm -f /tmp/burp.crt
 unset http_proxy
 
@@ -1672,11 +1674,13 @@ unset http_proxy
 echo -e "\n\e[01;32m[+]\e[00m Installing sparta ~ GUI automatic wrapper"
 apt-get -y -qq install git
 git clone git://github.com/secforce/sparta.git /usr/share/sparta_git/
+cd /usr/share/sparta_git/ && git pull
+cd - &>/dev/null
 file=/usr/local/bin/sparta_git
 cat <<EOF > $file
 #!/bin/bash
 
-cd /usr/share/sparta_git/ && ./sparta.py "$@"
+cd /usr/share/sparta_git/ && ./sparta.py "\$@"
 EOF
 chmod +x $file
 
@@ -1808,6 +1812,7 @@ apt-get -y -qq install daemonfs
 echo -e "\n\e[01;32m[+]\e[00m Installing filezilla ~ GUI file transfer"
 apt-get -y -qq install filezilla
 #--- Configure filezilla
+export DISPLAY=:0.0   #[[ -z $SSH_CONNECTION ]] || export DISPLAY=:0.0
 timeout 15 filezilla   #filezilla & sleep 5; killall -q -w filezilla >/dev/null     # Start and kill. Files needed for first time run
 file=/root/.filezilla/filezilla.xml; [ -e $file ] && cp -n $file{,.bkup}
 sed -i 's#^.*"Default editor".*#\t<Setting name="Default editor" type="string">2/usr/bin/geany</Setting>#' $file
@@ -1816,6 +1821,11 @@ sed -i 's#^.*"Default editor".*#\t<Setting name="Default editor" type="string">2
 ##### Installing remmina
 echo -e "\n\e[01;32m[+]\e[00m Installing remmina ~ GUI remote desktop"
 apt-get -y -qq install remmina
+
+
+##### Installing x2go client
+echo -e "\n\e[01;32m[+]\e[00m Installing x2go client ~ GUI remote desktop"
+apt-get -y -qq install x2goclient
 
 
 ##### Setting up tftp client & server
@@ -1924,10 +1934,12 @@ apt-get -y -qq install lbd
 
 ##### Installing wafw00f
 echo -e "\n\e[01;32m[+]\e[00m Installing wafw00f ~ WAF detector"
-apt-get -y -qq install git
+apt-get -y -qq install git python python-pip
 git clone git://github.com/sandrogauci/wafw00f.git /usr/share/wafw00f_git/
-#pip install --upgrade pip==1.5 && cd /usr/share/wafw00f_git/ && python setup.py install
-#pip install setuptools --no-use-wheel --upgrade && pip install wafw00f
+cd /usr/share/wafw00f_git/
+git pull
+python setup.py install
+cd - &>/dev/null
 
 
 ##### Installing unicornscan
@@ -1939,11 +1951,13 @@ apt-get -y -qq install unicornscan
 echo -e "\n\e[01;32m[+]\e[00m Installing onetwopunch ~ unicornscan & nmap wrapper"
 apt-get -y -qq install git nmap unicornscan
 git clone git://github.com/superkojiman/onetwopunch.git /usr/share/onetwopunch_git/
+cd /usr/share/onetwopunch_git/ && git pull
+cd - &>/dev/null
 file=/usr/local/bin/onetwopunch
 cat <<EOF > $file
 #!/bin/bash
 
-cd /usr/share/onetwopunch_git/ && ./onetwopunch.sh "$@"
+cd /usr/share/onetwopunch_git/ && ./onetwopunch.sh "\$@"
 EOF
 chmod +x $file
 
@@ -1962,6 +1976,8 @@ apt-get -y -qq install webhandler
 echo -e "\n\e[01;32m[+]\e[00m Installing azazel ~ linux userland rootkit"
 apt-get -y -qq install git
 git clone git://github.com/chokepoint/azazel.git /usr/share/azazel_git/
+cd /usr/share/azazel_git/ && git pull
+cd - &>/dev/null
 
 
 ##### Installing b374k
@@ -1969,6 +1985,7 @@ echo -e "\n\e[01;32m[+]\e[00m Installing b374k ~ (PHP) web shell"
 apt-get -y -qq install git php5-cli
 git clone git://github.com/b374k/b374k.git /usr/share/b374k_git/
 cd /usr/share/b374k_git/
+git pull
 php index.php -o b374k.php -s
 cd - &>/dev/null
 ln -sf /usr/share/b374k_git /usr/share/webshells/php/b374k
@@ -1999,11 +2016,13 @@ mkdir -p /usr/share/mana-toolkit/www/facebook/    #*** BUG FIX: https://bugs.kal
 echo -e "\n\e[01;32m[+]\e[00m Installing wifiphisher ~ automated WiFi phishing"
 apt-get -y -qq install git
 git clone git://github.com/sophron/wifiphisher.git /usr/share/wifiphisher_git/
+cd /usr/share/wifiphisher_git/ && git pull
+cd - &> /dev/null
 file=/usr/local/bin/wifiphisher_git
 cat <<EOF > $file
 #!/bin/bash
 
-cd /usr/share/wifiphisher_git/ && python wifiphisher.py "$@"
+cd /usr/share/wifiphisher_git/ && python wifiphisher.py "\$@"
 EOF
 chmod +x $file
 
@@ -2012,6 +2031,8 @@ chmod +x $file
 echo -e "\n\e[01;32m[+]\e[00m Installing hostapd-wpe-extended ~ rogue AP for WPA-Enterprise"
 apt-get -y -qq install git
 git clone git://github.com/NerdyProjects/hostapd-wpe-extended.git /usr/share/hostapd-wpe-extended_git/
+cd /usr/share/hostapd-wpe-extended_git/ && git pull
+cd - &> /dev/null
 
 
 ##### Installing httptunnel
@@ -2064,7 +2085,9 @@ apt-get -y -qq install libc6-i686 libc6-dev-i686
 
 ##### Installing mingw & cross compiling tools
 echo -e "\n\e[01;32m[+]\e[00m Installing mingw & cross compiling tools"
-apt-get -y -qq install mingw-w64 binutils-mingw-w64 gcc-mingw-w64 mingw-w64-dev mingw-w64-tools cmake
+apt-get -y -qq install mingw-w64 binutils-mingw-w64 gcc-mingw-w64 cmake
+apt-get -y -qq install mingw-w64-dev mingw-w64-tools
+apt-get -y -qq install gcc-mingw-w64-i686
 
 
 ##### Installing wine
@@ -2084,6 +2107,14 @@ fi
 ##### Installing the backdoor factory
 echo -e "\n\e[01;32m[+]\e[00m Installing backdoor factory ~ bypassing anti-virus"
 apt-get -y -qq install backdoor-factory
+
+
+##### Installing the Backdoor Factory Proxy (BDFProxy)
+echo -e "\n\e[01;32m[+]\e[00m Installing backdoor factory ~ patches binaries files via MITM"
+apt-get -y -qq install git
+git clone git://github.com/secretsquirrel/BDFProxy.git /usr/share/bdfproxy_git/
+cd /usr/share/bdfproxy_git/ && git pull
+cd - &>/dev/null
 
 
 ##### Installing veil framework
@@ -2182,11 +2213,13 @@ apt-file update
 echo -e "\n\e[01;32m[+]\e[00m Installing sqlmap (GIT) ~ automatic SQL injection"
 apt-get -y -qq install git
 git clone git://github.com/sqlmapproject/sqlmap.git /usr/share/sqlmap_git/
+cd /usr/share/sqlmap_git/ && git pull
+cd - &>/dev/null
 file=/usr/local/bin/sqlmap_git
 cat <<EOF > $file
 #!/bin/bash
 
-cd /usr/share/sqlmap_git/ && ./sqlmap.py "$@"
+cd /usr/share/sqlmap_git/ && ./sqlmap.py "\$@"
 EOF
 chmod +x $file
 
@@ -2195,28 +2228,35 @@ chmod +x $file
 echo -e "\n\e[01;32m[+]\e[00m Installing Babel scripts ~ post exploitation scripts"
 apt-get -y -qq install git
 git clone git://github.com/attackdebris/babel-sf.git /usr/share/babel-sf_git/
+cd /usr/share/babel-sf_git/ && git pull
+cd - &>/dev/null
 
 
 ##### Installing python-pty-shells
 echo -e "\n\e[01;32m[+]\e[00m Installing python-pty-shells ~ PTY shells"
 apt-get -y -qq install git
 git clone git://github.com/infodox/python-pty-shells.git /usr/share/python-pty-shells_git/
+cd /usr/share/python-pty-shells_git/ && git pull
+cd - &>/dev/null
 
 
 ##### Installing pwntools
 echo -e "\n\e[01;32m[+]\e[00m Installing pwntools ~ handy CTF tools"
 apt-get -y -qq install git
 git clone git://github.com/Gallopsled/pwntools.git /usr/share/pwntools_git/
+cd /usr/share/pwntools_git/ && git pull
+cd - &>/dev/null
 
 
 ##### Installing CMSmap
 echo -e "\n\e[01;32m[+]\e[00m Installing CMSmap ~ CMS detection"
 apt-get -y -qq install git
 git clone git://github.com/Dionach/CMSmap.git /usr/share/cmsmap_git/
+file=/usr/local/bin/cmsmap_git
 cat <<EOF > $file
 #!/bin/bash
 
-cd /usr/share/cmsmap_git/ && ./cmsmap.py "$@"
+cd /usr/share/cmsmap_git/ && ./cmsmap.py "\$@"
 EOF
 chmod +x $file
 
@@ -2226,18 +2266,22 @@ chmod +x $file
 #apt-get -y -qq install git
 #git clone git://github.com/wpscanteam/CMSScanner.git /usr/share/cmsscanner_git/
 #cd /usr/share/cmsscanner_git/
+#git pull
 #bundle install
+#cd - &>/dev/null
 
 
 ##### Installing droopescan (GIT)
 echo -e "\n\e[01;32m[+]\e[00m Installing droopescan (GIT) ~ Drupal vulnerability scanner"
 apt-get -y -qq install git
 git clone git://github.com/droope/droopescan.git /usr/share/droopescan_git/
+cd /usr/share/droopescan_git/ && git pull
+cd - &>/dev/null
 file=/usr/local/bin/droopescan_git
 cat <<EOF > $file
 #!/bin/bash
 
-cd /usr/share/droopescan_git/ && ./droopescan "$@"
+cd /usr/share/droopescan_git/ && ./droopescan "\$@"
 EOF
 chmod +x $file
 
@@ -2246,11 +2290,13 @@ chmod +x $file
 echo -e "\n\e[01;32m[+]\e[00m Installing wpscan (GIT) ~ WordPress vulnerability scanner"
 apt-get -y -qq install git
 git clone git://github.com/wpscanteam/wpscan.git /usr/share/wpscan_git/
+cd /usr/share/wpscan_git/ && git pull
+cd - &>/dev/null
 file=/usr/local/bin/wpscan_git
 cat <<EOF > $file
 #!/bin/bash
 
-cd /usr/share/wpscan_git/ && ./wpscan.rb "$@"
+cd /usr/share/wpscan_git/ && ./wpscan.rb "\$@"
 EOF
 chmod +x $file
 
@@ -2308,7 +2354,7 @@ ssh-keygen -b 4096 -t rsa -f /root/.ssh/id_rsa -P ""
 #file=/etc/ssh/sshd_config; [ -e $file ] && cp -n $file{,.bkup}
 #sed -i 's/^Port .*/Port 2222/g' $file
 #--- Enable ssh at startup
-#update-rc.d -f ssh defaults
+#update-rc.d -f ssh enable
 
 
 ##### Cleaning the system
