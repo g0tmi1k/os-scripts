@@ -1,6 +1,6 @@
 #!/bin/bash
 #-Metadata----------------------------------------------------#
-#  Filename: kali.sh                     (Update: 2015-02-09) #
+#  Filename: kali.sh                     (Update: 2015-02-12) #
 #-Info--------------------------------------------------------#
 #  Personal post install script for Kali Linux.               #
 #-Author(s)---------------------------------------------------#
@@ -18,8 +18,8 @@
 #  Incomplete stuff/buggy search for '***'.                   #
 #                           ---                               #
 #             ** This script is meant for _ME_. **            #
-#      ** Wasn't designed with customization in mind. **      #
 #         ** EDIT this to meet _YOUR_ requirements! **        #
+#      ** Wasn't designed with customization in mind. **      #
 #-------------------------------------------------------------#
 
 
@@ -89,6 +89,10 @@ apt-get update
 ##### Installing kernel headers
 echo -e "\n$GREEN[+]$RESET Installing kernel headers"
 apt-get -y -qq install gcc make linux-headers-$(uname -r)
+if [[ $? -ne 0 ]]; then
+  echo -e $RED'[!]'$RESET' There was an issue installing kernel headers' 1>&2
+  echo -e $YELLOW'[i]'$RESET' Are you using the latest kernel?'
+fi
 
 
 ##### (Optional) Checking to see if Kali is in a VM. If so, install "Virtual Machine Addons/Tools" for a "better" virtual experiment
@@ -252,6 +256,14 @@ apt-get update && apt-get -y -qq dist-upgrade --fix-missing
 #file=/etc/apt/sources.list; [ -e $file ] && cp -n $file{,.bkup}
 #grep -q 'kali-bleeding-edge' $file 2>/dev/null || echo -e "\n\n## Bleeding edge\ndeb http://repo.kali.org/kali kali-bleeding-edge main" >> $file
 #apt-get update && apt-get -y -qq upgrade
+#--- Check kernel stuff
+TMP=$(dpkg -l | grep linux-image- | grep -v meta | wc -l)
+if [[ "$TMP" -gt 1 ]]; then
+  echo -e "\n$YELLOW[i]$RESET Detected multiple kernels installed"
+  #echo -e "$YELLOW[i]$RESET   Clean up: apt-get remove --purge $(dpkg -l 'linux-image-*' | sed '/^ii/!d;/'"$(uname -r | sed "s/\(.*\)-\([^0-9]\+\)/\1/")"'/d;s/^[^ ]* [^ ]* \([^ ]*\).*/\1/;/[0-9]/!d')"   # DO NOT RUN IF NOT USING THE LASTEST KERNEL!
+  TMP=$(dpkg -l | grep linux-image | grep -v meta | sort | tail -n 1 | grep `uname -r`)
+  [[ -z "$TMP" ]] && echo -e $RED'[!]'$RESET' Not using the latest kernel! You need to **reboot**.' 1>&2
+fi
 
 
 ##### Settings services to listen to listen to loopback interface ***
