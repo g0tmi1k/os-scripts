@@ -1,22 +1,20 @@
 #!/bin/bash
 #-Metadata----------------------------------------------------#
-#  Filename: kali.sh                     (Update: 2015-02-15) #
+#  Filename: kali.sh                     (Update: 2015-03-14) #
 #-Info--------------------------------------------------------#
 #  Personal post install script for Kali Linux.               #
 #-Author(s)---------------------------------------------------#
-#  g0tmilk ~ https://blog.g0tmi1k.com                         #
+#  g0tmilk ~ https://blog.g0tmi1k.com/                        #
 #-Operating System--------------------------------------------#
-#  Designed for: Kali Linux 1.1.0 [x64] (VM - VMware)         #
-#     Tested on: Kali Linux 1.0.0 - 1.1.0 [x64 & x84 & mini]  #
+#  Designed for: Kali Linux 1.1.0a [x64] (VM - VMware)        #
+#     Tested on: Kali Linux 1.0.0 - 1.1.0a [x64 & x84 & mini] #
 #-Notes-------------------------------------------------------#
 #  Run as root, just after a fresh/clean install of Kali.     #
-#                           ---                               #
+#                             ---                             #
 #  By default it will set the time zone & keyboard to UK/GB.  #
-#                           ---                               #
-#  Skips making the NIC MAC & hostname random on boot.        #
-#                           ---                               #
-#  Incomplete stuff/buggy search for '***'.                   #
-#                           ---                               #
+#                             ---                             #
+#  Incomplete/buggy/hidden stuff - search for '***'.          #
+#                             ---                             #
 #             ** This script is meant for _ME_. **            #
 #         ** EDIT this to meet _YOUR_ requirements! **        #
 #      ** Wasn't designed with customization in mind. **      #
@@ -38,21 +36,25 @@ keyboardlayout="gb"         # Great Britain
 timezone="Europe/London"    # London, Europe
 
 
+##### (Optional) Don't ever update these packages
+#for x in metasploit metasploit-framework; do
+#  echo "$x hold" | dpkg --set-selections
+#done
+
+
 ##### (Optional) Enable debug mode?
 #set -x
 
 
-##### (Optional) Don't update these packages
-#echo "metasploit hold" | dpkg --set-selections
-#echo "metasploit-framework hold" | dpkg --set-selections
-
-
 ##### (Cosmetic) Colour output
-RED="\e[01;31m"
-GREEN="\e[01;32m"
-YELLOW="\e[01;33m"
-BLUE="\e[01;34m"
-RESET="\e[00m"
+RED="\033[01;31m"
+GREEN="\033[01;32m"
+YELLOW="\033[01;33m"
+BLUE="\033[01;34m"
+RESET="\033[00m"
+
+
+#-Start-------------------------------------------------#
 
 
 ##### Check if we are running as root - else this script will fail (hard!)
@@ -85,12 +87,17 @@ for i in {1..10}; do ping -c 1 -W $i www.google.com &>/dev/null && break; done
 ping -c 1 www.google.com &>/dev/null || (echo -e $RED'[!]'$RESET' No Internet connection(?). Please re-run the script. Quitting...' 1>&2 && exit 1)
 
 
-##### Fixing default network repositories ~ http://docs.kali.org/general-use/kali-linux-sources-list-repositories
-echo -e "\n$GREEN[+]$RESET Fixing default network repositories ~ enabling if it wasn't selected during install"
+##### Enabling default network repositories ~ http://docs.kali.org/general-use/kali-linux-sources-list-repositories
+echo -e "\n$GREEN[+]$RESET Enabling default network repositories ~ fixing if it wasn't selected during install"
+#find /var/cache/apt/ -type f -delete
+find /var/lib/apt/lists/ -type f -delete                                                                                        # https://forums.kali.org/showthread.php?24687-Problem-with-apt-get-update&p=42558&viewfull=1#post42558
+apt-key adv --keyserver hkp://keys.gnupg.net --recv-keys 7D8D0BF6   #gpg --keyserver hkp://keys.gnupg.net --recv-key 7D8D0BF6   # http://docs.kali.org/introduction/download-official-kali-linux-images
 file=/etc/apt/sources.list; [ -e "$file" ] && cp -n $file{,.bkup}
+([[ -e "$file" ]] && [[ "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
 grep -q 'kali main non-free contrib' "$file" 2>/dev/null || echo "deb http://http.kali.org/kali kali main non-free contrib" >> "$file"
 grep -q 'kali/updates main contrib non-free' "$file" 2>/dev/null || echo "deb http://security.kali.org/kali-security kali/updates main contrib non-free" >> "$file"
 apt-get -qq update
+apt-get -y -qq install kali-archive-keyring
 
 
 ##### Installing kernel headers
@@ -114,22 +121,18 @@ elif (dmidecode | grep -iq vmware); then
   sleep 1
   mount -o ro /dev/cdrom /mnt/cdrom 2>/dev/null; _mount=$?   # Only checks first CD drive (if multiple)
   file=$(find /mnt/cdrom/ -maxdepth 1 -type f -name 'VMwareTools-*.tar.gz' -print -quit)
-  if [[ "$_mount" == 0 ]] && [[ -z "$file" ]]; then
-    echo -e $RED'[!]'$RESET' Incorrect CD/ISO mounted' 1>&2
-  fi
+  ([[ "$_mount" == 0 ]] && [[ -z "$file" ]]) && echo -e $RED'[!]'$RESET' Incorrect CD/ISO mounted' 1>&2
   if [[ "$_mount" == 0 ]] && [[ -n "$file" ]]; then             # If there is a CD in (and its right!), try to install native Guest Additions
-    echo -e $YELLOW'[i]'$RESET' Using "Native VMware Tools"'
-    apt-get -y -qq install gcc make "linux-headers-$(uname -r)"
-    # Kernel 3.14+ - so it doesn't need patching any more
-    #file=/usr/sbin/update-rc.d; [ -e "$file" ] && cp -n $file{,.bkup}
-    #grep -q '^cups enabled' "$file" 2>/dev/null || echo "cups enabled" >> "$file"
-    #grep -q '^vmware-tools enabled' "$file" 2>/dev/null || echo "vmware-tools enabled" >> "$file"
-    #ln -sf "/usr/src/linux-headers-$(uname -r)/include/generated/uapi/linux/version.h" "/usr/src/linux-headers-$(uname -r)/include/linux/"
-    cp -f /mnt/cdrom/VMwareTools-*.tar.gz /tmp/
-    tar -zxf /tmp/VMwareTools-* -C /tmp/
-    pushd /tmp/vmware-tools-distrib/ >/dev/null
-    echo -e '\n' | timeout 300 perl vmware-install.pl       # Press ENTER for all the default options, wait for 5 minutes to try and install else just quit
-    popd >/dev/null
+    echo -e $YELLOW'[i]'$RESET' Using "Native VMware Tools" (Patched)'
+    apt-get -y -qq install gcc make "linux-headers-$(uname -r)" git
+    git clone git://github.com/rasa/vmware-tools-patches.git /tmp/vmware-tools-patches
+    cp -f /mnt/cdrom/VMwareTools-*.tar.gz /tmp/vmware-tools-patches/downloads/
+    bash /tmp/vmware-tools-patches/untar-and-patch-and-compile.sh
+    #cp -f /mnt/cdrom/VMwareTools-*.tar.gz /tmp/
+    #tar -zxf /tmp/VMwareTools-* -C /tmp/
+    #pushd /tmp/vmware-tools-distrib/ >/dev/null
+    #echo -e '\n' | timeout 300 perl vmware-install.pl       # Press ENTER for all the default options, wait for 5 minutes to try and install else just quit
+    #popd >/dev/null
     umount -f /mnt/cdrom 2>/dev/null
   else                                                      # The fallback is 'open vm tools' ~ http://open-vm-tools.sourceforge.net/about.php
     echo -e $RED'[!]'$RESET' VMware Tools CD/ISO isnt mounted' 1>&2
@@ -138,8 +141,8 @@ elif (dmidecode | grep -iq vmware); then
   fi
   #--- Slow mouse? ~ http://docs.kali.org/general-use/install-vmware-tools-kali-guest
   #apt-get -y -qq install xserver-xorg-input-vmmouse
-#elif [ -e "/path/to/vbox" ]; then
-#  echo -e '\n'$RED'[!]'$RESET' Virtualbox Guest Additions is already installed. Skipping...' 1>&2
+elif [ -e "/etc/init.d/vboxadd" ]; then
+  echo -e '\n'$RED'[!]'$RESET' Virtualbox Guest Additions is already installed. Skipping...' 1>&2
 elif (dmidecode | grep -iq virtualbox); then
   ##### (Optional) Installing Virtualbox Guest Additions.   Note: Need VirtualBox 4.2.xx+ (http://docs.kali.org/general-use/kali-linux-virtual-box-guest)
   echo -e "\n$GREEN[+]$RESET (Optional) Installing Virtualbox Guest Additions"
@@ -160,14 +163,14 @@ elif (dmidecode | grep -iq virtualbox); then
 fi
 
 
-##### Checking display resolutions - just for post install setup
-echo -e "\n$GREEN[+]$RESET Checking possible display resolutions"
-export DISPLAY=:0.0   #[[ -z $SSH_CONNECTION ]] || export DISPLAY=:0.0
-current_res=$(xrandr | grep '\*' | awk '{print $1}')
-if [[ $current_res == "800x600" ]]; then
-  echo -e $YELLOW'[i]'$RESET' Setting display resolution (1152x864) - Only until next reboot!'
-  (xrandr | grep -q 1152x864) && xrandr --size 1152x864
-fi
+##### Checking display resolutions - just for post install setup ***
+#echo -e "\n$GREEN[+]$RESET Checking possible display resolutions"
+#export DISPLAY=:0.0   #[[ -z $SSH_CONNECTION ]] || export DISPLAY=:0.0
+#current_res=$(xrandr | grep '\*' | awk '{print $1}')
+#if [[ $current_res == "800x600" ]]; then
+#  echo -e $YELLOW'[i]'$RESET' Setting display resolution (1152x864) - Only until next reboot!'
+#  (xrandr | grep -q 1152x864) && xrandr --size 1152x864
+#fi
 
 
 ##### Checking to see if there is a second ethernet card (if so, set an static IP address)
@@ -193,11 +196,13 @@ echo -e "\n$GREEN[+]$RESET Setting static & protecting DNS name servers"
 file=/etc/resolv.conf; [ -e "$file" ] && cp -n $file{,.bkup}
 chattr -i "$file" 2>/dev/null
 #--- Remove duplicate results
-#uniq "$file" > "$file".new; mv $file{.new,}
+#uniq "$file" > "$file.new"; mv $file{.new,}
 #--- Use OpenDNS DNS
 #echo -e 'nameserver 208.67.222.222\nnameserver 208.67.220.220' > "$file"
 #--- Use Google DNS
 echo -e 'nameserver 8.8.8.8\nnameserver 8.8.4.4' > "$file"
+#--- Add domain
+#echo -e "domain $domainName\n#search $domainName" >> "$file"
 #--- Protect it
 chattr +i "$file" 2>/dev/null
 
@@ -231,7 +236,7 @@ fi
 #--- Changing time zone
 [ -z "$timezone" ] && timezone=Etc/GMT
 ln -sf /usr/share/zoneinfo/$timezone /etc/localtime   #ln -sf /usr/share/zoneinfo/Etc/GMT
-echo $timezone > /etc/timezone   #Etc/GMT vs Etc/UTC vs UTC vs Europe/London
+echo "$timezone" > /etc/timezone   #Etc/GMT vs Etc/UTC vs UTC vs Europe/London
 ln -sf "/usr/share/zoneinfo/$(cat /etc/timezone)" /etc/localtime
 #--- Setting locale
 #sed -i 's/^# en_/en_/' /etc/locale.gen   #en_GB en_US
@@ -257,7 +262,6 @@ start_time=$(date +%s)
 
 ##### Updating OS from repositories
 echo -e "\n$GREEN[+]$RESET Updating OS from repositories"
-for ITEM in clean autoremove autoclean; do apt-get -y -qq $ITEM; done
 export DEBIAN_FRONTEND=noninteractive
 apt-get -qq update && apt-get -y -qq dist-upgrade --fix-missing
 #--- Enable bleeding edge ~ http://www.kali.org/kali-monday/bleeding-edge-kali-repositories/
@@ -269,9 +273,11 @@ TMP=$(dpkg -l | grep linux-image- | grep -vc meta)
 if [[ "$TMP" -gt 1 ]]; then
   echo -e "\n$YELLOW[i]$RESET Detected multiple kernels installed"
   #echo -e "$YELLOW[i]$RESET   Clean up: apt-get remove --purge $(dpkg -l 'linux-image-*' | sed '/^ii/!d;/'"$(uname -r | sed "s/\(.*\)-\([^0-9]\+\)/\1/")"'/d;s/^[^ ]* [^ ]* \([^ ]*\).*/\1/;/[0-9]/!d')"   # DO NOT RUN IF NOT USING THE LASTEST KERNEL!
-  TMP=$(dpkg -l | grep linux-image | grep -v meta | sort | tail -n 1 | grep "$(uname -r)")
+  TMP=$(dpkg -l | grep linux-image | grep -v meta | sort -t '.' -k 2 -g | tail -n 1 | grep "$(uname -r)")
   [[ -z "$TMP" ]] && echo -e $RED'[!]'$RESET' You are not using the latest kernel' 1>&2 && echo -e "$YELLOW[i]$RESET You have it downloaded & installed, just not using it. You need to **reboot**"
 fi
+#--- Kali's default tools ~ https://www.kali.org/news/kali-linux-metapackages/
+apt-get -y -qq install kali-linux-full
 
 
 ##### Settings services to listen to listen to loopback interface ***
@@ -895,6 +901,7 @@ curl --progress -k -L "http://www.kali.org/images/wallpapers-01/kali-wp-june-201
 curl --progress -k -L "http://imageshack.us/a/img17/4646/vzex.png" >  /usr/share/wallpapers/kali_blue_splat.png
 curl --progress -k -L "http://www.n1tr0g3n.com/wp-content/uploads/2013/03/Kali-Linux-faded-no-Dragon-small-text.png" > /usr/share/wallpapers/kali_black_clean.png
 curl --progress -k -L "http://1hdwallpapers.com/wallpapers/kali_linux.jpg" > /usr/share/wallpapers/kali_black_stripes.jpg
+curl --progress -k -L "http://fc01.deviantart.net/fs71/f/2011/118/e/3/bt___edb_wallpaper_by_xxdigipxx-d3f4nxv.png" > /usr/share/wallpapers/bt___edb_wallpaper_by_xxdigipxx.jpg
 ln -sf /usr/share/wallpapers/kali/contents/images/1440x900.png /usr/share/wallpapers/kali_default-1440x900.jpg
 #--- Change desktop wallpaper (single random pick - on each install).   Note: For now...
 wallpaper=$(shuf -n1 -e /usr/share/wallpapers/kali_*)   #wallpaper=/usr/share/wallpapers/kali_blue_splat.png
@@ -932,16 +939,19 @@ EOF
 #--- Configure file browser (need to re-login for effect)
 mkdir -p /root/.config/Thunar/
 file=/root/.config/Thunar/thunarrc; [ -e "$file" ] && cp -n $file{,.bkup}
+([[ -e "$file" ]] && [[ "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
 sed -i 's/LastShowHidden=.*/LastShowHidden=TRUE/' "$file" 2>/dev/null || echo -e "[Configuration]\nLastShowHidden=TRUE" > /root/.config/Thunar/thunarrc;
 #--- Enable num lock at start up (might not be smart if you're using a smaller keyboard (laptop?)) ~ https://wiki.xfce.org/faq
 #xfconf-query -c keyboards -p /Default/Numlock -s true
 apt-get -y -qq install numlockx
 file=/etc/xdg/xfce4/xinitrc; [ -e "$file" ] && cp -n $file{,.bkup}     #/etc/rc.local
+([[ -e "$file" ]] && [[ "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
 grep -q '^/usr/bin/numlockx' "$file" 2>/dev/null || echo "/usr/bin/numlockx on" >> "$file"
 #--- XFCE fixes for default applications
 mkdir -p /root/.local/share/applications/
 file=/root/.local/share/applications/mimeapps.list; [ -e "$file" ] && cp -n $file{,.bkup}
 [ ! -e "$file" ] && echo '[Added Associations]' > "$file"
+([[ -e "$file" ]] && [[ "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
 for VALUE in file trash; do
   sed -i 's#x-scheme-handler/'$VALUE'=.*#x-scheme-handler/'$VALUE'=exo-file-manager.desktop#' "$file"
   grep -q '^x-scheme-handler/'$VALUE'=' "$file" 2>/dev/null || echo -e 'x-scheme-handler/'$VALUE'=exo-file-manager.desktop' >> "$file"
@@ -987,9 +997,12 @@ rm -f /tmp/Shiki-Colors-Light-Menus.tar*
 echo -e "\n$GREEN[+]$RESET Configuring file browser"
 mkdir -p /root/.config/gtk-2.0/
 file=/root/.config/gtk-2.0/gtkfilechooser.ini; [ -e "$file" ] && cp -n $file{,.bkup}
+([[ -e "$file" ]] && [[ "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
 sed -i 's/^.*ShowHidden.*/ShowHidden=true/' "$file" 2>/dev/null || echo -e "\n[Filechooser Settings]\nLocationMode=path-bar\nShowHidden=true\nExpandFolders=false\nShowSizeColumn=true\nGeometryX=66\nGeometryY=39\nGeometryWidth=780\nGeometryHeight=618\nSortColumn=name\nSortOrder=ascending" > "$file"    #Open/save Window -> Right click -> Show Hidden Files: Enabled
 dconf write /org/gnome/nautilus/preferences/show-hidden-files true
 file=/root/.gtk-bookmarks; [ -e "$file" ] && cp -n $file{,.bkup}
+([[ -e "$file" ]] && [[ "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
+grep -q '^file:///root/Downloads ' "$file" 2>/dev/null || echo 'file:///root/Downloads Downloads' >> "$file"
 (dmidecode | grep -iq vmware) && (mkdir -p /mnt/hgfs/; grep -q '^file:///mnt/hgfs ' "$file" 2>/dev/null || echo 'file:///mnt/hgfs vmshare' >> "$file")
 grep -q '^file:///tmp ' "$file" 2>/dev/null || echo 'file:///tmp tmp' >> "$file"
 grep -q '^file:///usr/local/src ' "$file" 2>/dev/null || echo 'file:///usr/local/src src' >> "$file"
@@ -1022,6 +1035,7 @@ if [[ "$SHELL" == "/bin/zsh" ]]; then source ~/.zshrc else source "$file"; fi
 ##### Configuring bash colour - all users
 echo -e "\n$GREEN[+]$RESET Configuring bash colour"
 file=/etc/bash.bashrc; [ -e "$file" ] && cp -n $file{,.bkup}   #/root/.bashrc
+([[ -e "$file" ]] && [[ "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
 sed -i 's/.*force_color_prompt=.*/force_color_prompt=yes/' "$file"
 grep -q '^force_color_prompt' "$file" 2>/dev/null || echo 'force_color_prompt=yes' >> "$file"
 sed -i 's#PS1='"'"'.*'"'"'#PS1='"'"'${debian_chroot:+($debian_chroot)}\\[\\033\[01;31m\\]\\u@\\h\\\[\\033\[00m\\]:\\[\\033\[01;34m\\]\\w\\[\\033\[00m\\]\\$ '"'"'#' "$file"
@@ -1051,6 +1065,7 @@ for FILE in /etc/bash.bashrc /root/.bashrc /root/.bash_aliases; do    #/etc/prof
 done
 #--- General system ones
 file=/root/.bash_aliases; [ -e "$file" ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
+([[ -e "$file" ]] && [[ "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
 grep -q '^## grep aliases' "$file" 2>/dev/null || echo -e '## grep aliases\nalias grep="grep --color=always"\nalias ngrep="grep -n"\n' >> "$file"
 grep -q '^alias egrep=' "$file" 2>/dev/null || echo -e 'alias egrep="egrep --color=auto"\n' >> "$file"
 grep -q '^alias fgrep=' "$file" 2>/dev/null || echo -e 'alias fgrep="fgrep --color=auto"\n' >> "$file"
@@ -1069,8 +1084,13 @@ grep -q '^## Directory navigation aliases' "$file" 2>/dev/null || echo -e '## Di
 grep -q '^## Add more aliases' "$file" 2>/dev/null || echo -e '## Add more aliases\nalias upd="sudo apt-get update"\nalias upg="sudo apt-get upgrade"\nalias ins="sudo apt-get install"\nalias rem="sudo apt-get purge"\nalias fix="sudo apt-get install -f"\n' >> "$file"
 grep -q '^## Extract file' "$file" 2>/dev/null || echo -e '## Extract file, example. "ex package.tar.bz2"\nex() {\n    if [[ -f $1 ]]; then\n        case $1 in\n            *.tar.bz2)   tar xjf $1  ;;\n            *.tar.gz)    tar xzf $1  ;;\n            *.bz2)       bunzip2 $1  ;;\n            *.rar)       rar x $1    ;;\n            *.gz)        gunzip $1   ;;\n            *.tar)       tar xf $1   ;;\n            *.tbz2)      tar xjf $1  ;;\n            *.tgz)       tar xzf $1  ;;\n            *.zip)       unzip $1    ;;\n            *.Z)         uncompress $1  ;;\n            *.7z)        7z x $1     ;;\n            *)           echo $1 cannot be extracted ;;\n        esac\n    else\n        echo $1 is not a valid file\n    fi\n}\n' >> "$file"
 grep -q '^## strings' "$file" 2>/dev/null || echo -e '## strings\nalias strings="strings -a"\n' >> "$file"
+grep -q '^## history' "$file" 2>/dev/null || echo -e '## history\nalias hg="history | grep"\n' >> "$file"
+grep -q '^## DNS - External IP #1' "$file" 2>/dev/null || echo -e '## DNS - External IP #1\nalias dns1="dig +short @resolver1.opendns.com myip.opendns.com"\n' >> "$file"
+grep -q '^## DNS - External IP #2' "$file" 2>/dev/null || echo -e '## DNS - External IP #2\nalias dns2="dig +short @208.67.222.222 myip.opendns.com"\n' >> "$file"
+grep -q '^## DNS - Check' "$file" 2>/dev/null || echo -e '### DNS - Check ("#.abc" is Okay)\nalias dns3="dig +short @208.67.220.220 which.opendns.com txt"\n' >> "$file"
+#alias ll="ls -l --block-size=\'1 --color=auto"
 #--- Add in tools
-grep -q '^## nmap' "$file" 2>/dev/null || echo -e '## nmap\nalias nmap="nmap --reason"\n' >> "$file"
+grep -q '^## nmap' "$file" 2>/dev/null || echo -e '## nmap\nalias nmap="nmap --reason"\n' >> "$file"    #nmap --reason --open
 grep -q '^## aircrack-ng' "$file" 2>/dev/null || echo -e '## aircrack-ng\nalias aircrack-ng="aircrack-ng -z"\n' >> "$file"
 grep -q '^## metasploit' "$file" 2>/dev/null || echo -e '## metasploit\nalias msfc="service postgresql start; service metasploit start; msfconsole -q \"$@\""\n' >> "$file"
 #airmon-vz --verbose
@@ -1129,6 +1149,7 @@ Name=terminator
 X-XFCE-Commands=/usr/bin/terminator
 EOF
 file=/root/.config/xfce4/helpers.rc; [ -e "$file" ] && cp -n $file{,.bkup}    #exo-preferred-applications   #xdg-mime default
+([[ -e "$file" ]] && [[ "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
 sed -i 's#^TerminalEmulator=.*#TerminalEmulator=custom-TerminalEmulator#' "$file"
 grep -q '^TerminalEmulator=custom-TerminalEmulator' "$file" 2>/dev/null || echo -e 'TerminalEmulator=custom-TerminalEmulator' >> "$file"
 
@@ -1141,6 +1162,7 @@ apt-get -y -qq install zsh git curl
 curl --progress -k -L https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh | sh     #curl -s -L https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh
 #--- Configure zsh
 file=/root/.zshrc; [ -e "$file" ] && cp -n $file{,.bkup}   #/etc/zsh/zshrc
+([[ -e "$file" ]] && [[ "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
 grep -q 'interactivecomments' "$file" 2>/dev/null || echo 'setopt interactivecomments' >> "$file"
 grep -q 'ignoreeof' "$file" 2>/dev/null || echo 'setopt ignoreeof' >> "$file"
 grep -q 'correctall' "$file" 2>/dev/null || echo 'setopt correctall' >> "$file"
@@ -1158,11 +1180,12 @@ chsh -s "$(which zsh)"
 #/usr/bin/env zsh      # Use it
 #source "$file"          # Make sure to reload our config
 #--- Copy it to other user(s)
-#if [ -e /home/$username/ ]; then   # Will do this later on again, if there isn't already a user
+#if [ -e "/home/$username/" ]; then   # Will do this later on again, if there isn't already a user
 #  cp -f /{root,home/$username}/.zshrc
 #  cp -rf /{root,home/$username}/.oh-my-zsh/
 #  chown -R $username\:$group /home/$username/.zshrc /home/$username/.oh-my-zsh/
-#  chsh $username -s "$(which zsh)"
+#  chsh "$username" -s "$(which zsh)"
+#  sed -i 's#^export ZSH=/.*/.oh-my-zsh#export ZSH=/home/'$username'/.oh-my-zsh#' /home/$username/.zshrc
 #fi
 
 
@@ -1242,6 +1265,7 @@ set -g status-right '#[fg=green][#[fg=yellow]%Y-%m-%d #[fg=white]%H:%M#[fg=green
 EOF
 #--- Setup alias
 file=/root/.bash_aliases; [ -e "$file" ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
+([[ -e "$file" ]] && [[ "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
 grep -q '^alias tmux' "$file" 2>/dev/null || echo -e '## tmux\nalias tmux="tmux attach || tmux new"\n' >> "$file"    #alias tmux="tmux attach -t $HOST || tmux new -s $HOST"
 #--- Apply new aliases
 if [[ "$SHELL" == "/bin/zsh" ]]; then source ~/.zshrc else source "$file"; fi
@@ -1293,6 +1317,7 @@ echo -e "\n$GREEN[+]$RESET Configuring vim ~ CLI text editor"
 apt-get -y -qq install vim
 #--- Configure vim
 file=/etc/vim/vimrc; [ -e "$file" ] && cp -n $file{,.bkup}   #/root/.vimrc
+([[ -e "$file" ]] && [[ "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
 sed -i 's/.*syntax on/syntax on/' "$file"
 sed -i 's/.*set background=dark/set background=dark/' "$file"
 sed -i 's/.*set showcmd/set showcmd/' "$file"
@@ -1314,9 +1339,11 @@ grep -q '^set laststatus' "$file" 2>/dev/null || echo -e 'set laststatus=2\nset 
 grep -q '^filetype on' "$file" 2>/dev/null || echo -e 'filetype on\nfiletype plugin on\nsyntax enable\nset grepprg=grep\ -nH\ $*' >> "$file"     # Syntax highlighting
 grep -q '^set wildmenu' "$file" 2>/dev/null || echo -e 'set wildmenu\nset wildmode=list:longest,full' >> "$file"                                 # Tab completion
 grep -q '^set pastetoggle=<F9>' "$file" 2>/dev/null || echo -e 'set pastetoggle=<F9>' >> "$file"                                                 # Hotkey - turning off auto indent when pasting
+grep -q '^:command Q q' "$file" 2>/dev/null || echo -e ':command Q q' >> "$file"                                                                 # Fix stupid typo I always make
 #--- Set as default editor
 export EDITOR="vim"   #update-alternatives --config editor
 file=/etc/bash.bashrc; [ -e "$file" ] && cp -n $file{,.bkup}
+([[ -e "$file" ]] && [[ "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
 grep -q '^EDITOR' "$file" 2>/dev/null || echo 'EDITOR="vim"' >> "$file"
 git config --global core.editor "vim"
 #--- Set as default mergetool
@@ -1333,6 +1360,7 @@ export DISPLAY=:0.0   #[[ -z $SSH_CONNECTION ]] || export DISPLAY=:0.0
 timeout 15 iceweasel   #iceweasel & sleep 15; killall -q -w iceweasel >/dev/null   # Start and kill. Files needed for first time run
 timeout 5 killall -9 -q -w iceweasel >/dev/null
 file=$(find /root/.mozilla/firefox/*.default*/ -maxdepth 1 -type f -name 'prefs.js' -print -quit) && [ -e "$file" ] && cp -n $file{,.bkup}   #/etc/iceweasel/pref/*.js
+([[ -e "$file" ]] && [[ "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
 sed -i 's/^.*browser.startup.page.*/user_pref("browser.startup.page", 0);' "$file" 2>/dev/null || echo 'user_pref("browser.startup.page", 0);' >> "$file"                                              # Iceweasel -> Edit -> Preferences -> General -> When firefox starts: Show a blank page
 sed -i 's/^.*privacy.donottrackheader.enabled.*/user_pref("privacy.donottrackheader.enabled", true);' "$file" 2>/dev/null || echo 'user_pref("privacy.donottrackheader.enabled", true);' >> "$file"    # Privacy -> Enable: Tell websites I do not want to be tracked
 sed -i 's/^.*browser.showQuitWarning.*/user_pref("browser.showQuitWarning", true);' "$file" 2>/dev/null || echo 'user_pref("browser.showQuitWarning", true);' >> "$file"                               # Stop Ctrl+Q from quitting without warning
@@ -1492,8 +1520,8 @@ TEXT
 \${top name 5}\${top pid 5}  \${top cpu 5}  \${top mem 5}
 
 \${color dodgerblue3}MEMORY & SWAP \${hr 2}\$color
-\${color white}RAM\$color   \$memperc%  \${membar 6}\$color
-\${color white}Swap\$color   \$swapperc%  \${swapbar 6}\$color
+\${color white}RAM\$color  \$alignr\$memperc%  \${membar 6,170}\$color
+\${color white}Swap\$color  \$alignr\$swapperc%  \${swapbar 6,170}\$color
 
 \${color dodgerblue3}FILESYSTEM \${hr 2}\$color
 \${color white}root\$color \${fs_free_perc /}% free\${alignr}\${fs_free /}/ \${fs_size /}
@@ -1563,6 +1591,7 @@ service metasploit start
 #--- Misc
 export GOCOW=1   # Always a cow logo ;)
 file=/root/.bashrc; [ -e "$file" ] && cp -n $file{,.bkup}
+([[ -e "$file" ]] && [[ "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
 grep -q '^GOCOW' "$file" 2>/dev/null || echo 'GOCOW=1' >> "$file"
 #--- Metasploit 4.10.x+ database fix #1 ~ https://community.rapid7.com/community/metasploit/blog/2014/08/25/not-reinventing-the-wheel
 mkdir -p /root/.msf4/
@@ -1579,6 +1608,13 @@ msfconsole -r /tmp/msf.rc
 #--- Setup GUI
 #bash /opt/metasploit/scripts/launchui.sh    #*** Doesn't automate. Takes a little while to kick in...
 #xdg-open https://127.0.0.1:3790/
+#--- Setup Armitage
+#export MSF_DATABASE_CONFIG=/opt/metasploit/apps/pro/ui/config/database.yml
+#file=/root/.bash_aliases; [ -e "$file" ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
+#([[ -e "$file" ]] && [[ "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
+#grep -q 'MSF_DATABASE_CONFIG' "$file" 2>/dev/null || echo -e 'MSF_DATABASE_CONFIG=/opt/metasploit/apps/pro/ui/config/database.yml\n' >> "$file"
+#chmod 0644 /opt/metasploit/apps/pro/ui/config/database.yml
+#msfrpcd -U msf -P test -f -S -a 127.0.0.1
 #--- Remove old temp files
 rm -f /tmp/msf.rc
 
@@ -1731,15 +1767,15 @@ unset http_proxy
 ##### Installing sparta
 echo -e "\n$GREEN[+]$RESET Installing sparta ~ GUI automatic wrapper"
 apt-get -y -qq install git
-git clone git://github.com/secforce/sparta.git /usr/share/sparta_git/
-pushd /usr/share/sparta_git/ >/dev/null
+git clone git://github.com/secforce/sparta.git /usr/share/sparta-git/
+pushd /usr/share/sparta-git/ >/dev/null
 git pull
 popd >/dev/null
-file=/usr/local/bin/sparta_git
+file=/usr/local/bin/sparta-git
 cat <<EOF > "$file"
 #!/bin/bash
 
-cd /usr/share/sparta_git/ && python sparta.py "\$@"
+cd /usr/share/sparta-git/ && python sparta.py "\$@"
 EOF
 chmod +x "$file"
 
@@ -1771,13 +1807,14 @@ chmod +x "$file"
 
 ##### Installing silver searcher
 echo -e "\n$GREEN[+]$RESET Installing silver searcher ~ code searching"
-apt-get -y -qq install automake pkg-config libpcre3-dev zlib1g-dev liblzma-dev --force-yes
+apt-get -y -qq install git automake pkg-config libpcre3-dev zlib1g-dev liblzma-dev --force-yes
 git clone git://github.com/ggreer/the_silver_searcher.git /usr/local/src/the_silver_searcher
 pushd /usr/local/src/the_silver_searcher/ >/dev/null
 git pull
 bash ./build.sh
 make -s install
 popd >/dev/null
+#ag <name>
 
 
 ##### Installing rips
@@ -1874,6 +1911,7 @@ echo -e "\n$GREEN[+]$RESET Installing axel ~ CLI download manager"
 apt-get -y -qq install axel
 #--- Setup alias
 file=/root/.bash_aliases; [ -e "$file" ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
+([[ -e "$file" ]] && [[ "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
 grep -q '^alias axel' "$file" 2>/dev/null || echo -e '## axel\nalias axel="axel -a"\n' >> "$file"
 #--- Apply new aliases
 if [[ "$SHELL" == "/bin/zsh" ]]; then source ~/.zshrc else source "$file"; fi
@@ -1934,6 +1972,7 @@ apt-get -y -qq install unace unrar rar unzip zip p7zip p7zip-full p7zip-rar   # 
 ##### Installing PPTP VPN support
 echo -e "\n$GREEN[+]$RESET Installing PPTP VPN support"
 apt-get -y -qq install network-manager-pptp-gnome network-manager-pptp
+#apt-get -y -qq install network-manager-openvpn network-manager-openvpn-gnome network-manager-pptp network-manager-pptp-gnome network-manager-strongswan network-manager-vpnc network-manager-vpnc-gnome network-manager-openconnect network-manager-openconnect-gnome network-manager-iodine network-manager-iodine-gnome
 
 
 ##### Installing flash
@@ -1970,8 +2009,8 @@ apt-get -y -qq install lbd
 ##### Installing wafw00f
 echo -e "\n$GREEN[+]$RESET Installing wafw00f ~ WAF detector"
 apt-get -y -qq install git python python-pip
-git clone git://github.com/sandrogauci/wafw00f.git /usr/share/wafw00f_git/
-pushd /usr/share/wafw00f_git/ >/dev/null
+git clone git://github.com/sandrogauci/wafw00f.git /usr/share/wafw00f-git/
+pushd /usr/share/wafw00f-git/ >/dev/null
 git pull
 python setup.py install
 popd >/dev/null
@@ -1984,6 +2023,7 @@ mkdir -p /usr/share/nmap/scripts/vulscan/
 curl --progress -k -L "http://www.computec.ch/projekte/vulscan/download/nmap_nse_vulscan-2.0.tar.gz" > /tmp/nmap_nse_vulscan.tar.gz    #***!!! hardcoded version! Need to manually check for updates
 gunzip /tmp/nmap_nse_vulscan.tar.gz
 tar -xf /tmp/nmap_nse_vulscan.tar -C /usr/share/nmap/scripts/
+chmod -R 0755 /usr/share/nmap/scripts/; find /usr/share/nmap/scripts/ -type f -exec chmod 0644 {} \;
 #--- Remove old temp files
 rm -f /tmp/nmap_nse_vulscan.tar*
 
@@ -1996,15 +2036,15 @@ apt-get -y -qq install unicornscan
 ##### Installing onetwopunch
 echo -e "\n$GREEN[+]$RESET Installing onetwopunch ~ unicornscan & nmap wrapper"
 apt-get -y -qq install git nmap unicornscan
-git clone git://github.com/superkojiman/onetwopunch.git /usr/share/onetwopunch_git/
-pushd /usr/share/onetwopunch_git/ >/dev/null
+git clone git://github.com/superkojiman/onetwopunch.git /usr/share/onetwopunch-git/
+pushd /usr/share/onetwopunch-git/ >/dev/null
 git pull
 popd >/dev/null
-file=/usr/local/bin/onetwopunch_git
+file=/usr/local/bin/onetwopunch-git
 cat <<EOF > "$file"
 #!/bin/bash
 
-cd /usr/share/onetwopunch_git/ && bash onetwopunch.sh "\$@"
+cd /usr/share/onetwopunch-git/ && bash onetwopunch.sh "\$@"
 EOF
 chmod +x "$file"
 
@@ -2041,8 +2081,8 @@ apt-get -y -qq install webhandler
 ##### Installing azazel
 echo -e "\n$GREEN[+]$RESET Installing azazel ~ linux userland rootkit"
 apt-get -y -qq install git
-git clone git://github.com/chokepoint/azazel.git /usr/share/azazel_git/
-pushd /usr/share/azazel_git/ >/dev/null
+git clone git://github.com/chokepoint/azazel.git /usr/share/azazel-git/
+pushd /usr/share/azazel-git/ >/dev/null
 git pull
 popd >/dev/null
 
@@ -2050,20 +2090,36 @@ popd >/dev/null
 ##### Installing b374k
 echo -e "\n$GREEN[+]$RESET Installing b374k ~ (PHP) web shell"
 apt-get -y -qq install git php5-cli
-git clone git://github.com/b374k/b374k.git /usr/share/b374k_git/
-pushd /usr/share/b374k_git/ >/dev/null
+git clone git://github.com/b374k/b374k.git /usr/share/b374k-git/
+pushd /usr/share/b374k-git/ >/dev/null
 git pull
 php index.php -o b374k.php -s
 popd >/dev/null
 #--- Link to others
 apt-get -y -qq install webshells
-ln -sf /usr/share/b374k_git /usr/share/webshells/php/b374k
+ln -sf /usr/share/b374k-git /usr/share/webshells/php/b374k
+
+
+##### Installing cmdsql
+echo -e "\n$GREEN[+]$RESET Installing cmdsql ~ (APSX) web shell"
+apt-get -y -qq install git
+git clone git://github.com/NetSPI/cmdsql.git /usr/share/cmdsql-git/
+pushd /usr/share/b374k-git/ >/dev/null
+git pull
+popd >/dev/null
+#--- Link to others
+apt-get -y -qq install webshells
+ln -sf /usr/share/cmdsql-git /usr/share/webshells/aspx/cmdsql
 
 
 ##### Installing jsp file browser
 echo -e "\n$GREEN[+]$RESET Installing jsp file browser ~ (JSP) web shell"
 apt-get -y -qq install curl
-curl --progress -k -L "http://www.vonloesch.de/files/browser.zip" > /tmp/jsp.zip && unzip -q -o -d /usr/share/webshells_jsp/ /tmp/jsp.zip
+mkdir -p /usr/share/jsp-filebrowser/
+curl --progress -k -L "http://www.vonloesch.de/files/browser.zip" > /tmp/jsp.zip && unzip -q -o -d /usr/share/jsp-filebrowser/ /tmp/jsp.zip
+#--- Link to others
+apt-get -y -qq install webshells
+ln -sf /usr/share/jsp-filebrowser /usr/share/webshells/jsp/jsp-filebrowser
 #--- Remove old temp files
 rm -f /tmp/jsp.zip
 
@@ -2071,6 +2127,25 @@ rm -f /tmp/jsp.zip
 ##### Installing htshells
 echo -e "\n$GREEN[+]$RESET Installing htshells ~ (htdocs/apache) web shells"
 apt-get -y -qq install htshells
+#--- Link to others
+apt-get -y -qq install webshells
+ln -sf /usr/share/htshells /usr/share/webshells/htshells
+
+
+##### Installing pipal (GIT)
+echo -e "\n$GREEN[+]$RESET Installing pipal (GIT) ~ password analyser"
+apt-get -y -qq install git
+git clone git://github.com/digininja/pipal.git /usr/share/pipal-git/
+pushd /usr/share/pipal-git/ >/dev/null
+git pull
+popd >/dev/null
+file=/usr/local/bin/pipal-git
+cat <<EOF > "$file"
+#!/bin/bash
+
+cd /usr/share/pipal-git/ && ruby pipal.rb "\$@"
+EOF
+chmod +x "$file"
 
 
 ##### Installing bridge-utils
@@ -2080,8 +2155,9 @@ apt-get -y -qq install bridge-utils
 
 ##### Installing WPA2-HalfHandshake-Crack
 echo -e "\n$GREEN[+]$RESET Installing WPA2-HalfHandshake-Crack ~ rogue AP todo WPA2 handshakes without AP"
-git clone git://github.com/dxa4481/WPA2-HalfHandshake-Crack.git /usr/share/wifiphisher_git/
-pushd /usr/share/wifiphisher_git/ >/dev/null
+apt-get -y -qq install git
+git clone git://github.com/dxa4481/WPA2-HalfHandshake-Crack.git /usr/share/wifiphisher-git/
+pushd /usr/share/wifiphisher-git/ >/dev/null
 git pull
 popd >/dev/null
 
@@ -2095,15 +2171,15 @@ mkdir -p /usr/share/mana-toolkit/www/facebook/    #*** BUG FIX: https://bugs.kal
 ##### Installing wifiphisher
 echo -e "\n$GREEN[+]$RESET Installing wifiphisher ~ automated Wi-Fi phishing"
 apt-get -y -qq install git
-git clone git://github.com/sophron/wifiphisher.git /usr/share/wifiphisher_git/
-pushd /usr/share/wifiphisher_git/ >/dev/null
+git clone git://github.com/sophron/wifiphisher.git /usr/share/wifiphisher-git/
+pushd /usr/share/wifiphisher-git/ >/dev/null
 git pull
 popd >/dev/null
-file=/usr/local/bin/wifiphisher_git
+file=/usr/local/bin/wifiphisher-git
 cat <<EOF > "$file"
 #!/bin/bash
 
-cd /usr/share/wifiphisher_git/ && python wifiphisher.py "\$@"
+cd /usr/share/wifiphisher-git/ && python wifiphisher.py "\$@"
 EOF
 chmod +x "$file"
 
@@ -2111,8 +2187,8 @@ chmod +x "$file"
 ##### Installing hostapd-wpe-extended
 echo -e "\n$GREEN[+]$RESET Installing hostapd-wpe-extended ~ rogue AP for WPA-Enterprise"
 apt-get -y -qq install git
-git clone git://github.com/NerdyProjects/hostapd-wpe-extended.git /usr/share/hostapd-wpe-extended_git/
-pushd /usr/share/hostapd-wpe-extended_git/ >/dev/null
+git clone git://github.com/NerdyProjects/hostapd-wpe-extended.git /usr/share/hostapd-wpe-extended-git/
+pushd /usr/share/hostapd-wpe-extended-git/ >/dev/null
 git pull
 popd >/dev/null
 
@@ -2158,18 +2234,19 @@ apt-get -y -qq install zerofree
 
 ##### Installing gcc & multilib
 echo -e "\n$GREEN[+]$RESET Installing gcc & multilibc ~ compiling libraries"
-apt-get -y -qq install gcc-multilib
+apt-get -y -qq install gcc cc gcc-multilib make automake
 #*** I know its messy...
 for FILE in libc6 libc6-dev libc6-amd64 libc6-dev-amd64 libc6-i386 libc6-dev-i386 libc6-i686 libc6-dev-i686; do
   apt-get -y -qq install "$FILE" 2>/dev/null
 done
 
 
-##### Installing mingw & cross compiling suite
-echo -e "\n$GREEN[+]$RESET Installing mingw & cross compiling suite"
+##### Installing mingw & cross compiling suites
+echo -e "\n$GREEN[+]$RESET Installing mingw & cross compiling suites"
 apt-get -y -qq install mingw-w64 binutils-mingw-w64 gcc-mingw-w64 cmake
 apt-get -y -qq install mingw-w64-dev mingw-w64-tools
-apt-get -y -qq install gcc-mingw-w64-i686
+apt-get -y -qq install gcc-mingw-w64-i686 gcc-mingw-w64-x86-64
+apt-get -y -qq install mingw32
 
 
 ##### Installing WINE
@@ -2212,8 +2289,8 @@ apt-get -y -qq install backdoor-factory
 ##### Installing the Backdoor Factory Proxy (BDFProxy)
 echo -e "\n$GREEN[+]$RESET Installing backdoor factory ~ patches binaries files via MITM"
 apt-get -y -qq install git
-git clone git://github.com/secretsquirrel/BDFProxy.git /usr/share/bdfproxy_git/
-pushd /usr/share/bdfproxy_git/ >/dev/null
+git clone git://github.com/secretsquirrel/BDFProxy.git /usr/share/bdfproxy-git/
+pushd /usr/share/bdfproxy-git/ >/dev/null
 git pull
 popd >/dev/null
 
@@ -2323,24 +2400,44 @@ apt-file update
 ##### Installing sqlmap (GIT)
 echo -e "\n$GREEN[+]$RESET Installing sqlmap (GIT) ~ automatic SQL injection"
 apt-get -y -qq install git
-git clone git://github.com/sqlmapproject/sqlmap.git /usr/share/sqlmap_git/
-pushd /usr/share/sqlmap_git/ >/dev/null
+git clone git://github.com/sqlmapproject/sqlmap.git /usr/share/sqlmap-git/
+pushd /usr/share/sqlmap-git/ >/dev/null
 git pull
 popd >/dev/null
-file=/usr/local/bin/sqlmap_git
+file=/usr/local/bin/sqlmap-git
 cat <<EOF > "$file"
 #!/bin/bash
 
-cd /usr/share/sqlmap_git/ && python sqlmap.py "\$@"
+cd /usr/share/sqlmap-git/ && python sqlmap.py "\$@"
 EOF
 chmod +x "$file"
+
+
+##### Installing Debian weak SSH keys
+#echo -e "\n$GREEN[+]$RESET Installing Debian weak SSH keys ~ OpenSSL predictable PRNG"
+#dpkg --remove --force-depends openssh-blacklist
+#grep -q '^PermitBlacklistedKeys yes' /etc/ssh/sshd_config || echo PermitBlacklistedKeys yes >> /etc/ssh/sshd_config
+#apt-get -y -qq install git
+#git clone git://github.com/g0tmi1k/debian-ssh.git /usr/share/exploit-debianssh/
+#pushd /usr/share/exploit-debianssh/ >/dev/null
+#git pull
+#popd >/dev/null
+
+
+##### Installing Exploit-DB binaries
+#echo -e "\n$GREEN[+]$RESET Installing Installing Exploit-DB binaries ~ pre-compiled exploits"
+#apt-get -y -qq install git
+#git clone git://github.com/offensive-security/exploit-database-bin-sploits.git /usr/share/exploitdb-bin/
+#pushd /usr/share/exploitdb-bin/ >/dev/null
+#git pull
+#popd >/dev/null
 
 
 ##### Installing Babel scripts
 echo -e "\n$GREEN[+]$RESET Installing Babel scripts ~ post exploitation scripts"
 apt-get -y -qq install git
-git clone git://github.com/attackdebris/babel-sf.git /usr/share/babel-sf_git/
-pushd /usr/share/babel-sf_git/ >/dev/null
+git clone git://github.com/attackdebris/babel-sf.git /usr/share/babel-sf-git/
+pushd /usr/share/babel-sf-git/ >/dev/null
 git pull
 popd >/dev/null
 
@@ -2348,8 +2445,8 @@ popd >/dev/null
 ##### Installing python-pty-shells
 echo -e "\n$GREEN[+]$RESET Installing python-pty-shells ~ PTY shells"
 apt-get -y -qq install git
-git clone git://github.com/infodox/python-pty-shells.git /usr/share/python-pty-shells_git/
-pushd /usr/share/python-pty-shells_git/ >/dev/null
+git clone git://github.com/infodox/python-pty-shells.git /usr/share/python-pty-shells-git/
+pushd /usr/share/python-pty-shells-git/ >/dev/null
 git pull
 popd >/dev/null
 
@@ -2357,24 +2454,33 @@ popd >/dev/null
 ##### Installing pwntools
 echo -e "\n$GREEN[+]$RESET Installing pwntools ~ handy CTF tools"
 apt-get -y -qq install git
-git clone git://github.com/Gallopsled/pwntools.git /usr/share/pwntools_git/
-pushd /usr/share/pwntools_git/ >/dev/null
+git clone git://github.com/Gallopsled/pwntools.git /usr/share/pwntools-git/
+pushd /usr/share/pwntools-git/ >/dev/null
 git pull
 popd >/dev/null
+
+
+##### Installing nullsecurity tool suite
+#echo -e "\n$GREEN[+]$RESET Installing nullsecurity tool suite ~ collection of tools"
+#apt-get -y -qq install git
+#git clone git://github.com/nullsecuritynet/tools.git /usr/share/nullsecuritynet-git/
+#pushd /usr/share/pwntools-git/ >/dev/null
+#git pull
+#popd >/dev/null
 
 
 ##### Installing wig
 echo -e "\n$GREEN[+]$RESET Installing wig ~ web app detection"
 apt-get -y -qq install git
-git clone git://github.com/jekyc/wig.git /usr/share/wig_git/
-pushd /usr/share/wig_git/ >/dev/null
+git clone git://github.com/jekyc/wig.git /usr/share/wig-git/
+pushd /usr/share/wig-git/ >/dev/null
 git pull
 popd >/dev/null
-file=/usr/local/bin/wig_git
+file=/usr/local/bin/wig-git
 cat <<EOF > "$file"
 #!/bin/bash
 
-cd /usr/share/wig_git/ && python wig.py "\$@"
+cd /usr/share/wig-git/ && python wig.py "\$@"
 EOF
 chmod +x "$file"
 
@@ -2382,15 +2488,15 @@ chmod +x "$file"
 ##### Installing CMSmap
 echo -e "\n$GREEN[+]$RESET Installing CMSmap ~ CMS detection"
 apt-get -y -qq install git
-git clone git://github.com/Dionach/CMSmap.git /usr/share/cmsmap_git/
-pushd /usr/share/cmsmap_git/ >/dev/null
+git clone git://github.com/Dionach/CMSmap.git /usr/share/cmsmap-git/
+pushd /usr/share/cmsmap-git/ >/dev/null
 git pull
 popd >/dev/null
-file=/usr/local/bin/cmsmap_git
+file=/usr/local/bin/cmsmap-git
 cat <<EOF > "$file"
 #!/bin/bash
 
-cd /usr/share/cmsmap_git/ && python cmsmap.py "\$@"
+cd /usr/share/cmsmap-git/ && python cmsmap.py "\$@"
 EOF
 chmod +x "$file"
 
@@ -2398,8 +2504,8 @@ chmod +x "$file"
 ##### Installing CMSScanner
 #echo -e "\n$GREEN[+]$RESET Installing CMSScanner ~ CMS detection"
 #apt-get -y -qq install git
-#git clone git://github.com/wpscanteam/CMSScanner.git /usr/share/cmsscanner_git/
-#pushd /usr/share/cmsscanner_git/ >/dev/null
+#git clone git://github.com/wpscanteam/CMSScanner.git /usr/share/cmsscanner-git/
+#pushd /usr/share/cmsscanner-git/ >/dev/null
 #git pull
 #bundle install
 #popd >/dev/null
@@ -2408,15 +2514,15 @@ chmod +x "$file"
 ##### Installing droopescan
 echo -e "\n$GREEN[+]$RESET Installing droopescan ~ Drupal vulnerability scanner"
 apt-get -y -qq install git
-git clone git://github.com/droope/droopescan.git /usr/share/droopescan_git/
-pushd /usr/share/droopescan_git/ >/dev/null
+git clone git://github.com/droope/droopescan.git /usr/share/droopescan-git/
+pushd /usr/share/droopescan-git/ >/dev/null
 git pull
 popd >/dev/null
-file=/usr/local/bin/droopescan_git
+file=/usr/local/bin/droopescan-git
 cat <<EOF > "$file"
 #!/bin/bash
 
-cd /usr/share/droopescan_git/ && python droopescan "\$@"
+cd /usr/share/droopescan-git/ && python droopescan "\$@"
 EOF
 chmod +x "$file"
 
@@ -2424,15 +2530,15 @@ chmod +x "$file"
 ##### Installing wpscan (GIT)
 echo -e "\n$GREEN[+]$RESET Installing wpscan (GIT) ~ WordPress vulnerability scanner"
 apt-get -y -qq install git
-git clone git://github.com/wpscanteam/wpscan.git /usr/share/wpscan_git/
-pushd /usr/share/wpscan_git/ >/dev/null
+git clone git://github.com/wpscanteam/wpscan.git /usr/share/wpscan-git/
+pushd /usr/share/wpscan-git/ >/dev/null
 git pull
 popd >/dev/null
-file=/usr/local/bin/wpscan_git
+file=/usr/local/bin/wpscan-git
 cat <<EOF > "$file"
 #!/bin/bash
 
-cd /usr/share/wpscan_git/ && ruby wpscan.rb "\$@"
+cd /usr/share/wpscan-git/ && ruby wpscan.rb "\$@"
 EOF
 chmod +x "$file"
 
@@ -2463,7 +2569,7 @@ apt-get -y -qq install pure-ftpd
 #--- Setup pure-ftpd
 mkdir -p /var/ftp/
 groupdel ftpgroup 2>/dev/null; groupadd ftpgroup
-userdel ftp 2>/dev/null; useradd -d /var/ftp/ -s /bin/false -c "FTP user" -g ftpgroup ftp
+userdel ftp 2>/dev/null; useradd -r -M -d /var/ftp/ -s /bin/false -c "FTP user" -g ftpgroup ftp
 chown -R ftp\:ftpgroup /var/ftp/
 chmod -R 0755 /var/ftp/
 pure-pw userdel ftp 2>/dev/null; echo -e '\n' | pure-pw useradd ftp -u ftp -d /var/ftp/
@@ -2494,7 +2600,8 @@ echo -e "\n$GREEN[+]$RESET Configuring samba ~ file transfer method"
 #--- Installing samba
 apt-get -y -qq install samba
 #--- Create samba user
-useradd -M -d /nonexistent -s /bin/false samba
+groupdel smbgroup 2>/dev/null; groupadd smbgroup
+userdel samba 2>/dev/null; useradd -r -M -d /nonexistent -s /bin/false -c "Samba user" -g smbgroup samba
 #--- Use the samba user
 file=/etc/samba/smb.conf; [ -e "$file" ] && cp -n $file{,.bkup}
 sed -i 's/guest account = .*/guest account = samba/' "$file" 2>/dev/null || sed -i 's#\[global\]#\[global\]\n   guest account = samba#' "$file"
@@ -2511,7 +2618,7 @@ EOF
 #--- Create samba path and configure it
 mkdir -p /var/samba/
 chown -R samba\:samba /var/samba/
-chmod -R 0770 /var/samba/
+chmod -R 0755 /var/samba/
 #--- Check result
 #service samba restart
 #smbclient -L \\127.0.0.1 -N
@@ -2551,7 +2658,7 @@ ssh-keygen -b 4096 -t rsa -f /root/.ssh/id_rsa -P ""
 ##### Cleaning the system
 echo -e "\n$GREEN[+]$RESET Cleaning the system"
 #--- Clean package manager
-for FILE in clean autoremove autoclean; do apt-get -y -qq "$FILE"; done                # Clean up
+for FILE in clean remove autoremove autoclean; do apt-get -y -qq "$FILE"; done         # Clean up
 apt-get -y -qq purge $(dpkg -l | tail -n +6 | egrep -v '^(h|i)i' | awk '{print $2}')   # Purged packages
 #--- Update slocate database
 updatedb
@@ -2559,7 +2666,7 @@ updatedb
 cd ~/ &>/dev/null
 #--- Remove any history files (as they could contain sensitive info)
 [ "$SHELL" == "/bin/zsh" ] || history -c
-for i in $(cut -d: -f6 /etc/passwd | sort | uniq); do
+for i in $(cut -d: -f6 /etc/passwd | sort -u); do
   [ -e "$i" ] && find "$i" -type f -name '.*_history' -delete
 done
 
@@ -2569,7 +2676,7 @@ finish_time=$(date +%s)
 echo -e "\n$YELLOW[i]$RESET Time (roughly) taken: $(( $(( finish_time - start_time )) / 60 )) minutes"
 
 
-#-Done--------------------------------------------------#
+#-Done--------------------------------------------------------#
 
 
 ##### Done!
