@@ -1,6 +1,6 @@
 #!/bin/bash
 #-Metadata----------------------------------------------------#
-#  Filename: kali.sh                     (Update: 2015-03-14) #
+#  Filename: kali.sh                     (Update: 2015-04-01) #
 #-Info--------------------------------------------------------#
 #  Personal post install script for Kali Linux.               #
 #-Author(s)---------------------------------------------------#
@@ -24,7 +24,7 @@
 if [ 1 -eq 0 ]; then    # This is never true, thus it acts as block comments ;)
 ### One liner - Grab the latest version and execute! ###########################
 wget -qO- https://raw.github.com/g0tmi1k/os-scripts/master/kali.sh | bash
-## Shorten URL >>>  wget -qO- http://bit.do/postkali | bash  <<<
+## Shorten URL:  >>>  wget -qO- http://bit.do/postkali | bash  <<<
 #curl -s -L -k https://raw.github.com/g0tmi1k/kali-postinstall/master/kali_postinstall.sh | nohup bash
 ################################################################################
 fi
@@ -36,10 +36,9 @@ keyboardlayout="gb"         # Great Britain
 timezone="Europe/London"    # London, Europe
 
 
-##### (Optional) Don't ever update these packages
-#for x in metasploit metasploit-framework; do
-#  echo "$x hold" | dpkg --set-selections
-#done
+##### Optional steps
+hardenDNS=false             # Set static & lock DNS name server
+freezeMSF=false             # Disable updating Metasploit
 
 
 ##### (Optional) Enable debug mode?
@@ -54,7 +53,19 @@ BLUE="\033[01;34m"
 RESET="\033[00m"
 
 
-#-Start-------------------------------------------------#
+##### Read command line arguments
+for x in $( tr '[:upper:]' '[:lower:]' <<< "$@" ); do
+  if [ "${x}" == "--osx" ]; then
+    keyboardApple=true
+  elif [ "${x}" == "--dns" ]; then
+    hardenDNS=true
+  elif [ "${x}" == "--metasploit" ]; then
+    freezeMSF=true
+  fi
+done
+
+
+#-Start-------------------------------------------------------#
 
 
 ##### Check if we are running as root - else this script will fail (hard!)
@@ -191,20 +202,22 @@ EOF
 fi
 
 
-##### Setting static & protecting DNS name servers.   Note: May cause issues with forced values (e.g. captive portals etc)
-echo -e "\n$GREEN[+]$RESET Setting static & protecting DNS name servers"
-file=/etc/resolv.conf; [ -e "$file" ] && cp -n $file{,.bkup}
-chattr -i "$file" 2>/dev/null
-#--- Remove duplicate results
-#uniq "$file" > "$file.new"; mv $file{.new,}
-#--- Use OpenDNS DNS
-#echo -e 'nameserver 208.67.222.222\nnameserver 208.67.220.220' > "$file"
-#--- Use Google DNS
-echo -e 'nameserver 8.8.8.8\nnameserver 8.8.4.4' > "$file"
-#--- Add domain
-#echo -e "domain $domainName\n#search $domainName" >> "$file"
-#--- Protect it
-chattr +i "$file" 2>/dev/null
+if [ "$hardenDNS" != "false" ]; then
+  ##### Setting static & protecting DNS name servers.   Note: May cause issues with forced values (e.g. captive portals etc)
+  echo -e "\n$GREEN[+]$RESET Setting static & protecting DNS name servers"
+  file=/etc/resolv.conf; [ -e "$file" ] && cp -n $file{,.bkup}
+  chattr -i "$file" 2>/dev/null
+  #--- Remove duplicate results
+  #uniq "$file" > "$file.new"; mv $file{.new,}
+  #--- Use OpenDNS DNS
+  #echo -e 'nameserver 208.67.222.222\nnameserver 208.67.220.220' > "$file"
+  #--- Use Google DNS
+  echo -e 'nameserver 8.8.8.8\nnameserver 8.8.4.4' > "$file"
+  #--- Add domain
+  #echo -e "domain $domainName\n#search $domainName" >> "$file"
+  #--- Protect it
+  chattr +i "$file" 2>/dev/null
+fi
 
 
 ##### Updating hostname (to 'kali') - but not domain name ***
@@ -234,7 +247,7 @@ if [ ! -z "$keyboardlayout" ]; then
   #dpkg-reconfigure -f noninteractive keyboard-configuration   #dpkg-reconfigure console-setup   #dpkg-reconfigure keyboard-configuration -u    #need to restart xserver for effect
 fi
 #--- Changing time zone
-[ -z "$timezone" ] && timezone=Etc/GMT
+[ -z "$timezone" ] && timezone=Etc/UTC                #Etc/GMT vs Etc/UTC vs UTC
 ln -sf /usr/share/zoneinfo/$timezone /etc/localtime   #ln -sf /usr/share/zoneinfo/Etc/GMT
 echo "$timezone" > /etc/timezone   #Etc/GMT vs Etc/UTC vs UTC vs Europe/London
 ln -sf "/usr/share/zoneinfo/$(cat /etc/timezone)" /etc/localtime
@@ -260,8 +273,19 @@ update-rc.d ntp enable 2>/dev/null
 start_time=$(date +%s)
 
 
+if [ "$freezeMSF" != "false" ]; then
+  ##### Don't ever update these packages
+  echo -e "\n$GREEN[+]$RESET Don't ever update these packages"
+  for x in metasploit metasploit-framework metasploit-common; do
+    echo -e "\n$YELLOW[i]$RESET Freezing: $x"
+    echo "$x hold" | dpkg --set-selections
+  done
+fi
+
+
 ##### Updating OS from repositories
 echo -e "\n$GREEN[+]$RESET Updating OS from repositories"
+for FILE in clean autoremove; do apt-get -y -qq "$FILE"; done         # Clean up      clean remove autoremove autoclean
 export DEBIAN_FRONTEND=noninteractive
 apt-get -qq update && apt-get -y -qq dist-upgrade --fix-missing
 #--- Enable bleeding edge ~ http://www.kali.org/kali-monday/bleeding-edge-kali-repositories/
@@ -1078,7 +1102,7 @@ grep -q '^## Checksums' "$file" 2>/dev/null || echo -e '## Checksums\nalias sha1
 grep -q '^## Force create folders' "$file" 2>/dev/null || echo -e '## Force create folders\nalias mkdir="/bin/mkdir -pv"\n' >> "$file"
 #grep -q '^## Mount' "$file" 2>/dev/null || echo -e '## Mount\nalias mount="mount | column -t"\n' >> "$file"
 grep -q '^## List open ports' "$file" 2>/dev/null || echo -e '## List open ports\nalias ports="netstat -tulanp"\n' >> "$file"
-grep -q '^## Get headers' "$file" 2>/dev/null || echo -e '## Get headers\nalias header="curl -I"\n' >> "$file"
+grep -q '^## Get header' "$file" 2>/dev/null || echo -e '## Get header\nalias header="curl -I"\n' >> "$file"
 grep -q '^## Get external IP address' "$file" 2>/dev/null || echo -e '## Get external IP address\nalias ipx="curl -s http://ipinfo.io/ip"\n' >> "$file"
 grep -q '^## Directory navigation aliases' "$file" 2>/dev/null || echo -e '## Directory navigation aliases\nalias ..="cd .."\nalias ...="cd ../.."\nalias ....="cd ../../.."\nalias .....="cd ../../../.."\n' >> "$file"
 grep -q '^## Add more aliases' "$file" 2>/dev/null || echo -e '## Add more aliases\nalias upd="sudo apt-get update"\nalias upg="sudo apt-get upgrade"\nalias ins="sudo apt-get install"\nalias rem="sudo apt-get purge"\nalias fix="sudo apt-get install -f"\n' >> "$file"
@@ -1361,6 +1385,10 @@ timeout 15 iceweasel   #iceweasel & sleep 15; killall -q -w iceweasel >/dev/null
 timeout 5 killall -9 -q -w iceweasel >/dev/null
 file=$(find /root/.mozilla/firefox/*.default*/ -maxdepth 1 -type f -name 'prefs.js' -print -quit) && [ -e "$file" ] && cp -n $file{,.bkup}   #/etc/iceweasel/pref/*.js
 ([[ -e "$file" ]] && [[ "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
+#sed -i 's/^.network.proxy.socks_remote_dns.*/user_pref("network.proxy.socks_remote_dns", true);' "$file" 2>/dev/null || echo 'user_pref("network.proxy.socks_remote_dns", true);' >> "$file"
+sed -i 's/^.browser.safebrowsing.enabled.*/user_pref("browser.safebrowsing.enabled", false);' "$file" 2>/dev/null || echo 'user_pref("browser.safebrowsing.enabled", false);' >> "$file"                             # Iceweasel -> Edit -> Preferences -> Security -> Block reported web forgeries
+sed -i 's/^.browser.safebrowsing.malware.enabled.*/user_pref("browser.safebrowsing.malware.enabled", false);' "$file" 2>/dev/null || echo 'user_pref("browser.safebrowsing.malware.enabled", false);' >> "$file"     # Iceweasel -> Edit -> Preferences -> Security -> Block reported attack sites
+sed -i 's/^.browser.safebrowsing.remoteLookups.enabled.*/user_pref("browser.safebrowsing.remoteLookups.enabled", false);' "$file" 2>/dev/null || echo 'user_pref("browser.safebrowsing.remoteLookups.enabled", false);' >> "$file"
 sed -i 's/^.*browser.startup.page.*/user_pref("browser.startup.page", 0);' "$file" 2>/dev/null || echo 'user_pref("browser.startup.page", 0);' >> "$file"                                              # Iceweasel -> Edit -> Preferences -> General -> When firefox starts: Show a blank page
 sed -i 's/^.*privacy.donottrackheader.enabled.*/user_pref("privacy.donottrackheader.enabled", true);' "$file" 2>/dev/null || echo 'user_pref("privacy.donottrackheader.enabled", true);' >> "$file"    # Privacy -> Enable: Tell websites I do not want to be tracked
 sed -i 's/^.*browser.showQuitWarning.*/user_pref("browser.showQuitWarning", true);' "$file" 2>/dev/null || echo 'user_pref("browser.showQuitWarning", true);' >> "$file"                               # Stop Ctrl+Q from quitting without warning
@@ -2132,22 +2160,6 @@ apt-get -y -qq install webshells
 ln -sf /usr/share/htshells /usr/share/webshells/htshells
 
 
-##### Installing pipal (GIT)
-echo -e "\n$GREEN[+]$RESET Installing pipal (GIT) ~ password analyser"
-apt-get -y -qq install git
-git clone git://github.com/digininja/pipal.git /usr/share/pipal-git/
-pushd /usr/share/pipal-git/ >/dev/null
-git pull
-popd >/dev/null
-file=/usr/local/bin/pipal-git
-cat <<EOF > "$file"
-#!/bin/bash
-
-cd /usr/share/pipal-git/ && ruby pipal.rb "\$@"
-EOF
-chmod +x "$file"
-
-
 ##### Installing bridge-utils
 echo -e "\n$GREEN[+]$RESET Installing bridge-utils ~ bridge network interfaces"
 apt-get -y -qq install bridge-utils
@@ -2442,6 +2454,23 @@ git pull
 popd >/dev/null
 
 
+##### Installing lnav
+echo -e "\n$GREEN[+]$RESET Installing lnav ~ CLI log veiwer"
+#apt-get -y -qq install git ncurses-dev libsqlite3-dev libgpm-dev
+#git clone git://github.com/tstack/lnav.git /usr/local/src/tstack
+#pushd /usr/local/src/tstack >/dev/null
+#git pull
+#./configure
+#make
+#make install
+#popd >/dev/null
+if [[ "$(uname -m)" == "x86_64" ]]; then
+  curl --progress -k -L "https://github.com/tstack/lnav/releases/download/v0.7.2/lnav-0.7.2-linux-64bit.zip" > /tmp/lnav.zip   #***!!! hardcoded version! Need to manually check for updates
+  unzip -q -o -d /tmp/ /tmp/lnav.zip
+  mv -f /tmp/lnav-*/lnav /usr/bin/
+fi
+
+
 ##### Installing python-pty-shells
 echo -e "\n$GREEN[+]$RESET Installing python-pty-shells ~ PTY shells"
 apt-get -y -qq install git
@@ -2554,8 +2583,9 @@ mkdir -p /var/tftp/
 chown -R nobody\:root /var/tftp/
 chmod -R 0755 /var/tftp/
 #--- Setup alias
-#file=/root/.bash_aliases; [ -e "$file" ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
-#grep -q '^## tftp' "$file" 2>/dev/null || echo -e '## tftproot\nalias tftp="cd /var/tftp/"\n' >> "$file"
+file=/root/.bash_aliases; [ -e "$file" ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
+([[ -e "$file" ]] && [[ "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
+grep -q '^## tftp' "$file" 2>/dev/null || echo -e '## tftp\nalias tftproot="cd /var/tftp/"\n' >> "$file"
 #--- Remove from start up
 update-rc.d -f atftpd remove
 #--- Disabling IPv6 can help
@@ -2589,10 +2619,12 @@ echo "no" > /etc/pure-ftpd/conf/AnonymousCantUpload
 #chmod -f 0600 /etc/ssl/private/*.pem
 ln -sf /etc/pure-ftpd/conf/PureDB /etc/pure-ftpd/auth/50pure
 #--- Setup alias
-#file=/root/.bash_aliases; [ -e "$file" ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
-#grep -q '^## ftp' "$file" 2>/dev/null || echo -e '## ftp\nalias ftproot="cd /var/ftp/"\n' >> "$file"
+file=/root/.bash_aliases; [ -e "$file" ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
+([[ -e "$file" ]] && [[ "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
+grep -q '^## ftp' "$file" 2>/dev/null || echo -e '## ftp\nalias ftproot="cd /var/ftp/"\n' >> "$file"
 #--- Remove from start up
 update-rc.d -f pure-ftpd remove
+
 
 
 ##### Configuring samba
@@ -2626,13 +2658,32 @@ chmod -R 0755 /var/samba/
 service samba stop
 update-rc.d -f samba remove
 #--- Setup alias
-#file=/root/.bash_aliases; [ -e "$file" ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
-#grep -q '^## smb' "$file" 2>/dev/null || echo -e '## smb\nalias sambaroot="cd /var/samba/"\n#alias smbroot="cd /var/samba/"\n' >> "$file"
+file=/root/.bash_aliases; [ -e "$file" ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
+([[ -e "$file" ]] && [[ "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
+grep -q '^## smb' "$file" 2>/dev/null || echo -e '## smb\nalias sambaroot="cd /var/samba/"\n#alias smbroot="cd /var/samba/"\n' >> "$file"
+
+
+##### Configuring apache2
+echo -e "\n$GREEN[+]$RESET Configuring apache2 ~ web server"
+touch /var/www/favicon.ico
+#--- Setup alias
+file=/root/.bash_aliases; [ -e "$file" ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
+([[ -e "$file" ]] && [[ "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
+grep -q '^## www' "$file" 2>/dev/null || echo -e '## www\nalias wwwroot="cd /var/www/"\n' >> "$file"
 
 
 ##### Installing rsh-client
 echo -e "\n$GREEN[+]$RESET Installing rsh-client ~ remote shell connections"
 apt-get -y -qq install rsh-client
+
+
+##### Installing DBeaver
+echo -e "\n$GREEN[+]$RESET Installing DBeaver ~ GUI DB manager"
+apt-get -y -qq install curl
+arch="i386"
+[[ "$(uname -m)" == "x86_64" ]] && arch="amd64"
+curl --progress -k -L "http://dbeaver.jkiss.org/files/dbeaver_3.2.0_$arch.deb" > /tmp/dbeaver.deb   #***!!! hardcoded version! Need to manually check for updates
+dpkg -i /tmp/dbeaver.deb
 
 
 ##### Setting up SSH
@@ -2658,7 +2709,7 @@ ssh-keygen -b 4096 -t rsa -f /root/.ssh/id_rsa -P ""
 ##### Cleaning the system
 echo -e "\n$GREEN[+]$RESET Cleaning the system"
 #--- Clean package manager
-for FILE in clean remove autoremove autoclean; do apt-get -y -qq "$FILE"; done         # Clean up
+for FILE in clean autoremove; do apt-get -y -qq "$FILE"; done         # Clean up - clean remove autoremove autoclean
 apt-get -y -qq purge $(dpkg -l | tail -n +6 | egrep -v '^(h|i)i' | awk '{print $2}')   # Purged packages
 #--- Update slocate database
 updatedb
