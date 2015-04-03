@@ -1,8 +1,8 @@
 #!/bin/bash
 #-Metadata----------------------------------------------------#
-#  Filename: kali.sh                     (Update: 2015-04-01) #
+#  Filename: kali.sh                     (Update: 2015-04-03) #
 #-Info--------------------------------------------------------#
-#  Personal post install script for Kali Linux.               #
+#  Personal post-install script for Kali Linux.               #
 #-Author(s)---------------------------------------------------#
 #  g0tmilk ~ https://blog.g0tmi1k.com/                        #
 #-Operating System--------------------------------------------#
@@ -25,7 +25,7 @@ if [ 1 -eq 0 ]; then    # This is never true, thus it acts as block comments ;)
 ### One liner - Grab the latest version and execute! ###########################
 wget -qO- https://raw.github.com/g0tmi1k/os-scripts/master/kali.sh | bash
 ## Shorten URL:  >>>  wget -qO- http://bit.do/postkali | bash  <<<
-#curl -s -L -k https://raw.github.com/g0tmi1k/kali-postinstall/master/kali_postinstall.sh | nohup bash
+#curl -s -L -k https://raw.github.com/g0tmi1k/kali-postinstall/master/kali_postinstall.sh > kali.sh | nohup bash --osx --dns --msf
 ################################################################################
 fi
 
@@ -59,8 +59,11 @@ for x in $( tr '[:upper:]' '[:lower:]' <<< "$@" ); do
     keyboardApple=true
   elif [ "${x}" == "--dns" ]; then
     hardenDNS=true
-  elif [ "${x}" == "--metasploit" ]; then
+  elif [ "${x}" == "--msf" ]; then
     freezeMSF=true
+  else
+    echo -e $RED'[!]'$RESET' Unknown option: '${x} 1>&2
+    exit 1
   fi
 done
 
@@ -98,17 +101,19 @@ for i in {1..10}; do ping -c 1 -W $i www.google.com &>/dev/null && break; done
 ping -c 1 www.google.com &>/dev/null || (echo -e $RED'[!]'$RESET' No Internet connection(?). Please re-run the script. Quitting...' 1>&2 && exit 1)
 
 
-##### Enabling default network repositories ~ http://docs.kali.org/general-use/kali-linux-sources-list-repositories
-echo -e "\n$GREEN[+]$RESET Enabling default network repositories ~ fixing if it wasn't selected during install"
+##### Enabling default network repositories ~ http://docs.kali.org/general-use/kali-linux-sources-list-repositories & Fix 'KEYEXPIRED 1425567400'
+echo -e "\n$GREEN[+]$RESET Enabling default network repositories ~ if they were not selected during install"
+#--- Fixing old keys
 #find /var/cache/apt/ -type f -delete
 find /var/lib/apt/lists/ -type f -delete                                                                                        # https://forums.kali.org/showthread.php?24687-Problem-with-apt-get-update&p=42558&viewfull=1#post42558
 apt-key adv --keyserver hkp://keys.gnupg.net --recv-keys 7D8D0BF6   #gpg --keyserver hkp://keys.gnupg.net --recv-key 7D8D0BF6   # http://docs.kali.org/introduction/download-official-kali-linux-images
+#--- Add network repositories
 file=/etc/apt/sources.list; [ -e "$file" ] && cp -n $file{,.bkup}
 ([[ -e "$file" ]] && [[ "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
 grep -q 'kali main non-free contrib' "$file" 2>/dev/null || echo "deb http://http.kali.org/kali kali main non-free contrib" >> "$file"
 grep -q 'kali/updates main contrib non-free' "$file" 2>/dev/null || echo "deb http://security.kali.org/kali-security kali/updates main contrib non-free" >> "$file"
 apt-get -qq update
-apt-get -y -qq install kali-archive-keyring
+apt-get -y -qq install kali-archive-keyring   # Fixing old keys
 
 
 ##### Installing kernel headers
@@ -129,16 +134,19 @@ elif (dmidecode | grep -iq vmware); then
   #--- VM -> Install VMware Tools.    Note: you may need to apply a patch: https://github.com/offensive-security/kali-vmware-tools-patches
   mkdir -p /mnt/cdrom/
   umount -f /mnt/cdrom 2>/dev/null
-  sleep 1
-  mount -o ro /dev/cdrom /mnt/cdrom 2>/dev/null; _mount=$?   # Only checks first CD drive (if multiple)
+  sleep 2
+  mount -o ro /dev/cdrom /mnt/cdrom 2>/dev/null; _mount=$?   # This will only check the first CD drive (if there are multiple bays)
+  sleep 2
   file=$(find /mnt/cdrom/ -maxdepth 1 -type f -name 'VMwareTools-*.tar.gz' -print -quit)
   ([[ "$_mount" == 0 ]] && [[ -z "$file" ]]) && echo -e $RED'[!]'$RESET' Incorrect CD/ISO mounted' 1>&2
   if [[ "$_mount" == 0 ]] && [[ -n "$file" ]]; then             # If there is a CD in (and its right!), try to install native Guest Additions
-    echo -e $YELLOW'[i]'$RESET' Using "Native VMware Tools" (Patched)'
+    echo -e $YELLOW'[i]'$RESET' Patching & using "native VMware tools"'
     apt-get -y -qq install gcc make "linux-headers-$(uname -r)" git
     git clone git://github.com/rasa/vmware-tools-patches.git /tmp/vmware-tools-patches
     cp -f /mnt/cdrom/VMwareTools-*.tar.gz /tmp/vmware-tools-patches/downloads/
-    bash /tmp/vmware-tools-patches/untar-and-patch-and-compile.sh
+    pushd /tmp/vmware-tools-patches/ >/dev/null
+    bash untar-and-patch-and-compile.sh
+    popd >/dev/null
     #cp -f /mnt/cdrom/VMwareTools-*.tar.gz /tmp/
     #tar -zxf /tmp/VMwareTools-* -C /tmp/
     #pushd /tmp/vmware-tools-distrib/ >/dev/null
@@ -174,7 +182,7 @@ elif (dmidecode | grep -iq virtualbox); then
 fi
 
 
-##### Checking display resolutions - just for post install setup ***
+##### Checking display resolutions - just for post-install setup ***
 #echo -e "\n$GREEN[+]$RESET Checking possible display resolutions"
 #export DISPLAY=:0.0   #[[ -z $SSH_CONNECTION ]] || export DISPLAY=:0.0
 #current_res=$(xrandr | grep '\*' | awk '{print $1}')
@@ -258,15 +266,17 @@ ln -sf "/usr/share/zoneinfo/$(cat /etc/timezone)" /etc/localtime
 #dpkg-reconfigure -f noninteractive tzdata
 ##locale -a    # Check
 #--- Installing ntp
-apt-get -y -qq install ntp
+apt-get -qq update
+apt-get -y -qq install ntp ntpdate
 #--- Configuring ntp
 #file=/etc/default/ntp; [ -e "$file" ] && cp -n $file{,.bkup}
 #grep -q "interface=127.0.0.1" "$file" || sed -i "s/NTPD_OPTS='/NTPD_OPTS='--interface=127.0.0.1 /" "$file"
-#ntpdate -b -s -u pool.ntp.org
+#--- Update time
+ntpdate -b -s -u pool.ntp.org
 #--- Start service
 service ntp restart
-#--- Add to start up
-update-rc.d ntp enable 2>/dev/null
+#--- Remove from start up
+update-rc.d ntp remove 2>/dev/null
 #--- Check
 #date
 #--- Only used for stats at the end
@@ -275,16 +285,16 @@ start_time=$(date +%s)
 
 if [ "$freezeMSF" != "false" ]; then
   ##### Don't ever update these packages
-  echo -e "\n$GREEN[+]$RESET Don't ever update these packages"
+  echo -e "\n$GREEN[+]$RESET Don't ever update these (Metasploit) packages"
   for x in metasploit metasploit-framework metasploit-common; do
-    echo -e "\n$YELLOW[i]$RESET Freezing: $x"
+    echo -e "$YELLOW[i]$RESET Freezing: $x"
     echo "$x hold" | dpkg --set-selections
   done
 fi
 
 
 ##### Updating OS from repositories
-echo -e "\n$GREEN[+]$RESET Updating OS from repositories"
+echo -e "\n$GREEN[+]$RESET Updating OS from repositories (this may take a while depending on your Internet connection & Kali version/age)"
 for FILE in clean autoremove; do apt-get -y -qq "$FILE"; done         # Clean up      clean remove autoremove autoclean
 export DEBIAN_FRONTEND=noninteractive
 apt-get -qq update && apt-get -y -qq dist-upgrade --fix-missing
@@ -1609,15 +1619,12 @@ EOF
 
 ##### Configuring metasploit ~ http://docs.kali.org/general-use/starting-metasploit-framework-in-kali
 echo -e "\n$GREEN[+]$RESET Configuring metasploit ~ exploit framework"
-apt-get -y -qq install metasploit
+apt-get -y -qq install metasploit 2>/dev/null   #metasploit = msf pro, metasploit-framework = free stuff
 #--- Start services
-service postgresql start
-service metasploit start
-#--- Add to start up
-#update-rc.d postgresql enable
-#update-rc.d metasploit enable
+service postgresql start   #service postgresql restart
+service metasploit start   #service metasploit restart
 #--- Misc
-export GOCOW=1   # Always a cow logo ;)
+export GOCOW=1   # Always a cow logo ;)   Others: THISISHALLOWEEN (Halloween), APRILFOOLSPONIES (My Little Pony)
 file=/root/.bashrc; [ -e "$file" ] && cp -n $file{,.bkup}
 ([[ -e "$file" ]] && [[ "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
 grep -q '^GOCOW' "$file" 2>/dev/null || echo 'GOCOW=1' >> "$file"
@@ -1631,12 +1638,18 @@ ln -sf /opt/metasploit/apps/pro/ui/config/database.yml /root/.msf4/database.yml 
 #--- Apply new alias
 if [[ "$SHELL" == "/bin/zsh" ]]; then source ~/.zshrc else source "$file"; fi
 #--- First time run
-echo -e 'sleep 10\ndb_rebuild_cache\nsleep 300\nexit' > /tmp/msf.rc   #echo -e 'go_pro' > /tmp/msf.rc
+echo -e 'sleep 10\ndb_status\ndb_rebuild_cache\nsleep 310\nexit' > /tmp/msf.rc   #echo -e 'go_pro' > /tmp/msf.rc
 msfconsole -r /tmp/msf.rc
-#--- Setup GUI
+#--- Check
+service postgresql status
+service metasploit status
+#--- Add to start up
+#update-rc.d postgresql enable
+#update-rc.d metasploit enable
+#--- Setup Web UI
 #bash /opt/metasploit/scripts/launchui.sh    #*** Doesn't automate. Takes a little while to kick in...
 #xdg-open https://127.0.0.1:3790/
-#--- Setup Armitage
+#--- Setup Armitage (UI)
 #export MSF_DATABASE_CONFIG=/opt/metasploit/apps/pro/ui/config/database.yml
 #file=/root/.bash_aliases; [ -e "$file" ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
 #([[ -e "$file" ]] && [[ "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
@@ -2140,7 +2153,7 @@ apt-get -y -qq install webshells
 ln -sf /usr/share/cmdsql-git /usr/share/webshells/aspx/cmdsql
 
 
-##### Installing jsp file browser
+##### Installing JSP file browser
 echo -e "\n$GREEN[+]$RESET Installing jsp file browser ~ (JSP) web shell"
 apt-get -y -qq install curl
 mkdir -p /usr/share/jsp-filebrowser/
@@ -2211,7 +2224,7 @@ apt-get -y -qq install http-tunnel
 
 
 ##### Installing sshuttle
-echo -e "\n$GREEN[+]$RESET Installing sshuttle ~ proxy server for VPN over SSH"
+echo -e "\n$GREEN[+]$RESET Installing sshuttle ~ VPN over SSH"
 apt-get -y -qq install sshuttle
 #sshuttle --dns --remote root@123.9.9.9 0/0 -vv
 
@@ -2237,6 +2250,13 @@ apt-get -y -qq install ptunnel
 #ptunnel -x password1 -p 123.9.9.9 -lp 8000 -da 127.0.0.1 -dp 22; ssh -C -D 8081 -p 8000 root@127.0.0.1
 
 
+##### Installing stunnel
+echo -e "\n$GREEN[+]$RESET Installing stunnel ~ SSL wrapper"
+apt-get -y -qq install stunnel
+#--- Remove from start up
+update-rc.d -f stunnel4 remove
+
+
 ##### Installing zerofree
 echo -e "\n$GREEN[+]$RESET Installing zerofree ~ CLI nulls free blocks on a HDD"
 apt-get -y -qq install zerofree
@@ -2246,9 +2266,8 @@ apt-get -y -qq install zerofree
 
 ##### Installing gcc & multilib
 echo -e "\n$GREEN[+]$RESET Installing gcc & multilibc ~ compiling libraries"
-apt-get -y -qq install gcc cc gcc-multilib make automake
 #*** I know its messy...
-for FILE in libc6 libc6-dev libc6-amd64 libc6-dev-amd64 libc6-i386 libc6-dev-i386 libc6-i686 libc6-dev-i686; do
+for FILE in cc gcc g++ gcc-multilib make automake libc6 libc6-dev libc6-amd64 libc6-dev-amd64 libc6-i386 libc6-dev-i386 libc6-i686 libc6-dev-i686 build-essential dpkg-dev; do
   apt-get -y -qq install "$FILE" 2>/dev/null
 done
 
@@ -2299,7 +2318,7 @@ apt-get -y -qq install backdoor-factory
 
 
 ##### Installing the Backdoor Factory Proxy (BDFProxy)
-echo -e "\n$GREEN[+]$RESET Installing backdoor factory ~ patches binaries files via MITM"
+echo -e "\n$GREEN[+]$RESET Installing backdoor factory ~ patches binaries files during MITM"
 apt-get -y -qq install git
 git clone git://github.com/secretsquirrel/BDFProxy.git /usr/share/bdfproxy-git/
 pushd /usr/share/bdfproxy-git/ >/dev/null
@@ -2308,12 +2327,12 @@ popd >/dev/null
 
 
 ##### Installing veil framework
-echo -e "\n$GREEN[+]$RESET Installing veil framework ~ bypassing anti-virus"
+echo -e "\n$GREEN[+]$RESET Installing veil framework ~ bypasses anti-virus products"
 apt-get -y -qq install veil
 
 
 ##### Installing OP packers
-echo -e "\n$GREEN[+]$RESET Installing OP packers ~ bypassing anti-virus"
+echo -e "\n$GREEN[+]$RESET Installing OP packers ~ bypasses anti-virus solutions"
 apt-get -y -qq install upx-ucl curl   #wget -q "http://upx.sourceforge.net/download/upx309w.zip" -P /usr/share/packers/ && unzip -q -o -d /usr/share/packers/ /usr/share/packers/upx309w.zip; rm -f /usr/share/packers/upx309w.zip
 mkdir -p /usr/share/packers/
 curl --progress -k -L "http://www.eskimo.com/~scottlu/win/cexe.exe" > /usr/share/packers/cexe.exe
@@ -2324,7 +2343,7 @@ rm -f /usr/share/packers/kkrunchy_023a2.zip
 
 
 ##### Installing hyperion
-echo -e "\n$GREEN[+]$RESET Installing hyperion ~ bypassing anti-virus"
+echo -e "\n$GREEN[+]$RESET Installing hyperion ~ bypasses anti-virus software"
 unzip -q -o -d /usr/share/windows-binaries/ /usr/share/windows-binaries/Hyperion-1.0.zip
 #rm -f /usr/share/windows-binaries/Hyperion-1.0.zip
 i686-w64-mingw32-g++ -static-libgcc -static-libstdc++ /usr/share/windows-binaries/Hyperion-1.0/Src/Crypter/*.cpp -o /usr/share/windows-binaries/Hyperion-1.0/Src/Crypter/bin/crypter.exe
@@ -2386,7 +2405,8 @@ apt-get -y -qq install curl
 #unzip -o -d /usr/share/sqlmap/txt/ /usr/share/sqlmap/txt/wordlist.zip
 #--- Add 10,000 Top/Worst/Common Passwords
 mkdir -p /usr/share/wordlists/
-curl --progress -k -L "http://xato.net/files/10k most common.zip" > /tmp/10kcommon.zip && unzip -q -o -d /usr/share/wordlists/ /tmp/10kcommon.zip && mv -f /usr/share/wordlists/10k{\ most\ ,_most_}common.txt
+(curl --progress -k -L "http://xato.net/files/10k most common.zip" > /tmp/10kcommon.zip && unzip -q -o -d /usr/share/wordlists/ /tmp/10kcommon.zip 2>/dev/null) || (curl --progress -k -L "http://download.g0tmi1k.com/wordlists/common-10k_most_common.zip" > /tmp/10kcommon.zip && unzip -q -o -d /usr/share/wordlists/ /tmp/10kcommon.zip)
+mv -f /usr/share/wordlists/10k{\ most\ ,_most_}common.txt
 #--- Linking to more - folders
 [ -e /usr/share/dirb/wordlists ] && ln -sf /usr/share/dirb/wordlists /usr/share/wordlists/dirb
 #--- Linking to more - files
@@ -2454,8 +2474,9 @@ git pull
 popd >/dev/null
 
 
-##### Installing lnav
-echo -e "\n$GREEN[+]$RESET Installing lnav ~ CLI log veiwer"
+if [[ "$(uname -m)" == "x86_64" ]]; then
+  ##### Installing lnav
+  echo -e "\n$GREEN[+]$RESET Installing lnav (x64) ~ CLI log veiwer"
 #apt-get -y -qq install git ncurses-dev libsqlite3-dev libgpm-dev
 #git clone git://github.com/tstack/lnav.git /usr/local/src/tstack
 #pushd /usr/local/src/tstack >/dev/null
@@ -2464,7 +2485,6 @@ echo -e "\n$GREEN[+]$RESET Installing lnav ~ CLI log veiwer"
 #make
 #make install
 #popd >/dev/null
-if [[ "$(uname -m)" == "x86_64" ]]; then
   curl --progress -k -L "https://github.com/tstack/lnav/releases/download/v0.7.2/lnav-0.7.2-linux-64bit.zip" > /tmp/lnav.zip   #***!!! hardcoded version! Need to manually check for updates
   unzip -q -o -d /tmp/ /tmp/lnav.zip
   mv -f /tmp/lnav-*/lnav /usr/bin/
@@ -2626,7 +2646,6 @@ grep -q '^## ftp' "$file" 2>/dev/null || echo -e '## ftp\nalias ftproot="cd /var
 update-rc.d -f pure-ftpd remove
 
 
-
 ##### Configuring samba
 echo -e "\n$GREEN[+]$RESET Configuring samba ~ file transfer method"
 #--- Installing samba
@@ -2649,7 +2668,7 @@ grep -q '^\[shared\]' "$file" 2>/dev/null || cat <<EOF >> "$file"
 EOF
 #--- Create samba path and configure it
 mkdir -p /var/samba/
-chown -R samba\:samba /var/samba/
+chown -R samba\:smbgroup /var/samba/
 chmod -R 0755 /var/samba/
 #--- Check result
 #service samba restart
@@ -2740,6 +2759,6 @@ echo -e "$YELLOW[i]$RESET   + Change time zone & keyboard layout (...if differen
 echo -e "$YELLOW[i]$RESET   + Reboot"
 echo -e "$YELLOW[i]$RESET   + Take a snapshot (...if you are using a VM)"
 
-echo -e '\n'$BLUE'[*]'$RESET' Done!\n'
+echo -e '\n'$BLUE'[*]'$RESET' Done!\n\a'
 #reboot
 exit 0
