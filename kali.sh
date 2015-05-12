@@ -23,8 +23,8 @@
 
 if [ 1 -eq 0 ]; then    # This is never true, thus it acts as block comments ;)
 ### One liner - Grab the latest version and execute! ###########################
-wget -qO- https://raw.github.com/g0tmi1k/os-scripts/master/kali.sh | bash
-## Shorten URL:  >>>   wget -qO- http://bit.do/postkali | bash --osx --burp --dns   <<<
+wget -qO- https://raw.github.com/g0tmi1k/os-scripts/master/kali.sh | bash --osx --dns --burp --openvas
+## Shorten URL:  >>>   wget -qO- http://bit.do/postkali | bash   <<<
 #curl -s -L -k https://raw.github.com/g0tmi1k/kali-postinstall/master/kali_postinstall.sh > kali.sh | nohup bash
 ################################################################################
 fi
@@ -37,9 +37,10 @@ timezone="Europe/London"    # London, Europe
 
 
 ##### Optional steps
-hardenDNS=false             # Set static & lock DNS name server                              [ --dns  ]
+hardenDNS=false             # Set static & lock DNS name server                              [ --dns ]
 freezeDEB=false             # Disable updating certain packages (e.g. Metasploit)            [ --hold ]
 burpFree=false              # Disable configuring Burp Proxy Free (for Burp Pro users....)   [ --burp ]
+openVAS=false               # Installs & configures OpenVAS (Not everyone wants it)          [ --openvas ]
 
 
 ##### (Optional) Enable debug mode?
@@ -64,6 +65,8 @@ for x in $( tr '[:upper:]' '[:lower:]' <<< "$@" ); do
     freezeDEB=true
   elif [ "${x}" == "--burp" ]; then
     burpFree=true
+  elif [ "${x}" == "--openvas" ]; then
+    openVAS=true
   else
     echo -e $RED'[!]'$RESET' Unknown option: '${x} 1>&2
     exit 1
@@ -1149,6 +1152,7 @@ grep -q '^## nmap' "$file" 2>/dev/null || echo -e '## nmap\nalias nmap="nmap --r
 grep -q '^## aircrack-ng' "$file" 2>/dev/null || echo -e '## aircrack-ng\nalias aircrack-ng="aircrack-ng -z"\n' >> "$file"
 grep -q '^## airodump-ng' "$file" 2>/dev/null || echo -e '## airodump-ng \nalias airodump-ng="airodump-ng --manufacturer --wps --uptime"\n' >> "$file"    # aircrack-ng 1.2 rc2
 grep -q '^## metasploit' "$file" 2>/dev/null || echo -e '## metasploit\nalias msfc="service postgresql start; service metasploit start; msfconsole -q \"$@\""\n' >> "$file"
+grep -q '^## openvas' "$file" 2>/dev/null || echo -e '## openvas\nalias openvas="service openvas-manager restart; service openvas-scanner restart; service greenbone-security-assistant restart; xdg-open https://127.0.0.1:9392/"\n' >> "$file"
 #airmon-vz --verbose
 #--- Add in folders
 grep -q '^## www' "$file" 2>/dev/null || echo -e '## www\nalias wwwroot="cd /var/www/"\n' >> "$file"
@@ -1790,12 +1794,30 @@ apt-get -y -qq install dhex
 
 
 ##### Installing openvas
-echo -e "\n$GREEN[+]$RESET Installing openvas ~ vulnerability scanner"
-apt-get -y -qq install openvas
-#openvas-setup   #*** Doesn't automate
-#--- Remove 'default' user (admin), and create a new admin user (root).
-#test -e /var/lib/openvas/users/admin && openvasad -c remove_user -n admin
-#test -e /var/lib/openvas/users/root || openvasad -c add_user -n root -r Admin   #*** Doesn't automate
+if [ "$openvas" != "false" ]; then
+  echo -e "\n$GREEN[+]$RESET Installing openvas ~ vulnerability scanner"
+  apt-get -y -qq install openvas
+  openvas-setup
+  #--- Make sure all services are correct
+  #openvas-start   #service openvas-manager restart; service openvas-scanner restart; service greenbone-security-assistant restart
+  #--- User control
+   (openvasmd --get-users | grep -q ^admin$) && openvasmd --delete-user=admin
+   (openvasmd --get-users | grep -q ^root$) || (openvasmd --create-user=root; openvasmd --user=root --new-password='toor')   # You will want to alter it to something (much) more secure!
+   echo -e "$YELLOW[i]$RESET OpenVAS username: root"
+   echo -e "$YELLOW[i]$RESET OpenVAS password: toor   *** CHANGE THIS ASAP. Run: # openvasmd --user=root --new-password='<NEW_PASSWORD>'"
+   echo -e "$YELLOW[i]$RESET OpenVAS web ui  : https://127.0.0.1:9392/"
+  #--- Check
+  openvas-check-setup
+  #--- Remove from start up
+  update-rc.d -f openvas-manager remove
+  update-rc.d -f openvas-scanner remove
+  update-rc.d -f greenbone-security-assistant remove
+  #--- Setup alias
+  file=/root/.bash_aliases; [ -e "$file" ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
+  grep -q '^## openvas' "$file" 2>/dev/null || echo -e '## openvas\nalias openvas="service openvas-manager restart; service openvas-scanner restart; service greenbone-security-assistant restart; xdg-open https://127.0.0.1:9392/"\n' >> "$file"
+else
+  echo -e $RED'[!]'$RESET' Skipping OpenVAS (missing --openvas)...' 1>&2
+fi
 
 
 ##### Configuring Burp Proxy
