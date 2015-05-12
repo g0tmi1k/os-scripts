@@ -1,6 +1,6 @@
 #!/bin/bash
 #-Metadata----------------------------------------------------#
-#  Filename: kali.sh                     (Update: 2015-04-03) #
+#  Filename: kali.sh                     (Update: 2015-05-12) #
 #-Info--------------------------------------------------------#
 #  Personal post-install script for Kali Linux.               #
 #-Author(s)---------------------------------------------------#
@@ -24,21 +24,22 @@
 if [ 1 -eq 0 ]; then    # This is never true, thus it acts as block comments ;)
 ### One liner - Grab the latest version and execute! ###########################
 wget -qO- https://raw.github.com/g0tmi1k/os-scripts/master/kali.sh | bash
-## Shorten URL:  >>>  wget -qO- http://bit.do/postkali | bash  <<<
-#curl -s -L -k https://raw.github.com/g0tmi1k/kali-postinstall/master/kali_postinstall.sh > kali.sh | nohup bash --osx --dns --msf
+## Shorten URL:  >>>   wget -qO- http://bit.do/postkali | bash --osx --burp --dns   <<<
+#curl -s -L -k https://raw.github.com/g0tmi1k/kali-postinstall/master/kali_postinstall.sh > kali.sh | nohup bash
 ################################################################################
 fi
 
 
 ##### Location information
-keyboardApple=false         # Using a Apple/Macintosh keyboard? Change to anything other than 'false' to enable
+keyboardApple=false         # Using a Apple/Macintosh keyboard? Change to anything other than 'false' to enable   [ --osx ]
 keyboardlayout="gb"         # Great Britain
 timezone="Europe/London"    # London, Europe
 
 
 ##### Optional steps
-hardenDNS=false             # Set static & lock DNS name server
-freezeMSF=false             # Disable updating Metasploit
+hardenDNS=false             # Set static & lock DNS name server                              [ --dns  ]
+freezeDEB=false             # Disable updating certain packages (e.g. Metasploit)            [ --hold ]
+burpFree=false              # Disable configuring Burp Proxy Free (for Burp Pro users....)   [ --burp ]
 
 
 ##### (Optional) Enable debug mode?
@@ -59,8 +60,10 @@ for x in $( tr '[:upper:]' '[:lower:]' <<< "$@" ); do
     keyboardApple=true
   elif [ "${x}" == "--dns" ]; then
     hardenDNS=true
-  elif [ "${x}" == "--msf" ]; then
-    freezeMSF=true
+  elif [ "${x}" == "--hold" ]; then
+    freezeDEB=true
+  elif [ "${x}" == "--burp" ]; then
+    burpFree=true
   else
     echo -e $RED'[!]'$RESET' Unknown option: '${x} 1>&2
     exit 1
@@ -98,7 +101,13 @@ sleep 3
 service network-manager restart
 sleep 10
 for i in {1..10}; do ping -c 1 -W $i www.google.com &>/dev/null && break; done
-ping -c 1 www.google.com &>/dev/null || (echo -e $RED'[!]'$RESET' No Internet connection(?). Please re-run the script. Quitting...' 1>&2 && exit 1)
+if [[ "$?" -ne 0 ]]; then
+  echo -e $RED'[!]'$RESET' Possible DNS issues(?). Trying DHCP "fix"' 1>&2
+  dhclient
+  sleep 15
+  ping -c 1 8.8.8.8 &>/dev/null || (echo -e $RED'[!]'$RESET' No Internet access. Fix & re-run the script. Quitting...' 1>&2 && exit 1)
+  ping -c 1 www.google.com &>/dev/null || (echo -e $RED'[!]'$RESET' Possible DNS issues(?). Fix & re-run the script. Quitting...' 1>&2 && exit 1)
+fi
 
 
 ##### Enabling default network repositories ~ http://docs.kali.org/general-use/kali-linux-sources-list-repositories & Fix 'KEYEXPIRED 1425567400'
@@ -112,6 +121,7 @@ file=/etc/apt/sources.list; [ -e "$file" ] && cp -n $file{,.bkup}
 ([[ -e "$file" ]] && [[ "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
 grep -q 'kali main non-free contrib' "$file" 2>/dev/null || echo "deb http://http.kali.org/kali kali main non-free contrib" >> "$file"
 grep -q 'kali/updates main contrib non-free' "$file" 2>/dev/null || echo "deb http://security.kali.org/kali-security kali/updates main contrib non-free" >> "$file"
+#grep -q 'kali-proposed-updates main contrib non-free' "$file" 2>/dev/null || echo "deb http://repo.kali.org/kali kali-proposed-updates main contrib non-free" >> "$file"
 apt-get -qq update
 apt-get -y -qq install kali-archive-keyring   # Fixing old keys
 
@@ -153,7 +163,7 @@ elif (dmidecode | grep -iq vmware); then
     #echo -e '\n' | timeout 300 perl vmware-install.pl       # Press ENTER for all the default options, wait for 5 minutes to try and install else just quit
     #popd >/dev/null
     umount -f /mnt/cdrom 2>/dev/null
-  else                                                      # The fallback is 'open vm tools' ~ http://open-vm-tools.sourceforge.net/about.php
+  else                                                       # The fallback is 'open vm tools' ~ http://open-vm-tools.sourceforge.net/about.php
     echo -e $RED'[!]'$RESET' VMware Tools CD/ISO isnt mounted' 1>&2
     echo -e $YELLOW'[i]'$RESET' Skipping "Native VMware Tools", switching to "Open VM Tools" instead'
     apt-get -y -qq install open-vm-toolbox
@@ -210,8 +220,8 @@ EOF
 fi
 
 
+##### Setting static & protecting DNS name servers.   Note: May cause issues with forced values (e.g. captive portals etc)
 if [ "$hardenDNS" != "false" ]; then
-  ##### Setting static & protecting DNS name servers.   Note: May cause issues with forced values (e.g. captive portals etc)
   echo -e "\n$GREEN[+]$RESET Setting static & protecting DNS name servers"
   file=/etc/resolv.conf; [ -e "$file" ] && cp -n $file{,.bkup}
   chattr -i "$file" 2>/dev/null
@@ -225,6 +235,8 @@ if [ "$hardenDNS" != "false" ]; then
   #echo -e "domain $domainName\n#search $domainName" >> "$file"
   #--- Protect it
   chattr +i "$file" 2>/dev/null
+else
+  echo -e $RED'[!]'$RESET' Skipping DNS (missing --dns)...' 1>&2
 fi
 
 
@@ -245,19 +257,19 @@ fi
 
 ##### Updating location information - set either value to "" to skip.
 echo -e "\n$GREEN[+]$RESET Updating location information ~ keyboard layout & time zone ($keyboardlayout & $timezone)"
-#keyboardlayout="gb"         # Great Britain
-#timezone="Europe/London"    # London, Europe
+[ "$keyboardApple" != "false" ]  && echo -e "\n$GREEN[+]$RESET Applying Apple hardware profile"
+#keyboardlayout="gb"          # Great Britain
+#timezone="Europe/London"     # London, Europe
 #--- Configure keyboard layout
 if [ ! -z "$keyboardlayout" ]; then
   file=/etc/default/keyboard; #[ -e "$file" ] && cp -n $file{,.bkup}
   sed -i 's/XKBLAYOUT=".*"/XKBLAYOUT="'$keyboardlayout'"/' "$file"
-  [ "$keyboardApple" != "false" ] && sed -i 's/XKBVARIANT=".*"/XKBVARIANT="mac"/' "$file"   ## Enable if you are using Apple based products.
-  #dpkg-reconfigure -f noninteractive keyboard-configuration   #dpkg-reconfigure console-setup   #dpkg-reconfigure keyboard-configuration -u    #need to restart xserver for effect
+  [ "$keyboardApple" != "false" ] && sed -i 's/XKBVARIANT=".*"/XKBVARIANT="mac"/' "$file"   # Enable if you are using Apple based products.
+  #dpkg-reconfigure -f noninteractive keyboard-configuration   #dpkg-reconfigure console-setup   #dpkg-reconfigure keyboard-configuration -u    # Need to restart xserver for effect
 fi
 #--- Changing time zone
-[ -z "$timezone" ] && timezone=Etc/UTC                #Etc/GMT vs Etc/UTC vs UTC
-ln -sf /usr/share/zoneinfo/$timezone /etc/localtime   #ln -sf /usr/share/zoneinfo/Etc/GMT
-echo "$timezone" > /etc/timezone   #Etc/GMT vs Etc/UTC vs UTC vs Europe/London
+[ -z "$timezone" ] && timezone=Etc/UTC     #Etc/GMT vs Etc/UTC vs UTC
+echo "$timezone" > /etc/timezone           #Etc/GMT vs Etc/UTC vs UTC vs Europe/London
 ln -sf "/usr/share/zoneinfo/$(cat /etc/timezone)" /etc/localtime
 #--- Setting locale
 #sed -i 's/^# en_/en_/' /etc/locale.gen   #en_GB en_US
@@ -283,12 +295,12 @@ update-rc.d ntp remove 2>/dev/null
 start_time=$(date +%s)
 
 
-if [ "$freezeMSF" != "false" ]; then
+if [ "$freezeDEB" != "false" ]; then
   ##### Don't ever update these packages
-  echo -e "\n$GREEN[+]$RESET Don't ever update these (Metasploit) packages"
+  echo -e "\n$GREEN[+]$RESET Don't ever update these packages"
   for x in metasploit metasploit-framework metasploit-common; do
     echo -e "$YELLOW[i]$RESET Freezing: $x"
-    echo "$x hold" | dpkg --set-selections
+    echo "$x hold" | dpkg --set-selections   # echo "$x install" | dpkg --set-selections
   done
 fi
 
@@ -391,8 +403,8 @@ dconf write /org/gnome/gnome-panel/layout/toplevels/top-panel/orientation "'top'
 #--- Panel ordering
 dconf write /org/gnome/gnome-panel/layout/objects/menu-bar/pack-type "'start'"
 dconf write /org/gnome/gnome-panel/layout/objects/menu-bar/pack-index 0
-dconf write /org/gnome/gnome-panel/layout/objects/window-list/pack-type "'start'"   # "'center'"
-dconf write /org/gnome/gnome-panel/layout/objects/window-list/pack-index 5          #0
+dconf write /org/gnome/gnome-panel/layout/objects/window-list/pack-type "'start'"    # "'center'"
+dconf write /org/gnome/gnome-panel/layout/objects/window-list/pack-index 5           #0
 dconf write /org/gnome/gnome-panel/layout/objects/workspace-switcher/pack-type "'end'"
 dconf write /org/gnome/gnome-panel/layout/objects/clock/pack-type "'end'"
 dconf write /org/gnome/gnome-panel/layout/objects/user-menu/pack-type "'end'"
@@ -933,10 +945,14 @@ curl --progress -k -L "http://www.kali.org/images/wallpapers-01/kali-wp-june-201
 curl --progress -k -L "http://www.kali.org/images/wallpapers-01/kali-wp-june-2014_1920x1080_B.png" > /usr/share/wallpapers/kali_blue_3d_b.png
 curl --progress -k -L "http://www.kali.org/images/wallpapers-01/kali-wp-june-2014_1920x1080_G.png" >  /usr/share/wallpapers/kali_black_honeycomb.png
 curl --progress -k -L "http://imageshack.us/a/img17/4646/vzex.png" >  /usr/share/wallpapers/kali_blue_splat.png
-curl --progress -k -L "http://www.n1tr0g3n.com/wp-content/uploads/2013/03/Kali-Linux-faded-no-Dragon-small-text.png" > /usr/share/wallpapers/kali_black_clean.png
-curl --progress -k -L "http://1hdwallpapers.com/wallpapers/kali_linux.jpg" > /usr/share/wallpapers/kali_black_stripes.jpg
-curl --progress -k -L "http://fc01.deviantart.net/fs71/f/2011/118/e/3/bt___edb_wallpaper_by_xxdigipxx-d3f4nxv.png" > /usr/share/wallpapers/bt___edb_wallpaper_by_xxdigipxx.jpg
-ln -sf /usr/share/wallpapers/kali/contents/images/1440x900.png /usr/share/wallpapers/kali_default-1440x900.jpg
+curl --progress -k -L "http://em3rgency.com/wp-content/uploads/2012/12/Kali-Linux-faded-no-Dragon-small-text.png" > /usr/share/wallpapers/kali_black_clean.png
+curl --progress -k -L "http://www.hdwallpapers.im/download/kali_linux-wallpaper.jpg" > /usr/share/wallpapers/kali_black_stripes.jpg
+curl --progress -k -L "http://fc01.deviantart.net/fs71/f/2011/118/e/3/bt___edb_wallpaper_by_xxdigipxx-d3f4nxv.png" > /usr/share/wallpapers/kali_bt_edb.jpg
+_TMP="$(find /usr/share/wallpapers/ -maxdepth 1 -type f \( -name 'kali_*' -o -empty \) | xargs -n1 file | grep -i 'HTML\|empty' | cut -d ':' -f1)"
+for FILE in $(echo $_TMP); do
+  rm -f $FILE
+done
+[[ -e "/usr/share/wallpapers/kali_default-1440x900.jpg" ]] && ln -sf /usr/share/wallpapers/kali/contents/images/1440x900.png /usr/share/wallpapers/kali_default-1440x900.jpg
 #--- Change desktop wallpaper (single random pick - on each install).   Note: For now...
 wallpaper=$(shuf -n1 -e /usr/share/wallpapers/kali_*)   #wallpaper=/usr/share/wallpapers/kali_blue_splat.png
 xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitor0/image-show -s true
@@ -950,7 +966,7 @@ file=/usr/local/bin/wallpaper.sh; [ -e "$file" ] && cp -n $file{,.bkup}
 cat <<EOF > "$file"
 #!/bin/bash
 
-wallpaper=\$(shuf -n1 -e /usr/share/wallpapers/kali_*)
+wallpaper="\$(shuf -n1 -e \$(find /usr/share/wallpapers/ -maxdepth 1 -type f -name 'kali_*'))"
 xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitor0/image-path -s \$wallpaper
 cp -f \$wallpaper /usr/share/images/desktop-base/login-background.png
 /usr/bin/xfdesktop --reload
@@ -1073,6 +1089,11 @@ file=/etc/bash.bashrc; [ -e "$file" ] && cp -n $file{,.bkup}   #/root/.bashrc
 sed -i 's/.*force_color_prompt=.*/force_color_prompt=yes/' "$file"
 grep -q '^force_color_prompt' "$file" 2>/dev/null || echo 'force_color_prompt=yes' >> "$file"
 sed -i 's#PS1='"'"'.*'"'"'#PS1='"'"'${debian_chroot:+($debian_chroot)}\\[\\033\[01;31m\\]\\u@\\h\\\[\\033\[00m\\]:\\[\\033\[01;34m\\]\\w\\[\\033\[00m\\]\\$ '"'"'#' "$file"
+grep -q "^export LS_OPTIONS='--color=auto'" "$file" 2>/dev/null || echo "export LS_OPTIONS='--color=auto'" >> "$file"
+grep -q '^eval "$(dircolors)"' "$file" 2>/dev/null || echo 'eval "$(dircolors)"' >> "$file"
+grep -q "^alias ls='ls $LS_OPTIONS'" "$file" 2>/dev/null || echo "alias ls='ls $LS_OPTIONS'" >> "$file"
+grep -q "^alias ll='ls $LS_OPTIONS -l'" "$file" 2>/dev/null || echo "alias ll='ls $LS_OPTIONS -l'" >> "$file"
+grep -q "^alias l='ls $LS_OPTIONS -lA'" "$file" 2>/dev/null || echo "alias l='ls $LS_OPTIONS -lA'" >> "$file"
 #--- All other users that are made afterwards
 file=/etc/skel/.bashrc   #; [ -e "$file" ] && cp -n $file{,.bkup}
 sed -i 's/.*force_color_prompt=.*/force_color_prompt=yes/' "$file"
@@ -1124,8 +1145,9 @@ grep -q '^## DNS - External IP #2' "$file" 2>/dev/null || echo -e '## DNS - Exte
 grep -q '^## DNS - Check' "$file" 2>/dev/null || echo -e '### DNS - Check ("#.abc" is Okay)\nalias dns3="dig +short @208.67.220.220 which.opendns.com txt"\n' >> "$file"
 #alias ll="ls -l --block-size=\'1 --color=auto"
 #--- Add in tools
-grep -q '^## nmap' "$file" 2>/dev/null || echo -e '## nmap\nalias nmap="nmap --reason"\n' >> "$file"    #nmap --reason --open
+grep -q '^## nmap' "$file" 2>/dev/null || echo -e '## nmap\nalias nmap="nmap --reason --open"\n' >> "$file"
 grep -q '^## aircrack-ng' "$file" 2>/dev/null || echo -e '## aircrack-ng\nalias aircrack-ng="aircrack-ng -z"\n' >> "$file"
+grep -q '^## airodump-ng' "$file" 2>/dev/null || echo -e '## airodump-ng \nalias airodump-ng="airodump-ng --manufacturer --wps --uptime"\n' >> "$file"    # aircrack-ng 1.2 rc2
 grep -q '^## metasploit' "$file" 2>/dev/null || echo -e '## metasploit\nalias msfc="service postgresql start; service metasploit start; msfconsole -q \"$@\""\n' >> "$file"
 #airmon-vz --verbose
 #--- Add in folders
@@ -1133,6 +1155,7 @@ grep -q '^## www' "$file" 2>/dev/null || echo -e '## www\nalias wwwroot="cd /var
 grep -q '^## ftp' "$file" 2>/dev/null || echo -e '## ftp\nalias ftproot="cd /var/ftp/"\n' >> "$file"
 grep -q '^## tftp' "$file" 2>/dev/null || echo -e '## tftp\nalias tftproot="cd /var/tftp/"\n' >> "$file"
 grep -q '^## smb' "$file" 2>/dev/null || echo -e '## smb\nalias sambaroot="cd /var/samba/"\n#alias smbroot="cd /var/samba/"\n' >> "$file"
+(dmidecode | grep -iq vmware) && (grep -q '^## vmware' "$file" 2>/dev/null || echo -e '## vmware\nalias vmroot="cd /mnt/hgfs/"' >> "$file")
 #--- Apply new aliases
 if [[ "$SHELL" == "/bin/zsh" ]]; then source ~/.zshrc else source "$file"; fi
 #--- Check
@@ -1236,15 +1259,19 @@ cat <<EOF > "$file"
 unbind C-b
 set -g prefix C-a
 
-## Pane switching (ALT+ARROWS)
-bind -n M-Left select-pane -L
-bind -n M-Right select-pane -R
-bind -n M-Up select-pane -U
-bind -n M-Down select-pane -D
+## Pane switching (SHIFT+ARROWS)
+bind-key -n S-Left select-pane -L
+bind-key -n S-Right select-pane -R
+bind-key -n S-Up select-pane -U
+bind-key -n S-Down select-pane -D
 
-## Windows re-ording (CTRL+SHIFT+ARROWS)
-bind-key -n C-S-Left swap-window -t -1
-bind-key -n C-S-Right swap-window -t +1
+## Windows switching (ALT+ARROWS)
+bind-key -n M-Left  previous-window
+bind-key -n M-Right next-window
+
+## Windows re-ording (SHIFT+ALT+ARROWS)
+bind-key -n M-S-Left swap-window -t -1
+bind-key -n M-S-Right swap-window -t +1
 
 ## Activity Monitoring
 setw -g monitor-activity on
@@ -1372,6 +1399,7 @@ grep -q '^set hlsearch' "$file" 2>/dev/null || echo 'set hlsearch' >> "$file"   
 grep -q '^set laststatus' "$file" 2>/dev/null || echo -e 'set laststatus=2\nset statusline=%F%m%r%h%w\ (%{&ff}){%Y}\ [%l,%v][%p%%]' >> "$file"   # Status bar
 grep -q '^filetype on' "$file" 2>/dev/null || echo -e 'filetype on\nfiletype plugin on\nsyntax enable\nset grepprg=grep\ -nH\ $*' >> "$file"     # Syntax highlighting
 grep -q '^set wildmenu' "$file" 2>/dev/null || echo -e 'set wildmenu\nset wildmode=list:longest,full' >> "$file"                                 # Tab completion
+grep -q '^set invnumber' "$file" 2>/dev/null || echo -e ':nmap <F8> :set invnumber<CR>' >> "$file"                                               # Toggle line numbers
 grep -q '^set pastetoggle=<F9>' "$file" 2>/dev/null || echo -e 'set pastetoggle=<F9>' >> "$file"                                                 # Hotkey - turning off auto indent when pasting
 grep -q '^:command Q q' "$file" 2>/dev/null || echo -e ':command Q q' >> "$file"                                                                 # Fix stupid typo I always make
 #--- Set as default editor
@@ -1384,6 +1412,11 @@ git config --global core.editor "vim"
 git config --global merge.tool vimdiff
 git config --global merge.conflictstyle diff3
 git config --global mergetool.prompt false
+
+
+##### Setting up pipe viewer
+echo -e "\n$GREEN[+]$RESET Installing pipe viewer ~ CLI progress bar"
+apt-get install -y -qq pv
 
 
 ##### Setting up iceweasel
@@ -1402,6 +1435,7 @@ sed -i 's/^.browser.safebrowsing.remoteLookups.enabled.*/user_pref("browser.safe
 sed -i 's/^.*browser.startup.page.*/user_pref("browser.startup.page", 0);' "$file" 2>/dev/null || echo 'user_pref("browser.startup.page", 0);' >> "$file"                                              # Iceweasel -> Edit -> Preferences -> General -> When firefox starts: Show a blank page
 sed -i 's/^.*privacy.donottrackheader.enabled.*/user_pref("privacy.donottrackheader.enabled", true);' "$file" 2>/dev/null || echo 'user_pref("privacy.donottrackheader.enabled", true);' >> "$file"    # Privacy -> Enable: Tell websites I do not want to be tracked
 sed -i 's/^.*browser.showQuitWarning.*/user_pref("browser.showQuitWarning", true);' "$file" 2>/dev/null || echo 'user_pref("browser.showQuitWarning", true);' >> "$file"                               # Stop Ctrl+Q from quitting without warning
+sed -i 's/^.*extensions.https_everywhere._observatory.popup_shown.*/user_pref("extensions.https_everywhere._observatory.popup_shown", true);' "$file" 2>/dev/null || echo 'user_pref("extensions.https_everywhere._observatory.popup_shown", true);' >> "$file"
 #--- Replace bookmarks (base: http://pentest-bookmarks.googlecode.com)
 file=$(find /root/.mozilla/firefox/*.default*/ -maxdepth 1 -type f -name 'bookmarks.html' -print -quit) && [ -e "$file" ] && cp -n $file{,.bkup}   #/etc/iceweasel/profile/bookmarks.html
 curl --progress -k -L "http://pentest-bookmarks.googlecode.com/files/bookmarksv1.5.html" > /tmp/bookmarks_new.html     #***!!! hardcoded version! Need to manually check for updates
@@ -1620,44 +1654,48 @@ EOF
 ##### Configuring metasploit ~ http://docs.kali.org/general-use/starting-metasploit-framework-in-kali
 echo -e "\n$GREEN[+]$RESET Configuring metasploit ~ exploit framework"
 apt-get -y -qq install metasploit 2>/dev/null   #metasploit = msf pro, metasploit-framework = free stuff
-#--- Start services
-service postgresql start   #service postgresql restart
-service metasploit start   #service metasploit restart
-#--- Misc
+#--- ASCII art
 export GOCOW=1   # Always a cow logo ;)   Others: THISISHALLOWEEN (Halloween), APRILFOOLSPONIES (My Little Pony)
 file=/root/.bashrc; [ -e "$file" ] && cp -n $file{,.bkup}
 ([[ -e "$file" ]] && [[ "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
 grep -q '^GOCOW' "$file" 2>/dev/null || echo 'GOCOW=1' >> "$file"
+#--- Start services
+service postgresql start   #service postgresql restart
+service metasploit start   #service metasploit restart
+sleep 10
 #--- Metasploit 4.10.x+ database fix #1 ~ https://community.rapid7.com/community/metasploit/blog/2014/08/25/not-reinventing-the-wheel
-mkdir -p /root/.msf4/
-ln -sf /opt/metasploit/apps/pro/ui/config/database.yml /root/.msf4/database.yml   #cp -f   #find / -name database.yml -type f | grep metasploit | grep -v gems   # /usr/share/metasploit-framework/config/database.yml
+#mkdir -p /root/.msf4/
+#ln -sf /opt/metasploit/apps/pro/ui/config/database.yml /root/.msf4/database.yml   #cp -f   #find / -name database.yml -type f | grep metasploit | grep -v gems   # /usr/share/metasploit-framework/config/database.yml
 #--- Metasploit 4.10.x+ database fix #2 ~ Using method #1, so this isn't needed
-#file=/root/.bash_aliases; [ -e "$file" ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliasesa
+file=/root/.bash_aliases; [ -e "$file" ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliasesa
 #grep -q '^alias msfconsole' "$file" 2>/dev/null || echo -e '## Metasploit Framework\nalias msfconsole="msfconsole db_connect -y /opt/metasploit/apps/pro/ui/config/database.yml"\n' >> "$file"
-#grep -q '^## metasploit' "$file" 2>/dev/null || echo -e '## metasploit\nalias msfc="service postgresql start; service metasploit start; msfconsole -q \"$@\""\n' >> "$file"
+grep -q '^## metasploit' "$file" 2>/dev/null || echo -e '## metasploit\nalias msfc="service postgresql start; service metasploit start; msfconsole -q \"$@\""\n' >> "$file"
 #--- Apply new alias
 if [[ "$SHELL" == "/bin/zsh" ]]; then source ~/.zshrc else source "$file"; fi
-#--- First time run
-echo -e 'sleep 10\ndb_status\ndb_rebuild_cache\nsleep 310\nexit' > /tmp/msf.rc   #echo -e 'go_pro' > /tmp/msf.rc
-msfconsole -r /tmp/msf.rc
+#--- First time run (Seams to break go_pro...)
+#echo -e 'sleep 10\ndb_status\n#db_rebuild_cache\n#sleep 310\nexit' > /tmp/msf.rc   #echo -e 'go_pro' >> /tmp/msf.rc
+#msfconsole -r /tmp/msf.rc
 #--- Check
-service postgresql status
-service metasploit status
+#service postgresql status
+#service metasploit status
 #--- Add to start up
 #update-rc.d postgresql enable
 #update-rc.d metasploit enable
 #--- Setup Web UI
 #bash /opt/metasploit/scripts/launchui.sh    #*** Doesn't automate. Takes a little while to kick in...
 #xdg-open https://127.0.0.1:3790/
-#--- Setup Armitage (UI)
+#--- Remove old temp files
+rm -f /tmp/msf.rc
+
+
+##### Configuring armitage
+#echo -e "\n$GREEN[+]$RESET Configuring armitage ~ GUI Metasploit UI"
 #export MSF_DATABASE_CONFIG=/opt/metasploit/apps/pro/ui/config/database.yml
 #file=/root/.bash_aliases; [ -e "$file" ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
 #([[ -e "$file" ]] && [[ "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
 #grep -q 'MSF_DATABASE_CONFIG' "$file" 2>/dev/null || echo -e 'MSF_DATABASE_CONFIG=/opt/metasploit/apps/pro/ui/config/database.yml\n' >> "$file"
 #chmod 0644 /opt/metasploit/apps/pro/ui/config/database.yml
 #msfrpcd -U msf -P test -f -S -a 127.0.0.1
-#--- Remove old temp files
-rm -f /tmp/msf.rc
 
 
 ##### Installing geany
@@ -1730,6 +1768,11 @@ echo -e "\n$GREEN[+]$RESET Installing bless ~ GUI hex editor"
 apt-get -y -qq install bless
 
 
+##### Installing dhex
+echo -e "\n$GREEN[+]$RESET Installing dhex ~ GUI hex compare"
+apt-get -y -qq install dhex
+
+
 ##### Installing nessus ***
 #echo -e "\n$GREEN[+]$RESET Installing nessus ~ vulnerability scanner"
 #--- Get download link
@@ -1755,12 +1798,13 @@ apt-get -y -qq install openvas
 #test -e /var/lib/openvas/users/root || openvasad -c add_user -n root -r Admin   #*** Doesn't automate
 
 
-##### Configuring burp suite
-echo -e "\n$GREEN[+]$RESET Configuring burp suite ~ web application proxy"
-apt-get -y -qq install burpsuite curl
-mkdir -p /root/.java/.userPrefs/burp/
-file=/root/.java/.userPrefs/burp/prefs.xml;   #[ -e "$file" ] && cp -n $file{,.bkup}
-[ -e "$file" ] || cat <<EOF > "$file"
+##### Configuring Burp Proxy
+if [ "$burpFree" != "false" ]; then
+  echo -e "\n$GREEN[+]$RESET Configuring Burp Proxy ~ web application proxy"
+  apt-get -y -qq install burpsuite curl
+  mkdir -p /root/.java/.userPrefs/burp/
+  file=/root/.java/.userPrefs/burp/prefs.xml;   #[ -e "$file" ] && cp -n $file{,.bkup}
+  [ -e "$file" ] || cat <<EOF > "$file"
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE map SYSTEM "http://java.sun.com/dtd/preferences.dtd" >
 <map MAP_XML_VERSION="1.0">
@@ -1768,41 +1812,44 @@ file=/root/.java/.userPrefs/burp/prefs.xml;   #[ -e "$file" ] && cp -n $file{,.b
   <entry key="free.suite.feedbackReportingEnabled" value="false"/>
 </map>
 EOF
-#--- Extract CA
-find /tmp/ -maxdepth 1 -name 'burp*.tmp' -delete
-export DISPLAY=:0.0   #[[ -z $SSH_CONNECTION ]] || export DISPLAY=:0.0
-timeout 120 burpsuite &
-PID=$!
-sleep 15
-#echo "-----BEGIN CERTIFICATE-----" > /tmp/PortSwiggerCA && grep caCert /root/.java/.userPrefs/burp/prefs.xml | awk -F '"' '{print $4}' | fold -w 64 >> /tmp/PortSwiggerCA && echo "-----END CERTIFICATE-----" >> /tmp/PortSwiggerCA
-export http_proxy="http://127.0.0.1:8080"
-rm -f /tmp/burp.crt
-while test -d /proc/$PID; do
+  #--- Extract CA
+  find /tmp/ -maxdepth 1 -name 'burp*.tmp' -delete
+  export DISPLAY=:0.0   #[[ -z $SSH_CONNECTION ]] || export DISPLAY=:0.0
+  timeout 120 burpsuite &
+  PID=$!
+  sleep 15
+  #echo "-----BEGIN CERTIFICATE-----" > /tmp/PortSwiggerCA && grep caCert /root/.java/.userPrefs/burp/prefs.xml | awk -F '"' '{print $4}' | fold -w 64 >> /tmp/PortSwiggerCA && echo "-----END CERTIFICATE-----" >> /tmp/PortSwiggerCA
+  export http_proxy="http://127.0.0.1:8080"
+  rm -f /tmp/burp.crt
+  while test -d /proc/$PID; do
+    sleep 1
+    curl --progress -k -L "http://burp/cert" -o /tmp/burp.crt 2>/dev/null
+    [ -f /tmp/burp.crt ] && break
+  done
+  timeout 5 kill $PID 2>/dev/null
+  unset http_proxy
+  #--- Installing CA
+  if [ -f /tmp/burp.crt ]; then
+    apt-get -y -qq install libnss3-tools
+    folder=$(find /root/.mozilla/firefox/ -maxdepth 1 -type d -name '*.default' -print -quit)
+    certutil -A -n Burp -t "CT,c,c" -d "$folder" -i /tmp/burp.crt
+    timeout 15 iceweasel
+    #mkdir -p /usr/share/ca-certificates/burp/
+    #cp -f /tmp/burp.crt /usr/share/ca-certificates/burp/
+    #dpkg-reconfigure ca-certificates
+    #cp -f /tmp/burp.crt /root/Desktop/burp.crt
+  else
+    echo -e $RED'[!]'$RESET' Didnt extract burp suite Certificate Authority (CA). Skipping...' 1>&2
+  fi
+  #--- Remove old temp files
   sleep 1
-  curl --progress -k -L "http://burp/cert" -o /tmp/burp.crt 2>/dev/null
-  [ -f /tmp/burp.crt ] && break
-done
-timeout 5 kill $PID 2>/dev/null
-unset http_proxy
-#--- Installing CA
-if [ -f /tmp/burp.crt ]; then
-  apt-get -y -qq install libnss3-tools
-  folder=$(find /root/.mozilla/firefox/ -maxdepth 1 -type d -name '*.default' -print -quit)
-  certutil -A -n Burp -t "CT,c,c" -d "$folder" -i /tmp/burp.crt
-  timeout 15 iceweasel
-  #mkdir -p /usr/share/ca-certificates/burp/
-  #cp -f /tmp/burp.crt /usr/share/ca-certificates/burp/
-  #dpkg-reconfigure ca-certificates
-  #cp -f /tmp/burp.crt /root/Desktop/burp.crt
+  find /tmp/ -maxdepth 1 -name 'burp*.tmp' -delete
+  find /root/.mozilla/firefox/*.default*/ -maxdepth 1 -type f -name 'sessionstore.*' -delete
+  rm -f /tmp/burp.crt
+  unset http_proxy
 else
-  echo -e $RED'[!]'$RESET' Didnt extract burp suite Certificate Authority (CA). Skipping...' 1>&2
+  echo -e $RED'[!]'$RESET' Skipping Burp (missing --burp)...' 1>&2
 fi
-#--- Remove old temp files
-sleep 1
-find /tmp/ -maxdepth 1 -name 'burp*.tmp' -delete
-find /root/.mozilla/firefox/*.default*/ -maxdepth 1 -type f -name 'sessionstore.*' -delete
-rm -f /tmp/burp.crt
-unset http_proxy
 
 
 ##### Installing sparta
@@ -1947,6 +1994,11 @@ apt-get -y -qq install iotop
 #apt-get -y -qq install glance
 
 
+##### Installing ca-certificates
+echo -e "\n$GREEN[+]$RESET Installing ca-certificates ~ HTTPS/SSL/TLS"
+apt-get -y -qq install ca-certificates
+
+
 ##### Installing axel
 echo -e "\n$GREEN[+]$RESET Installing axel ~ CLI download manager"
 apt-get -y -qq install axel
@@ -2032,11 +2084,6 @@ echo -e "\n$GREEN[+]$RESET Installing hashid ~ identify hash types"
 apt-get -y -qq install hashid
 
 
-##### Installing bully
-echo -e "\n$GREEN[+]$RESET Installing bully ~ WPS pin brute force"
-apt-get -y -qq install bully
-
-
 ##### Installing httprint
 echo -e "\n$GREEN[+]$RESET Installing httprint ~ GUI web server fingerprint"
 apt-get -y -qq install httprint
@@ -2057,13 +2104,43 @@ python setup.py install
 popd >/dev/null
 
 
+##### Installing aircrack-ng
+echo -e "\n$GREEN[+]$RESET Installing aircrack-ng ~ Wi-Fi cracking suite"
+apt-get -y -qq install aircrack-ng curl
+#--- Setup hardware database
+mkdir -p /etc/aircrack-ng/
+airodump-ng-oui-update 2>/dev/null || curl --progress -k -L "http://standards.ieee.org/develop/regauth/oui/oui.txt" > /etc/aircrack-ng/oui.txt
+[ -e /etc/aircrack-ng/oui.txt ] && (\grep "(hex)" /etc/aircrack-ng/oui.txt | sed 's/^[ \t]*//g;s/[ \t]*$//g' > /etc/aircrack-ng/airodump-ng-oui.txt)
+#--- Setup alias
+file=/root/.bash_aliases; [ -e "$file" ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
+([[ -e "$file" ]] && [[ "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
+grep -q '^## aircrack-ng' "$file" 2>/dev/null || echo -e '## aircrack-ng\nalias aircrack-ng="aircrack-ng -z"\n' >> "$file"
+grep -q '^## airodump-ng' "$file" 2>/dev/null || echo -e '## airodump-ng \nalias airodump-ng="airodump-ng --manufacturer --wps --uptime"\n' >> "$file"    # aircrack-ng 1.2 rc2
+
+
+##### Installing reaver (community fork)
+echo -e "\n$GREEN[+]$RESET Installing reaver (community fork) ~ WPS pin brute force + Pixie Attack"
+apt-get -y -qq install reaver pixiewps
+
+
+##### Installing bully
+echo -e "\n$GREEN[+]$RESET Installing bully ~ WPS pin brute force"
+apt-get -y -qq install bully
+
+
+##### Installing wifite
+echo -e "\n$GREEN[+]$RESET Installing wifite ~ automated Wi-Fi tool"
+apt-get -y -qq install wifite
+
+
 ##### Installing vulscan script for nmap
-echo -e "\n$GREEN[+]$RESET Installing vulscan script for nmap ~ basic vulnerability scanner with nmap"
+echo -e "\n$GREEN[+]$RESET Installing vulscan script for nmap ~ vulnerability scanner add-on"
 apt-get -y -qq install nmap curl
 mkdir -p /usr/share/nmap/scripts/vulscan/
 curl --progress -k -L "http://www.computec.ch/projekte/vulscan/download/nmap_nse_vulscan-2.0.tar.gz" > /tmp/nmap_nse_vulscan.tar.gz    #***!!! hardcoded version! Need to manually check for updates
 gunzip /tmp/nmap_nse_vulscan.tar.gz
 tar -xf /tmp/nmap_nse_vulscan.tar -C /usr/share/nmap/scripts/
+#--- Fix permissions (by default its 0777)
 chmod -R 0755 /usr/share/nmap/scripts/; find /usr/share/nmap/scripts/ -type f -exec chmod 0644 {} \;
 #--- Remove old temp files
 rm -f /tmp/nmap_nse_vulscan.tar*
@@ -2173,6 +2250,15 @@ apt-get -y -qq install webshells
 ln -sf /usr/share/htshells /usr/share/webshells/htshells
 
 
+##### Installing python-pty-shells
+echo -e "\n$GREEN[+]$RESET Installing python-pty-shells ~ PTY shells"
+apt-get -y -qq install git
+git clone git://github.com/infodox/python-pty-shells.git /usr/share/python-pty-shells-git/
+pushd /usr/share/python-pty-shells-git/ >/dev/null
+git pull
+popd >/dev/null
+
+
 ##### Installing bridge-utils
 echo -e "\n$GREEN[+]$RESET Installing bridge-utils ~ bridge network interfaces"
 apt-get -y -qq install bridge-utils
@@ -2218,6 +2304,19 @@ git pull
 popd >/dev/null
 
 
+##### Installing proxychains-ng
+echo -e "\n$GREEN[+]$RESET Installing proxychains-ng ~ proxifier to connect through a proxy"
+apt-get -y -qq install git gcc
+git clone git://github.com/rofl0r/proxychains-ng.git /usr/share/proxychains-ng-git/
+pushd /usr/share/proxychains-ng-git/ >/dev/null
+git pull
+./configure --prefix=/usr --sysconfdir=/etc
+make
+make install
+popd >/dev/null
+ln -sf /usr/bin/proxychains4 /usr/bin/proxychains-ng
+
+
 ##### Installing httptunnel
 echo -e "\n$GREEN[+]$RESET Installing httptunnel ~ tunnels data streams in HTTP requests"
 apt-get -y -qq install http-tunnel
@@ -2231,7 +2330,7 @@ apt-get -y -qq install sshuttle
 
 ##### Installing iodine
 echo -e "\n$GREEN[+]$RESET Installing iodine ~ DNS tunneling (IP over DNS)"
-apt-get -y -qq install ptunnel
+apt-get -y -qq install iodine
 #iodined -f -P password1 10.0.0.1 dns.mydomain.com
 #iodine -f -P password1 123.9.9.9 dns.mydomain.com; ssh -C -D 8081 root@10.0.0.1
 
@@ -2429,22 +2528,6 @@ apt-file update
 #apt-get -y -qq install apt-show-versions
 
 
-##### Installing sqlmap (GIT)
-echo -e "\n$GREEN[+]$RESET Installing sqlmap (GIT) ~ automatic SQL injection"
-apt-get -y -qq install git
-git clone git://github.com/sqlmapproject/sqlmap.git /usr/share/sqlmap-git/
-pushd /usr/share/sqlmap-git/ >/dev/null
-git pull
-popd >/dev/null
-file=/usr/local/bin/sqlmap-git
-cat <<EOF > "$file"
-#!/bin/bash
-
-cd /usr/share/sqlmap-git/ && python sqlmap.py "\$@"
-EOF
-chmod +x "$file"
-
-
 ##### Installing Debian weak SSH keys
 #echo -e "\n$GREEN[+]$RESET Installing Debian weak SSH keys ~ OpenSSL predictable PRNG"
 #dpkg --remove --force-depends openssh-blacklist
@@ -2474,6 +2557,24 @@ git pull
 popd >/dev/null
 
 
+##### Installing pwntools
+echo -e "\n$GREEN[+]$RESET Installing pwntools ~ handy CTF tools"
+apt-get -y -qq install git
+git clone git://github.com/Gallopsled/pwntools.git /usr/share/pwntools-git/
+pushd /usr/share/pwntools-git/ >/dev/null
+git pull
+popd >/dev/null
+
+
+##### Installing nullsecurity tool suite
+#echo -e "\n$GREEN[+]$RESET Installing nullsecurity tool suite ~ collection of tools"
+#apt-get -y -qq install git
+#git clone git://github.com/nullsecuritynet/tools.git /usr/share/nullsecuritynet-git/
+#pushd /usr/share/pwntools-git/ >/dev/null
+#git pull
+#popd >/dev/null
+
+
 if [[ "$(uname -m)" == "x86_64" ]]; then
   ##### Installing lnav
   echo -e "\n$GREEN[+]$RESET Installing lnav (x64) ~ CLI log veiwer"
@@ -2491,31 +2592,41 @@ if [[ "$(uname -m)" == "x86_64" ]]; then
 fi
 
 
-##### Installing python-pty-shells
-echo -e "\n$GREEN[+]$RESET Installing python-pty-shells ~ PTY shells"
+##### Installing sqlmap (GIT)
+echo -e "\n$GREEN[+]$RESET Installing sqlmap (GIT) ~ automatic SQL injection"
 apt-get -y -qq install git
-git clone git://github.com/infodox/python-pty-shells.git /usr/share/python-pty-shells-git/
-pushd /usr/share/python-pty-shells-git/ >/dev/null
+git clone git://github.com/sqlmapproject/sqlmap.git /usr/share/sqlmap-git/
+pushd /usr/share/sqlmap-git/ >/dev/null
 git pull
 popd >/dev/null
+file=/usr/local/bin/sqlmap-git
+cat <<EOF > "$file"
+#!/bin/bash
+
+cd /usr/share/sqlmap-git/ && python sqlmap.py "\$@"
+EOF
+chmod +x "$file"
 
 
-##### Installing pwntools
-echo -e "\n$GREEN[+]$RESET Installing pwntools ~ handy CTF tools"
+##### Installing commix (GIT)
+echo -e "\n$GREEN[+]$RESET Installing commix (GIT) ~ automatic command injection"
 apt-get -y -qq install git
-git clone git://github.com/Gallopsled/pwntools.git /usr/share/pwntools-git/
-pushd /usr/share/pwntools-git/ >/dev/null
+git clone git://github.com/stasinopoulos/commix.git /usr/share/commix-git/
+pushd /usr/share/commix-git/ >/dev/null
 git pull
 popd >/dev/null
+file=/usr/local/bin/commix-git
+cat <<EOF > "$file"
+#!/bin/bash
+
+cd /usr/share/commix-git/ && python commix.py "\$@"
+EOF
+chmod +x "$file"
 
 
-##### Installing nullsecurity tool suite
-#echo -e "\n$GREEN[+]$RESET Installing nullsecurity tool suite ~ collection of tools"
-#apt-get -y -qq install git
-#git clone git://github.com/nullsecuritynet/tools.git /usr/share/nullsecuritynet-git/
-#pushd /usr/share/pwntools-git/ >/dev/null
-#git pull
-#popd >/dev/null
+##### Installing smbmap
+echo -e "\n$GREEN[+]$RESET Installing smbmap ~ SMB enumeration tool"
+apt-get -y -qq install smbmap
 
 
 ##### Installing wig
@@ -2590,6 +2701,11 @@ cat <<EOF > "$file"
 cd /usr/share/wpscan-git/ && ruby wpscan.rb "\$@"
 EOF
 chmod +x "$file"
+
+
+##### Installing firmware-mod-kit
+echo -e "\n$GREEN[+]$RESET Installing firmware-mod-kit ~ customize firmware"
+apt-get -y -qq install firmware-mod-kit
 
 
 ##### Setting up tftp client & server
@@ -2696,6 +2812,11 @@ echo -e "\n$GREEN[+]$RESET Installing rsh-client ~ remote shell connections"
 apt-get -y -qq install rsh-client
 
 
+##### Installing sshpass
+echo -e "\n$GREEN[+]$RESET Installing sshpass ~ automating SSH connections"
+apt-get -y -qq install sshpass
+
+
 ##### Installing DBeaver
 echo -e "\n$GREEN[+]$RESET Installing DBeaver ~ GUI DB manager"
 apt-get -y -qq install curl
@@ -2703,6 +2824,26 @@ arch="i386"
 [[ "$(uname -m)" == "x86_64" ]] && arch="amd64"
 curl --progress -k -L "http://dbeaver.jkiss.org/files/dbeaver_3.2.0_$arch.deb" > /tmp/dbeaver.deb   #***!!! hardcoded version! Need to manually check for updates
 dpkg -i /tmp/dbeaver.deb
+
+
+##### Setting up a jail ~ http://allanfeid.com/content/creating-chroot-jail-ssh-access
+echo -e "\n$GREEN[+]$RESET Setting up a jail ~ Testing environment"
+apt-get -y -qq install debootstrap curl
+#mkdir -p /var/jail/
+#debootstrap wheezy /var/jail/
+#SHELL=/bin/bash
+#chroot /var/jail
+#---
+#mkdir -p /var/jail/{dev,etc,lib,usr,bin}/
+#mkdir -p /var/jail/{,usr/}bin/
+#chown root\:root /var/jail
+#mknod -m 666 /var/jail/dev/null c 1 3
+#cp -f /etc/ld.so.cache /etc/ld.so.cache /etc/ld.so.conf /etc/nsswitch.conf /etc/hosts /var/jail/etc/
+#cp -f /bin/ls /bin/bash /var/jail/bin/
+##ldd /bin/ls
+#curl --progress -k -L "http://www.cyberciti.biz/files/lighttpd/l2chroot.txt" > /usr/sbin/l2chroot
+#sed -i 's#^BASE=".*"#BASE="/var/jail"#' /usr/sbin/l2chroot
+#chmod +x /usr/sbin/l2chroot
 
 
 ##### Setting up SSH
@@ -2735,7 +2876,7 @@ updatedb
 #--- Reset folder location
 cd ~/ &>/dev/null
 #--- Remove any history files (as they could contain sensitive info)
-[ "$SHELL" == "/bin/zsh" ] || history -c
+[[ "$SHELL" == "/bin/zsh" ]] || history -c
 for i in $(cut -d: -f6 /etc/passwd | sort -u); do
   [ -e "$i" ] && find "$i" -type f -name '.*_history' -delete
 done
