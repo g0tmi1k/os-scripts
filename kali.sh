@@ -1812,6 +1812,8 @@ if [ "$openvas" != "false" ]; then
   update-rc.d -f openvas-manager remove
   update-rc.d -f openvas-scanner remove
   update-rc.d -f greenbone-security-assistant remove
+  #--- Fix target credentials creation bug
+  mkdir /var/lib/openvas/gnupg
   #--- Setup alias
   file=/root/.bash_aliases; [ -e "$file" ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
   grep -q '^## openvas' "$file" 2>/dev/null || echo -e '## openvas\nalias openvas="service openvas-manager restart; service openvas-scanner restart; service greenbone-security-assistant restart; xdg-open https://127.0.0.1:9392/"\n' >> "$file"
