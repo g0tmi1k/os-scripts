@@ -1,6 +1,6 @@
 #!/bin/bash
 #-Metadata----------------------------------------------------#
-#  Filename: kali.sh                     (Update: 2015-08-25) #
+#  Filename: kali.sh                     (Update: 2015-08-26) #
 #-Info--------------------------------------------------------#
 #  Personal post-install script for Kali Linux 2.0.           #
 #-Author(s)---------------------------------------------------#
@@ -94,11 +94,11 @@ done
 
 
 ##### Check if we are running as root - else this script will fail (hard!)
-if [[ $EUID -ne 0 ]]; then
+if [[ ${EUID} -ne 0 ]]; then
   echo -e ' '${RED}'[!]'${RESET}" This script must be ${RED}run as root${RESET}. Quitting..." 1>&2
   exit 1
 else
-  echo -e " $BLUE[*]$RESET ${BOLD}Kali Linux 2.x post-install script${RESET}"
+  echo -e " ${BLUE}[*]${RESET} ${BOLD}Kali Linux 2.x post-install script${RESET}"
 fi
 
 
@@ -114,7 +114,7 @@ export DISPLAY=:0.0   #[[ -z $SSH_CONNECTION ]] || export DISPLAY=:0.0
   dconf write /org/gnome/settings-daemon/plugins/updates/active false
   dconf write /org/gnome/desktop/notifications/application/gpk-update-viewer/active false
   timeout 5 killall -w /usr/lib/apt/methods/http >/dev/null 2>&1
-  #[[ -e /var/lib/dpkg/lock || -e /var/lib/apt/lists/lock ]] && echo -e ' '${RED}'[!]'$RESET" There ${RED}another service${RESET} (other than this script) using ${BOLD}Advanced Packaging Tool${RESET} currently" && exit 1
+  #[[ -e /var/lib/dpkg/lock || -e /var/lib/apt/lists/lock ]] && echo -e ' '${RED}'[!]'${RESET}" There ${RED}another service${RESET} (other than this script) using ${BOLD}Advanced Packaging Tool${RESET} currently" && exit 1
 fi
 
 
@@ -122,7 +122,7 @@ fi
 echo -e "\n ${GREEN}[+]${RESET} Checking ${GREEN}Internet access${RESET}"
 for i in {1..10}; do ping -c 1 -W ${i} www.google.com &>/dev/null && break; done
 if [[ "$?" -ne 0 ]]; then
-  echo -e ' '${RED}'[!]'$RESET" ${RED}Possible DNS issues${RESET}(?). Trying DHCP 'fix'." 1>&2
+  echo -e ' '${RED}'[!]'${RESET}" ${RED}Possible DNS issues${RESET}(?). Trying DHCP 'fix'." 1>&2
   chattr -i /etc/resolv.conf 2>/dev/null
   dhclient -r
   route delete default gw 192.168.155.1 2>/dev/null
@@ -171,7 +171,7 @@ fi
 
 ##### Install kernel headers
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}kernel headers${RESET}"
-apt-get -y -qq install make gcc "linux-headers-$(uname -r)" || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install make gcc "linux-headers-$(uname -r)" || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 if [[ $? -ne 0 ]]; then
   echo -e ' '${RED}'[!]'${RESET}" There was an ${RED}issue installing kernel headers${RESET}" 1>&2
   echo -e " ${YELLOW}[i]${RESET} Are you ${YELLOW}USING${RESET} the ${YELLOW}latest kernel${RESET}?"
@@ -196,8 +196,8 @@ elif (dmidecode | grep -iq vmware); then
   ([[ "${_mount}" == 0 && -z "${file}" ]]) && echo -e ' '${RED}'[!]'${RESET}' Incorrect CD/ISO mounted' 1>&2
   if [[ "${_mount}" == 0 && -n "${file}" ]]; then             # If there is a CD in (and its right!), try to install native Guest Additions
     echo -e ' '${YELLOW}'[i]'${RESET}' Patching & using "native VMware tools"'
-    apt-get -y -qq install make gcc "linux-headers-$(uname -r)" git || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
-    git clone -q https://github.com/rasa/vmware-tools-patches.git /tmp/vmware-tools-patches || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+    apt-get -y -qq install make gcc "linux-headers-$(uname -r)" git || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
+    git clone -q https://github.com/rasa/vmware-tools-patches.git /tmp/vmware-tools-patches || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
     cp -f /mnt/cdrom/VMwareTools-*.tar.gz /tmp/vmware-tools-patches/downloads/
     pushd /tmp/vmware-tools-patches/ >/dev/null
     bash untar-and-patch-and-compile.sh
@@ -207,7 +207,7 @@ elif (dmidecode | grep -iq vmware); then
     echo -e " ${YELLOW}[i]${RESET} VMware Tools CD/ISO isnt mounted"
     echo -e " ${YELLOW}[i]${RESET} Skipping 'Native VMware Tools', switching to 'Open VM Tools'"
     apt-get -y -qq install open-vm-tools open-vm-tools-desktop open-vm-tools-dkms|| echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
-    apt-get -y -qq install make || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}    # nags afterwards
+    apt-get -y -qq install make || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}    # nags afterwards
   fi
 elif [ -e "/etc/init.d/vboxadd" ]; then
   echo -e '\n '${RED}'[!]'${RESET}" Virtualbox Guest Additions is ${RED}already installed${RESET}. Skipping..." 1>&2
@@ -222,7 +222,7 @@ elif (dmidecode | grep -iq virtualbox); then
   if [[ "${_mount}" == 0 && ! -e /mnt/cdrom/VBoxLinuxAdditions.run ]]; then
     echo -e ' '${RED}'[!]'${RESET}' Incorrect CD/ISO mounted. Skipping...' 1>&2
   elif [[ "${_mount}" == 0 ]]; then
-    apt-get -y -qq install make gcc "linux-headers-$(uname -r)" || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+    apt-get -y -qq install make gcc "linux-headers-$(uname -r)" || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
     cp -f /mnt/cdrom/VBoxLinuxAdditions.run /tmp/
     chmod -f 0755 /tmp/VBoxLinuxAdditions.run
     /tmp/VBoxLinuxAdditions.run --nox11
@@ -262,7 +262,7 @@ if [ "${hardenDNS}" != "false" ]; then
   #--- Use Google DNS
   echo -e 'nameserver 8.8.8.8\nnameserver 8.8.4.4' > "${file}"
   #--- Add domain
-  #echo -e "domain $domainName\n#search $domainName" >> "${file}"
+  #echo -e "domain ${domainName}\n#search ${domainName}" >> "${file}"
   #--- Protect it
   chattr +i "${file}" 2>/dev/null
 else
@@ -285,8 +285,8 @@ if [ ! -z "${keyboardlayout}" ]; then
   #dpkg-reconfigure -f noninteractive keyboard-configuration   #dpkg-reconfigure console-setup   #dpkg-reconfigure keyboard-configuration -u    # Need to restart xserver for effect
 fi
 #--- Changing time zone
-[ -z "$timezone" ] && timezone=Etc/UTC     #Etc/GMT vs Etc/UTC vs UTC
-echo "$timezone" > /etc/timezone           #Etc/GMT vs Etc/UTC vs UTC vs Europe/London
+[ -z "${timezone}" ] && timezone=Etc/UTC     #Etc/GMT vs Etc/UTC vs UTC
+echo "${timezone}" > /etc/timezone           #Etc/GMT vs Etc/UTC vs UTC vs Europe/London
 ln -sf "/usr/share/zoneinfo/$(cat /etc/timezone)" /etc/localtime
 dpkg-reconfigure -f noninteractive tzdata
 #--- Setting locale    # Cant't do due to user input
@@ -296,7 +296,7 @@ dpkg-reconfigure -f noninteractive tzdata
 #dpkg-reconfigure -f noninteractive tzdata
 ##locale -a    # Check
 #--- Installing ntp
-apt-get -y -qq install ntp ntpdate || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install ntp ntpdate || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 #--- Configuring ntp
 #file=/etc/default/ntp; [ -e "${file}" ] && cp -n $file{,.bkup}
 #grep -q "interface=127.0.0.1" "${file}" || sed -i "s/NTPD_OPTS='/NTPD_OPTS='--interface=127.0.0.1 /" "${file}"
@@ -326,7 +326,7 @@ fi
 echo -e "\n ${GREEN}[+]${RESET} ${GREEN}Updating OS${RESET} from network repositories ~ this ${BOLD}may take a while${RESET} depending on your Internet connection & Kali version/age"
 for FILE in clean autoremove; do apt-get -y -qq "${FILE}"; done         # Clean up      clean remove autoremove autoclean
 export DEBIAN_FRONTEND=noninteractive
-apt-get -qq update && apt-get -y -qq dist-upgrade --fix-missing || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -qq update && apt-get -y -qq dist-upgrade --fix-missing || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 #--- Enable bleeding edge ~ http://www.kali.org/kali-monday/bleeding-edge-kali-repositories/
 #file=/etc/apt/sources.list; [ -e "${file}" ] && cp -n $file{,.bkup}
 #grep -q 'kali-bleeding-edge' "${file}" 2>/dev/null || echo -e "\n\n## Bleeding edge\ndeb http://repo.kali.org/kali sana-bleeding-edge main" >> "${file}"
@@ -334,7 +334,7 @@ apt-get -qq update && apt-get -y -qq dist-upgrade --fix-missing || echo -e ' '${
 #--- Check kernel stuff
 _TMP=$(dpkg -l | grep linux-image- | grep -vc meta)
 if [[ "${_TMP}" -gt 1 ]]; then
-  echo -e "\n $YELLOW[i]$RESET Detected multiple kernels installed"
+  echo -e "\n ${YELLOW}[i]${RESET} Detected multiple kernels installed"
   #echo -e " ${YELLOW}[i]${RESET}   Clean up: apt-get remove --purge $(dpkg -l 'linux-image-*' | sed '/^ii/!d;/'"$(uname -r | sed "s/\(.*\)-\([^0-9]\+\)/\1/")"'/d;s/^[^ ]* [^ ]* \([^ ]*\).*/\1/;/[0-9]/!d')"   # DO NOT RUN IF NOT USING THE LASTEST KERNEL!
   TMP=$(dpkg -l | grep linux-image | grep -v meta | sort -t '.' -k 2 -g | tail -n 1 | grep "$(uname -r)")
   [[ -z "${_TMP}" ]] && echo -e ' '${RED}'[!]'${RESET}' You are '${RED}'not using the latest kernel'${RESET} 1>&2 && echo -e " ${YELLOW}[i]${RESET} You have it downloaded & installed, ${YELLOW}just not using it${RESET}. You ${YELLOW}need to reboot${RESET}"
@@ -345,13 +345,13 @@ fi
 ##### Update OS from network repositories
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}kali-linux-full${RESET} meta-package ~ this ${BOLD}may take a while${RESET} depending on your Kali version (e.g. ARM or light)"
 #--- Kali's default tools ~ https://www.kali.org/news/kali-linux-metapackages/
-apt-get -y -qq install kali-linux-full || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install kali-linux-full || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
 ##### Fix audio issues
 echo -e "\n ${GREEN}[+]${RESET} Fixing ${GREEN}audio${RESET} issues"
 #--- Unmute on startup
-apt-get -y -qq install alsa-utils || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install alsa-utils || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 #--- Set volume now
 amixer set Master unmute >/dev/null
 amixer set Master 50% >/dev/null
@@ -383,17 +383,17 @@ update-grub
 #echo -e "\n ${GREEN}[+]${RESET} Configuring ${GREEN}startup${RESET} ~ randomize the hostname, eth0 & wlan0s MAC address"
 #--- Start up
 #file=/etc/rc.local; [ -e "${file}" ] && cp -n $file{,.bkup}
-#grep -q "macchanger" "${file}" 2>/dev/null || sed -i "s#^exit 0#for INT in eth0 wlan0; do\n  $(which ip) link set \$INT down\n  $(which macchanger) -r \$INT \&\& $(which sleep) 3s\n  $(which ip) link set \$INT up\ndone\n\n\nexit 0#" "${file}"
+#grep -q "macchanger" "${file}" 2>/dev/null || sed -i "s#^exit 0#for INT in eth0 wlan0; do\n  $(which ip) link set \${INT} down\n  $(which macchanger) -r \${INT} \&\& $(which sleep) 3s\n  $(which ip) link set \${INT} up\ndone\n\n\nexit 0#" "${file}"
 #grep -q "hostname" "${file}" 2>/dev/null || sed -i "s#^exit 0#echo \$($(which cat) /dev/urandom | $(which tr) -dc 'A-Za-z' | $(which head) -c8) > /etc/hostname\nexit 0#" "${file}"
 #--- On demand
 file=/usr/local/bin/mac-rand; [ -e "${file}" ] && cp -n $file{,.bkup}
 cat <<EOF > ${file}
 #!/bin/bash
 for INT in eth0 wlan0; do
-  echo "[i] Randomizing: \$INT"
-  ifconfig \$INT down
-  macchanger -r \$INT && sleep 3
-  ifconfig \$INT up
+  echo "[i] Randomizing: \${INT}"
+  ifconfig \${INT} down
+  macchanger -r \${INT} && sleep 3
+  ifconfig \${INT} up
   echo "--------------------"
 done
 exit 0
@@ -403,10 +403,10 @@ chmod -f 0500 "${file}"
 #file=/etc/network/if-pre-up.d/macchanger; [ -e "${file}" ] && cp -n $file{,.bkup}
 #cat <<EOF > ${file}
 ##!/bin/bash
-#[ "\$IFACE" == "lo" ] && exit 0
-#ifconfig \$IFACE down
-#macchanger -r \$IFACE
-#ifconfig \$IFACE up
+#[ "\${IFACE}" == "lo" ] && exit 0
+#ifconfig \${IFACE} down
+#macchanger -r \${IFACE}
+#ifconfig \${IFACE} up
 #exit 0
 #EOF
 #chmod -f 0500 "${file}"
@@ -420,21 +420,21 @@ echo -e "\n ${GREEN}[+]${RESET} Configuring ${GREEN}GNOME 3${RESET} ~ desktop en
 export DISPLAY=:0.0   #[[ -z $SSH_CONNECTION ]] || export DISPLAY=:0.0
 #-- Gnome Extension - Frippery (https://extensions.gnome.org/extension/13/applications-menu/)   *** TaskBar has more features
 mkdir -p "~/.local/share/gnome-shell/extensions/"
-curl --progress -k -L -f "http://frippery.org/extensions/gnome-shell-frippery-0.9.3.tgz" > /tmp/frippery.tgz || echo -e ' '${RED}'[!]'$RESET" Issue downloading frippery.tgz" 1>&2
+curl --progress -k -L -f "http://frippery.org/extensions/gnome-shell-frippery-0.9.3.tgz" > /tmp/frippery.tgz || echo -e ' '${RED}'[!]'${RESET}" Issue downloading frippery.tgz" 1>&2
 tar -zxf /tmp/frippery.tgz -C ~/
 #-- Gnome Extension - TopIcons (https://extensions.gnome.org/extension/495/topicons/)    *** isn't working?
 #mkdir -p "~/.local/share/gnome-shell/extensions/"   #"/usr/share/gnome-shell/extensions/topIcons@adel.gadllah@gmail.com/"
-#curl --progress -k -L -f "https://extensions.gnome.org/review/download/2236.shell-extension.zip" > /tmp/topIcons.zip || echo -e ' '${RED}'[!]'$RESET" Issue downloading topIcons.zip" 1>&2
+#curl --progress -k -L -f "https://extensions.gnome.org/review/download/2236.shell-extension.zip" > /tmp/topIcons.zip || echo -e ' '${RED}'[!]'${RESET}" Issue downloading topIcons.zip" 1>&2
 #unzip -q -o /tmp/topIcons.zip -d "~/.local/share/gnome-shell/extensions/topIcons@adel.gadllah@gmail.com/"
 #-- Gnome Extension - icon-hider (https://github.com/ikalnitsky/gnome-shell-extension-icon-hider)
 #mkdir -p "/usr/share/gnome-shell/extensions/"
-#git clone -q https://github.com/ikalnitsky/gnome-shell-extension-icon-hider.git "/usr/share/gnome-shell/extensions/icon-hider@kalnitsky.org/" || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+#git clone -q https://github.com/ikalnitsky/gnome-shell-extension-icon-hider.git "/usr/share/gnome-shell/extensions/icon-hider@kalnitsky.org/" || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 #-- Gnome Extension - Disable Screen Shield (https://extensions.gnome.org/extension/672/disable-screen-shield/)
 #mkdir -p "/usr/share/gnome-shell/extensions/"
-#git clone -q https://github.com/lgpasquale/gnome-shell-extension-disable-screenshield.git "/usr/share/gnome-shell/extensions/disable-screenshield@lgpasquale.com/" || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+#git clone -q https://github.com/lgpasquale/gnome-shell-extension-disable-screenshield.git "/usr/share/gnome-shell/extensions/disable-screenshield@lgpasquale.com/" || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 #-- Gnome Extension - TaskBar (https://extensions.gnome.org/extension/584/taskbar/)
 mkdir -p "/usr/share/gnome-shell/extensions/"
-git clone -q https://github.com/zpydr/gnome-shell-extension-taskbar.git "/usr/share/gnome-shell/extensions/TaskBar@zpydr/" || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+git clone -q https://github.com/zpydr/gnome-shell-extension-taskbar.git "/usr/share/gnome-shell/extensions/TaskBar@zpydr/" || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 #--- Gnome Extensions (Enable)
 for EXTENSION in "alternate-tab@gnome-shell-extensions.gcampax.github.com" "drive-menu@gnome-shell-extensions.gcampax.github.com" "TaskBar@zpydr" "Bottom_Panel@rmy.pobox.com" "Panel_Favorites@rmy.pobox.com" "Move_Clock@rmy.pobox.com"; do   #"topIcons@adel.gadllah@gmail.com"   "disable-screenshield@lgpasquale.com"
   GNOME_EXTENSIONS=$(gsettings get org.gnome.shell enabled-extensions | sed 's_^.\(.*\).$_\1_')
@@ -442,7 +442,7 @@ for EXTENSION in "alternate-tab@gnome-shell-extensions.gcampax.github.com" "driv
 done
 #--- Gnome Extensions (Disable)
 for EXTENSION in "dash-to-dock@micxgx.gmail.com" "workspace-indicator@gnome-shell-extensions.gcampax.github.com"; do
-  GNOME_EXTENSIONS=$(gsettings get org.gnome.shell enabled-extensions | sed "s_^.\(.*\).\$_\1_; s_, '$EXTENSION'__")
+  GNOME_EXTENSIONS=$(gsettings get org.gnome.shell enabled-extensions | sed "s_^.\(.*\).\$_\1_; s_, '${EXTENSION}'__")
   gsettings set org.gnome.shell enabled-extensions "[${GNOME_EXTENSIONS}]"
 done
 #--- TaskBar (Global)
@@ -474,6 +474,9 @@ dconf write /org/gnome/shell/extensions/TaskBar/bottom-panel false
 dconf write /org/gnome/shell/extensions/TaskBar/display-favorites false
 dconf write /org/gnome/shell/extensions/TaskBar/display-desktop-button false
 dconf write /org/gnome/shell/extensions/TaskBar/display-showapps-button false
+dconf write /org/gnome/shell/extensions/TaskBar/display-tasks false
+dconf write /org/gnome/shell/extensions/TaskBar/display-workspace-button false
+dconf write /org/gnome/shell/extensions/TaskBar/overview false
 dconf write /org/gnome/shell/extensions/TaskBar/separator-two false
 dconf write /org/gnome/shell/extensions/TaskBar/separator-three false
 dconf write /org/gnome/shell/extensions/TaskBar/separator-four false
@@ -518,8 +521,8 @@ fi
 ##### Install XFCE4
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}XFCE4${RESET}${RESET} ~ desktop environment"
 export DISPLAY=:0.0   #[[ -z $SSH_CONNECTION ]] || export DISPLAY=:0.0
-apt-get -y -qq install curl || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
-apt-get -y -qq install xfce4 xfce4-places-plugin || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}    #xfce4-goodies   xfce4-battery-plugin  xfce4-mount-plugin
+apt-get -y -qq install curl || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
+apt-get -y -qq install xfce4 xfce4-places-plugin || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}    #xfce4-goodies   xfce4-battery-plugin  xfce4-mount-plugin
 #apt-get -y -qq install shiki-colors-xfwm-theme     # theme from repos
 #--- Configuring XFCE
 mv -f /usr/bin/startx{,-gnome}
@@ -761,7 +764,7 @@ xfconf-query -n -c xfwm4 -p /general/frame_opacity -t int -s 85
 ##### Configure XFCE4
 echo -e "\n ${GREEN}[+]${RESET} Configuring ${GREEN}XFCE4${RESET}${RESET} ~ desktop environment"
 #--- Disable user folders
-apt-get -y -qq install xdg-user-dirs || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install xdg-user-dirs || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 xdg-user-dirs-update
 file=/etc/xdg/user-dirs.conf; [ -e "${file}" ] && cp -n $file{,.bkup}
 sed -i 's/^enable=.*/enable=False/' "${file}"   #sed -i 's/^XDG_/#XDG_/; s/^#XDG_DESKTOP/XDG_DESKTOP/;' /root/.config/user-dirs.dirs
@@ -824,7 +827,7 @@ file=/root/.xsession; [ -e "${file}" ] && cp -n $file{,.bkup}       #~/.xsession
 echo xfce4-session > "${file}"
 #--- Enable num lock at start up (might not be smart if you're using a smaller keyboard (laptop?)) ~ https://wiki.xfce.org/faq
 #xfconf-query -n -c keyboards -p /Default/Numlock -t bool -s true
-apt-get -y -qq install numlockx || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install numlockx || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 file=/etc/xdg/xfce4/xinitrc; [ -e "${file}" ] && cp -n $file{,.bkup}     #/etc/rc.local
 ([[ -e "${file}" && "$(tail -c 1 $file)" != "" ]]) && echo >> "${file}"
 grep -q '^/usr/bin/numlockx' "${file}" 2>/dev/null || echo "/usr/bin/numlockx on" >> "${file}"
@@ -857,26 +860,26 @@ echo -e "\n ${GREEN}[+]${RESET} ${GREEN}Cosmetics${RESET}${RESET} ~ Making it di
 mkdir -p /root/.themes/
 export DISPLAY=:0.0   #[[ -z $SSH_CONNECTION ]] || export DISPLAY=:0.0
 #--- shiki-colors-light v1.3 XFCE4 theme
-curl --progress -k -L -f "http://xfce-look.org/CONTENT/content-files/142110-Shiki-Colors-Light-Menus.tar.gz" > /tmp/Shiki-Colors-Light-Menus.tar.gz || echo -e ' '${RED}'[!]'$RESET" Issue downloading Shiki-Colors-Light-Menus.tar.gz" 1>&2    #***!!! hardcoded path!
+curl --progress -k -L -f "http://xfce-look.org/CONTENT/content-files/142110-Shiki-Colors-Light-Menus.tar.gz" > /tmp/Shiki-Colors-Light-Menus.tar.gz || echo -e ' '${RED}'[!]'${RESET}" Issue downloading Shiki-Colors-Light-Menus.tar.gz" 1>&2    #***!!! hardcoded path!
 tar -zxf /tmp/Shiki-Colors-Light-Menus.tar.gz -C /root/.themes/
 #xfconf-query -n -c xsettings -p /Net/ThemeName -s "Shiki-Colors-Light-Menus"
 #xfconf-query -n -c xsettings -p /Net/IconThemeName -s "Vibrancy-Kali-Dark"
 #--- axiom / axiomd (May 18 2010) XFCE4 theme
-curl --progress -k -L -f "http://xfce-look.org/CONTENT/content-files/90145-axiom.tar.gz" > /tmp/axiom.tar.gz || echo -e ' '${RED}'[!]'$RESET" Issue downloading axiom.tar.gz" 1>&2    #***!!! hardcoded path!
+curl --progress -k -L -f "http://xfce-look.org/CONTENT/content-files/90145-axiom.tar.gz" > /tmp/axiom.tar.gz || echo -e ' '${RED}'[!]'${RESET}" Issue downloading axiom.tar.gz" 1>&2    #***!!! hardcoded path!
 tar -zxf /tmp/axiom.tar.gz -C /root/.themes/
 xfconf-query -n -c xsettings -p /Net/ThemeName -s "axiomd"
 xfconf-query -n -c xsettings -p /Net/IconThemeName -s "Vibrancy-Kali-Dark"
 #--- Get new desktop wallpaper
 mkdir -p /usr/share/wallpapers/
-curl --progress -k -L -f "http://www.kali.org/images/wallpapers-01/kali-wp-june-2014_1920x1080_A.png" > /usr/share/wallpapers/kali_blue_3d_a.png || echo -e ' '${RED}'[!]'$RESET" Issue downloading kali_blue_3d_a.png" 1>&2     #***!!! hardcoded paths!
-curl --progress -k -L -f "http://www.kali.org/images/wallpapers-01/kali-wp-june-2014_1920x1080_B.png" > /usr/share/wallpapers/kali_blue_3d_b.png || echo -e ' '${RED}'[!]'$RESET" Issue downloading kali_blue_3d_b.png" 1>&2
-curl --progress -k -L -f "http://www.kali.org/images/wallpapers-01/kali-wp-june-2014_1920x1080_G.png" > /usr/share/wallpapers/kali_black_honeycomb.png || echo -e ' '${RED}'[!]'$RESET" Issue downloading kali_blue_splat.png" 1>&2
-curl --progress -k -L -f "http://imageshack.us/a/img17/4646/vzex.png" > /usr/share/wallpapers/kali_blue_splat.png || echo -e ' '${RED}'[!]'$RESET" Issue downloading kali_blue_splat.png" 1>&2
-curl --progress -k -L -f "http://em3rgency.com/wp-content/uploads/2012/12/Kali-Linux-faded-no-Dragon-small-text.png" > /usr/share/wallpapers/kali_black_clean.png || echo -e ' '${RED}'[!]'$RESET" Issue downloading kali_black_clean.png" 1>&2
-curl --progress -k -L -f "http://www.hdwallpapers.im/download/kali_linux-wallpaper.jpg" > /usr/share/wallpapers/kali_black_stripes.jpg || echo -e ' '${RED}'[!]'$RESET" Issue downloading kali_black_stripes.jpg" 1>&2
-curl --progress -k -L -f "http://fc01.deviantart.net/fs71/f/2011/118/e/3/bt___edb_wallpaper_by_xxdigipxx-d3f4nxv.png" > /usr/share/wallpapers/kali_bt_edb.jpg || echo -e ' '${RED}'[!]'$RESET" Issue downloading kali_bt_edb.jpg" 1>&2
-curl --progress -k -L -f "http://pre07.deviantart.net/58d1/th/pre/i/2015/223/4/8/kali_2_0_alternate_wallpaper_by_xxdigipxx-d95800s.png" > /usr/share/wallpapers/kali_2_0_alternate_wallpaper.png || echo -e ' '${RED}'[!]'$RESET" Issue downloading kali_2_0_alternate_wallpaper.png" 1>&2
-curl --progress -k -L -f "http://pre01.deviantart.net/4210/th/pre/i/2015/195/3/d/kali_2_0__personal__wp_by_xxdigipxx-d91c8dq.png" > /usr/share/wallpapers/kali_2_0__personal.png || echo -e ' '${RED}'[!]'$RESET" Issue downloading kali_2_0__personal.png" 1>&2
+curl --progress -k -L -f "http://www.kali.org/images/wallpapers-01/kali-wp-june-2014_1920x1080_A.png" > /usr/share/wallpapers/kali_blue_3d_a.png || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_blue_3d_a.png" 1>&2     #***!!! hardcoded paths!
+curl --progress -k -L -f "http://www.kali.org/images/wallpapers-01/kali-wp-june-2014_1920x1080_B.png" > /usr/share/wallpapers/kali_blue_3d_b.png || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_blue_3d_b.png" 1>&2
+curl --progress -k -L -f "http://www.kali.org/images/wallpapers-01/kali-wp-june-2014_1920x1080_G.png" > /usr/share/wallpapers/kali_black_honeycomb.png || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_blue_splat.png" 1>&2
+curl --progress -k -L -f "http://imageshack.us/a/img17/4646/vzex.png" > /usr/share/wallpapers/kali_blue_splat.png || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_blue_splat.png" 1>&2
+curl --progress -k -L -f "http://em3rgency.com/wp-content/uploads/2012/12/Kali-Linux-faded-no-Dragon-small-text.png" > /usr/share/wallpapers/kali_black_clean.png || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_black_clean.png" 1>&2
+curl --progress -k -L -f "http://www.hdwallpapers.im/download/kali_linux-wallpaper.jpg" > /usr/share/wallpapers/kali_black_stripes.jpg || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_black_stripes.jpg" 1>&2
+curl --progress -k -L -f "http://fc01.deviantart.net/fs71/f/2011/118/e/3/bt___edb_wallpaper_by_xxdigipxx-d3f4nxv.png" > /usr/share/wallpapers/kali_bt_edb.jpg || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_bt_edb.jpg" 1>&2
+curl --progress -k -L -f "http://pre07.deviantart.net/58d1/th/pre/i/2015/223/4/8/kali_2_0_alternate_wallpaper_by_xxdigipxx-d95800s.png" > /usr/share/wallpapers/kali_2_0_alternate_wallpaper.png || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_2_0_alternate_wallpaper.png" 1>&2
+curl --progress -k -L -f "http://pre01.deviantart.net/4210/th/pre/i/2015/195/3/d/kali_2_0__personal__wp_by_xxdigipxx-d91c8dq.png" > /usr/share/wallpapers/kali_2_0__personal.png || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_2_0__personal.png" 1>&2
 _TMP="$(find /usr/share/wallpapers/ -maxdepth 1 -type f \( -name 'kali_*' -o -empty \) | xargs -n1 file | grep -i 'HTML\|empty' | cut -d ':' -f1)"
 for FILE in $(echo ${_TMP}); do rm -f "${FILE}"; done
 [[ -e "/usr/share/wallpapers/kali_default-1440x900.jpg" ]] && ln -sf /usr/share/wallpapers/kali/contents/images/1440x900.png /usr/share/wallpapers/kali_default-1440x900.jpg                       # Kali1
@@ -989,7 +992,7 @@ if [[ "${SHELL}" == "/bin/zsh" ]]; then source ~/.zshrc else source "${file}"; f
 
 ##### Install bash completion - all users
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}bash completion${RESET} ~ tab complete CLI commands"
-apt-get -y -qq install bash-completion || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install bash-completion || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 file=/etc/bash.bashrc; [ -e "${file}" ] && cp -n $file{,.bkup}    #/root/.bashrc
 sed -i '/# enable bash completion in/,+7{/enable bash completion/!s/^#//}' "${file}"
 #--- Apply new function
@@ -1053,7 +1056,7 @@ if [[ "${SHELL}" == "/bin/zsh" ]]; then source ~/.zshrc else source "${file}"; f
 
 ##### Install GNOME Terminator
 echo -e "\n ${GREEN}[+]${RESET} Installing GNOME ${GREEN}Terminator${RESET} ~ multiple terminals in a single window"
-apt-get -y -qq install terminator || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install terminator || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 #--- Configure terminator
 mkdir -p /root/.config/terminator/
 file=/root/.config/terminator/config; [ -e "${file}" ] && cp -n $file{,.bkup}
@@ -1103,10 +1106,10 @@ grep -q '^TerminalEmulator=custom-TerminalEmulator' "${file}" 2>/dev/null || ech
 ##### Install ZSH & Oh-My-ZSH - root user.   Note:  'Open terminal here', will not work with ZSH.   Make sure to have tmux already installed
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}ZSH${RESET} & ${GREEN}Oh-My-ZSH${RESET} ~ unix shell"
 #group="sudo"
-apt-get -y -qq install zsh git curl || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install zsh git curl || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 #--- Setup oh-my-zsh
 #rm -rf ~/.oh-my-zsh/
-curl --progress -k -L -f "https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh" | zsh    #curl -s -L "https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh"  || echo -e ' '${RED}'[!]'$RESET" Issue downloading file" 1>&2
+curl --progress -k -L -f "https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh" | zsh    #curl -s -L "https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh"  || echo -e ' '${RED}'[!]'${RESET}" Issue downloading file" 1>&2
 #--- Configure zsh
 file=/root/.zshrc; [ -e "${file}" ] && cp -n $file{,.bkup}   #/etc/zsh/zshrc
 ([[ -e "${file}" && "$(tail -c 1 $file)" != "" ]]) && echo >> "${file}"
@@ -1127,12 +1130,12 @@ chsh -s "$(which zsh)"
 #/usr/bin/env zsh      # Use it
 #source "${file}"          # Make sure to reload our config
 #--- Copy it to other user(s)
-#if [ -e "/home/$username/" ]; then   # Will do this later on again, if there isn't already a user
-#  cp -f /{root,home/$username}/.zshrc
-#  cp -rf /{root,home/$username}/.oh-my-zsh/
-#  chown -R $username\:$group /home/$username/.zshrc /home/$username/.oh-my-zsh/
-#  chsh "$username" -s "$(which zsh)"
-#  sed -i 's#^export ZSH=/.*/.oh-my-zsh#export ZSH=/home/'$username'/.oh-my-zsh#' /home/$username/.zshrc
+#if [ -e "/home/${username}/" ]; then   # Will do this later on again, if there isn't already a user
+#  cp -f /{root,home/${username}}/.zshrc
+#  cp -rf /{root,home/${username}}/.oh-my-zsh/
+#  chown -R ${username}\:${group} /home/${username}/.zshrc /home/${username}/.oh-my-zsh/
+#  chsh "${username}" -s "$(which zsh)"
+#  sed -i 's#^export ZSH=/.*/.oh-my-zsh#export ZSH=/home/'${username}'/.oh-my-zsh#' /home/${username}/.zshrc
 #fi
 
 
@@ -1140,7 +1143,7 @@ chsh -s "$(which zsh)"
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}tmux${RESET} ~ multiplex virtual consoles"
 #group="sudo"
 #apt-get -y -qq remove screen   # Optional: If we're going to have/use tmux, why have screen?
-apt-get -y -qq install tmux || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install tmux || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 #--- Configure tmux
 file=/root/.tmux.conf; [ -e "${file}" ] && cp -n $file{,.bkup}   #/etc/tmux.conf
 cat <<EOF > "${file}"
@@ -1221,10 +1224,10 @@ grep -q '^alias tmux' "${file}" 2>/dev/null || echo -e '## tmux\nalias tmux="tmu
 #--- Apply new aliases
 if [[ "${SHELL}" == "/bin/zsh" ]]; then source ~/.zshrc else source "${file}"; fi
 #--- Copy it to other user(s) ~
-#if [ -e /home/$username/ ]; then   # Will do this later on again, if there isn't already a user
-#  cp -f /{etc/,home/$username/.}tmux.conf    #cp -f /{root,home/$username}/.tmux.conf
-#  chown $username\:$group /home/$username/.tmux.conf
-#  file=/home/$username/.bash_aliases; [ -e "${file}" ] && cp -n $file{,.bkup}
+#if [ -e /home/${username}/ ]; then   # Will do this later on again, if there isn't already a user
+#  cp -f /{etc/,home/${username}/.}tmux.conf    #cp -f /{root,home/${username}}/.tmux.conf
+#  chown ${username}\:${group} /home/${username}/.tmux.conf
+#  file=/home/${username}/.bash_aliases; [ -e "${file}" ] && cp -n $file{,.bkup}
 #  grep -q '^alias tmux' "${file}" 2>/dev/null || echo -e '## tmux\nalias tmux="tmux attach || tmux new"\n' >> "${file}"    #alias tmux="tmux attach -t $HOST || tmux new -s $HOST"
 #fi
 #--- Use it ~ bit pointless if used in a post-install script
@@ -1233,7 +1236,7 @@ if [[ "${SHELL}" == "/bin/zsh" ]]; then source ~/.zshrc else source "${file}"; f
 
 ##### Configure screen ~ if possible, use tmux instead!
 echo -e "\n ${GREEN}[+]${RESET} Configuring ${GREEN}screen${RESET} ~ multiplex virtual consoles"
-#apt-get -y -qq install screen || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+#apt-get -y -qq install screen || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 #--- Configure screen
 file=/root/.screenrc; [ -e "${file}" ] && cp -n $file{,.bkup}
 cat <<EOF > "${file}"
@@ -1265,7 +1268,7 @@ EOF
 
 ##### Install vim - all users
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}vim${RESET} ~ CLI text editor"
-apt-get -y -qq install vim || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install vim || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 #--- Configure vim
 file=/etc/vim/vimrc; [ -e "${file}" ] && cp -n $file{,.bkup}   #/root/.vimrc
 ([[ -e "${file}" && "$(tail -c 1 $file)" != "" ]]) && echo >> "${file}"
@@ -1306,7 +1309,7 @@ git config --global mergetool.prompt false
 
 ##### Setup iceweasel
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}iceweasel${RESET} ~ GUI web browser"
-apt-get install -y -qq unzip curl iceweasel || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get install -y -qq unzip curl iceweasel || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 #--- Configure iceweasel
 export DISPLAY=:0.0   #[[ -z $SSH_CONNECTION ]] || export DISPLAY=:0.0
 timeout 15 iceweasel >/dev/null 2>&1  #iceweasel & sleep 15; killall -q -w iceweasel >/dev/null   # Start and kill. Files needed for first time run
@@ -1324,7 +1327,7 @@ sed -i 's/^.*extensions.https_everywhere._observatory.popup_shown.*/user_pref("e
 sed -i 's/^.network.security.ports.banned.override/user_pref("network.security.ports.banned.override", "1-65455");' "${file}" 2>/dev/null || echo 'user_pref("network.security.ports.banned.override", "1-65455");' >> "${file}"    # Remove "This address is restricted"
 #--- Replace bookmarks (base: http://pentest-bookmarks.googlecode.com)
 file=$(find /root/.mozilla/firefox/*.default*/ -maxdepth 1 -type f -name 'bookmarks.html' -print -quit) && [ -e "${file}" ] && cp -n $file{,.bkup}   #/etc/iceweasel/profile/bookmarks.html
-curl --progress -k -L -f "http://pentest-bookmarks.googlecode.com/files/bookmarksv1.5.html" > /tmp/bookmarks_new.html || echo -e ' '${RED}'[!]'$RESET" Issue downloading bookmarks_new.html" 1>&2      #***!!! hardcoded version! Need to manually check for updates
+curl --progress -k -L -f "http://pentest-bookmarks.googlecode.com/files/bookmarksv1.5.html" > /tmp/bookmarks_new.html || echo -e ' '${RED}'[!]'${RESET}" Issue downloading bookmarks_new.html" 1>&2      #***!!! hardcoded version! Need to manually check for updates
 #--- Configure bookmarks
 awk '!a[$0]++' /tmp/bookmarks_new.html | \egrep -v ">(Latest Headlines|Getting Started|Recently Bookmarked|Recent Tags|Mozilla Firefox|Help and Tutorials|Customize Firefox|Get Involved|About Us|Hacker Media|Bookmarks Toolbar|Most Visited)</" | \egrep -v "^    </DL><p>" | \egrep -v "^<DD>Add" > "${file}"
 sed -i 's#^</DL><p>#        </DL><p>\n    </DL><p>\n</DL><p>#' "${file}"                                                          # Fix import issues from pentest-bookmarks...
@@ -1358,20 +1361,20 @@ rm -f /tmp/bookmarks_new.html
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}iceweasel's plugins${RESET} ~ Useful addons"
 #--- Download extensions
 ffpath="$(find /root/.mozilla/firefox/*.default*/ -maxdepth 0 -mindepth 0 -type d -name '*.default*' -print -quit)/extensions"
-[ "${ffpath}" == "/extensions" ] && echo -e ' '${RED}'[!]'$RESET" Couldn't find Firefox/Iceweasel folder" 1>&2
+[ "${ffpath}" == "/extensions" ] && echo -e ' '${RED}'[!]'${RESET}" Couldn't find Firefox/Iceweasel folder" 1>&2
 mkdir -p "${ffpath}/"
-#curl --progress -k -L -f "https://github.com/mozmark/ringleader/blob/master/fx_pnh.xpi?raw=true"  || echo -e ' '${RED}'[!]'$RESET" Issue downloading fx_pnh.xpi" 1>&2                                                                                                                        # plug-n-hack
-#curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/284030/addon-284030-latest.xpi?src=dp-btn-primary" -o "$ffpath/{6bdc61ae-7b80-44a3-9476-e1d121ec2238}.xpi" || echo -e ' '${RED}'[!]'$RESET" Issue downloading 'HTTPS Finder'" 1>&2                             # HTTPS Finder
-curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/5817/addon-5817-latest.xpi?src=dp-btn-primary" -o "$ffpath/SQLiteManager@mrinalkant.blogspot.com.xpi" || echo -e ' '${RED}'[!]'$RESET" Issue downloading 'SQLite Manager'" 1>&2                                 # SQLite Manager
-curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/1865/addon-1865-latest.xpi?src=dp-btn-primary" -o "$ffpath/{d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d}.xpi" || echo -e ' '${RED}'[!]'$RESET" Issue downloading 'Adblock Plus'" 1>&2                                  # Adblock Plus
-curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/92079/addon-92079-latest.xpi?src=dp-btn-primary" -o "$ffpath/{bb6bc1bb-f824-4702-90cd-35e2fb24f25d}.xpi" || echo -e ' '${RED}'[!]'$RESET" Issue downloading 'Cookies Manager+'" 1>&2                            # Cookies Manager+
-curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/1843/addon-1843-latest.xpi?src=dp-btn-primary" -o "$ffpath/firebug@software.joehewitt.com.xpi" || echo -e ' '${RED}'[!]'$RESET" Issue downloading 'Firebug'" 1>&2                                               # Firebug
-curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/15023/addon-15023-latest.xpi?src=dp-btn-primary" -o "$ffpath/foxyproxy-basic@eric.h.jung.xpi" || echo -e ' '${RED}'[!]'$RESET" Issue downloading 'FoxyProxy Basic'" 1>&2                                        # FoxyProxy Basic
-curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/429678/addon-429678-latest.xpi?src=dp-btn-primary" -o "$ffpath/useragentoverrider@qixinglu.com.xpi" || echo -e ' '${RED}'[!]'$RESET" Issue downloading 'User Agent Overrider'" 1>&2                             # User Agent Overrider
-curl --progress -k -L -f "https://www.eff.org/files/https-everywhere-latest.xpi" -o "$ffpath/https-everywhere@eff.org.xpi" || echo -e ' '${RED}'[!]'$RESET" Issue downloading 'HTTPS Everywhere'" 1>&2                                                                                        # HTTPS Everywhere
-curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/3829/addon-3829-latest.xpi?src=dp-btn-primary" -o "$ffpath/{8f8fe09b-0bd3-4470-bc1b-8cad42b8203a}.xpi" || echo -e ' '${RED}'[!]'$RESET" Issue downloading 'Live HTTP Headers'" 1>&2                             # Live HTTP Headers
-curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/966/addon-966-latest.xpi?src=dp-btn-primary" -o "$ffpath/{9c51bd27-6ed8-4000-a2bf-36cb95c0c947}.xpi" || echo -e ' '${RED}'[!]'$RESET" Issue downloading 'Tamper Data'" 1>&2                                     # Tamper Data
-curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/300254/addon-300254-latest.xpi?src=dp-btn-primary" -o "$ffpath/check-compatibility@dactyl.googlecode.com.xpi" || echo -e ' '${RED}'[!]'$RESET" Issue downloading 'Disable Add-on Compatibility Checks'" 1>&2    # Disable Add-on Compatibility Checks
+#curl --progress -k -L -f "https://github.com/mozmark/ringleader/blob/master/fx_pnh.xpi?raw=true"  || echo -e ' '${RED}'[!]'${RESET}" Issue downloading fx_pnh.xpi" 1>&2                                                                                                                        # plug-n-hack
+#curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/284030/addon-284030-latest.xpi?src=dp-btn-primary" -o "$ffpath/{6bdc61ae-7b80-44a3-9476-e1d121ec2238}.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'HTTPS Finder'" 1>&2                             # HTTPS Finder
+curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/5817/addon-5817-latest.xpi?src=dp-btn-primary" -o "$ffpath/SQLiteManager@mrinalkant.blogspot.com.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'SQLite Manager'" 1>&2                                 # SQLite Manager
+curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/1865/addon-1865-latest.xpi?src=dp-btn-primary" -o "$ffpath/{d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d}.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'Adblock Plus'" 1>&2                                  # Adblock Plus
+curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/92079/addon-92079-latest.xpi?src=dp-btn-primary" -o "$ffpath/{bb6bc1bb-f824-4702-90cd-35e2fb24f25d}.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'Cookies Manager+'" 1>&2                            # Cookies Manager+
+curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/1843/addon-1843-latest.xpi?src=dp-btn-primary" -o "$ffpath/firebug@software.joehewitt.com.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'Firebug'" 1>&2                                               # Firebug
+curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/15023/addon-15023-latest.xpi?src=dp-btn-primary" -o "$ffpath/foxyproxy-basic@eric.h.jung.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'FoxyProxy Basic'" 1>&2                                        # FoxyProxy Basic
+curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/429678/addon-429678-latest.xpi?src=dp-btn-primary" -o "$ffpath/useragentoverrider@qixinglu.com.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'User Agent Overrider'" 1>&2                             # User Agent Overrider
+curl --progress -k -L -f "https://www.eff.org/files/https-everywhere-latest.xpi" -o "$ffpath/https-everywhere@eff.org.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'HTTPS Everywhere'" 1>&2                                                                                        # HTTPS Everywhere
+curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/3829/addon-3829-latest.xpi?src=dp-btn-primary" -o "$ffpath/{8f8fe09b-0bd3-4470-bc1b-8cad42b8203a}.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'Live HTTP Headers'" 1>&2                             # Live HTTP Headers
+curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/966/addon-966-latest.xpi?src=dp-btn-primary" -o "$ffpath/{9c51bd27-6ed8-4000-a2bf-36cb95c0c947}.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'Tamper Data'" 1>&2                                     # Tamper Data
+curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/300254/addon-300254-latest.xpi?src=dp-btn-primary" -o "$ffpath/check-compatibility@dactyl.googlecode.com.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'Disable Add-on Compatibility Checks'" 1>&2    # Disable Add-on Compatibility Checks
 #--- Installing extensions
 for FILE in $(find "${ffpath}" -maxdepth 1 -type f -name '*.xpi'); do
   d="$(basename "${FILE}" .xpi)"
@@ -1384,18 +1387,18 @@ timeout 15 iceweasel >/dev/null 2>&1   #iceweasel & sleep 15; killall -q -w icew
 sleep 3
 file=$(find /root/.mozilla/firefox/*.default*/ -maxdepth 1 -type f -name 'extensions.sqlite' -print -quit)   #&& [ -e "${file}" ] && cp -n $file{,.bkup}
 if [ ! -e "${file}" ] || [ -z "${file}" ]; then
-  #echo -e ' '${RED}'[!]'$RESET" Something went wrong enabling Iceweasel's extensions via method #1. Trying method #2..." 1>&2
+  #echo -e ' '${RED}'[!]'${RESET}" Something went wrong enabling Iceweasel's extensions via method #1. Trying method #2..." 1>&2
   false
 else
   echo -e " ${YELLOW}[i]${RESET} Enabled ${YELLOW}Iceweasel's extensions${RESET} (via method #1!)"
-  apt-get install -y -qq sqlite3 || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+  apt-get install -y -qq sqlite3 || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
   rm -f /tmp/iceweasel.sql; touch /tmp/iceweasel.sql
   echo "UPDATE 'main'.'addon' SET 'active' = 1, 'userDisabled' = 0;" > /tmp/iceweasel.sql    # Force them all!
   sqlite3 "${file}" < /tmp/iceweasel.sql      #fuser extensions.sqlite
 fi
 file=$(find /root/.mozilla/firefox/*.default*/ -maxdepth 1 -type f -name 'extensions.json' -print -quit)   #&& [ -e "${file}" ] && cp -n $file{,.bkup}
 if [ ! -e "${file}" ] || [ -z "${file}" ]; then
-  #echo -e ' '${RED}'[!]'$RESET" Something went wrong enabling Iceweasel's extensions via method #2. Did method #1 also fail?" 1>&2
+  #echo -e ' '${RED}'[!]'${RESET}" Something went wrong enabling Iceweasel's extensions via method #2. Did method #1 also fail?" 1>&2
   false
 else
   echo -e " ${YELLOW}[i]${RESET} Enabled ${YELLOW}Iceweasel's extensions${RESET} (via method #2!)"
@@ -1432,7 +1435,7 @@ rm -f /tmp/iceweasel.sql
 
 ##### Install conky
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}conky${RESET} ~ GUI desktop monitor"
-apt-get -y -qq install conky || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install conky || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 #--- Configure conky
 file=/root/.conkyrc; [ -e "${file}" ] && cp -n $file{,.bkup}
 cat <<EOF > "${file}"
@@ -1540,7 +1543,7 @@ file=/usr/local/bin/start-conky; [ -e "${file}" ] && cp -n $file{,.bkup}
 cat <<EOF > "${file}"
 #!/bin/bash
 
-[[ -z $DISPLAY ]] && export DISPLAY=:0.0
+[[ -z ${DISPLAY} ]] && export DISPLAY=:0.0
 
 $(which timeout) 10 $(which killall) -q conky
 $(which sleep) 15
@@ -1565,7 +1568,7 @@ EOF
 
 ##### Install metasploit ~ http://docs.kali.org/general-use/starting-metasploit-framework-in-kali
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}metasploit${RESET} ~ exploit framework"
-apt-get -y -qq install metasploit-framework 2>/dev/null || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install metasploit-framework 2>/dev/null || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 #--- ASCII art
 export GOCOW=1   # Always a cow logo ;)   Others: THISISHALLOWEEN (Halloween), APRILFOOLSPONIES (My Little Pony)
 file=/root/.bashrc; [ -e "${file}" ] && cp -n $file{,.bkup}
@@ -1644,7 +1647,7 @@ msfconsole -q -x 'version;db_status;sleep 310;exit'   #db_rebuild_cache;
 #  echo "export ORACLE_HOME=/opt/oracle/instantclient_12_1" >> "${file}"
 #fi
 ##if [[ "${SHELL}" == "/bin/zsh" ]]; then source ~/.zshrc else source "${file}"; fi
-#apt-get -y -qq install ruby-dev libgmp-dev || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+#apt-get -y -qq install ruby-dev libgmp-dev || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 #wget -q -O ruby-oci8.zip https://codeload.github.com/kubo/ruby-oci8/zip/ruby-oci8-2.1.8 && unzip -q -o -d /opt/oracle/ ruby-oci8.zip && rm -f ruby-oci8.zip
 #pushd /opt/oracle/ruby-oci8-ruby-oci8-*/ >/dev/null
 #if [[ "${SHELL}" == "/bin/zsh" ]]; then source ~/.zshrc else source "${file}"; fi    # Lose values due to pushd
@@ -1658,7 +1661,7 @@ msfconsole -q -x 'version;db_status;sleep 310;exit'   #db_rebuild_cache;
 rm -f /tmp/msf.rc
 
 
-###### Install armitage
+##### Install armitage
 #echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}armitage${RESET} ~ GUI Metasploit UI"
 #export MSF_DATABASE_CONFIG=/opt/metasploit/apps/pro/ui/config/database.yml
 #file=/root/.bash_aliases; [ -e "${file}" ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
@@ -1670,26 +1673,26 @@ rm -f /tmp/msf.rc
 
 ##### Install MPC
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}MPC${RESET} ~ Msfvenom Payload Creator"
-curl --progress -k -L -f "https://raw.githubusercontent.com/g0tmi1k/mpc/master/mpc.sh" > /usr/bin/mpc || echo -e ' '${RED}'[!]'$RESET" Issue downloading mpc" 1>&2
+curl --progress -k -L -f "https://raw.githubusercontent.com/g0tmi1k/mpc/master/mpc.sh" > /usr/bin/mpc || echo -e ' '${RED}'[!]'${RESET}" Issue downloading mpc" 1>&2
 chmod +x /usr/bin/mpc
 
 
 ##### Install avb
 #echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}abc${RESET} ~ simple anti-virus bypass"
-#curl --progress -k -L -f "https://raw.githubusercontent.com/g0tmi1k/avb/master/avb.sh" > /usr/bin/avb || echo -e ' '${RED}'[!]'$RESET" Issue downloading avb" 1>&2
+#curl --progress -k -L -f "https://raw.githubusercontent.com/g0tmi1k/avb/master/avb.sh" > /usr/bin/avb || echo -e ' '${RED}'[!]'${RESET}" Issue downloading avb" 1>&2
 #chmod +x /usr/bin/avb
 
 
 ##### Install ifile
 #echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}ifile${RESET} ~ more informations about files"
-#curl --progress -k -L -f "https://raw.githubusercontent.com/g0tmi1k/ifile/master/ifile.sh" > /usr/bin/ifile || echo -e ' '${RED}'[!]'$RESET" Issue downloading ifile" 1>&2
+#curl --progress -k -L -f "https://raw.githubusercontent.com/g0tmi1k/ifile/master/ifile.sh" > /usr/bin/ifile || echo -e ' '${RED}'[!]'${RESET}" Issue downloading ifile" 1>&2
 #chmod +x /usr/bin/ifile
 
 
 ##### Install Geany
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}Geany${RESET} ~ GUI text editor"
 export DISPLAY=:0.0   #[[ -z $SSH_CONNECTION ]] || export DISPLAY=:0.0
-apt-get -y -qq install geany || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install geany || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 #--- Add to panel (GNOME)
 if [[ $(which gnome-shell) ]]; then
 dconf load /org/gnome/gnome-panel/layout/objects/geany/ << EOF
@@ -1745,9 +1748,9 @@ backup_dir=/root/backups/geany
 EOF
 
 
-###### Install PyCharm (Community Edition)
+##### Install PyCharm (Community Edition)
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}PyCharm (Community Edition)${RESET} ~ Python IDE"
-curl --progress -k -L -f "https://download.jetbrains.com/python/pycharm-community-4.5.2.tar.gz" > /tmp/pycharms-community.tar.gz || echo -e ' '${RED}'[!]'$RESET" Issue downloading pycharms-community.tar.gz" 1>&2       #***!!! hardcoded version!
+curl --progress -k -L -f "https://download.jetbrains.com/python/pycharm-community-4.5.2.tar.gz" > /tmp/pycharms-community.tar.gz || echo -e ' '${RED}'[!]'${RESET}" Issue downloading pycharms-community.tar.gz" 1>&2       #***!!! hardcoded version!
 tar -xf /tmp/pycharms-community.tar.gz -C /tmp/
 mv /tmp/pycharm-community-*/ /usr/share/pycharms
 ln -sf /usr/share/pycharms/bin/pycharm.sh /usr/bin/pycharms
@@ -1755,7 +1758,7 @@ ln -sf /usr/share/pycharms/bin/pycharm.sh /usr/bin/pycharms
 
 ##### Install Meld
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}Meld${RESET} ~ GUI text compare"
-apt-get -y -qq install meld || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install meld || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 #--- Configure meld
 gconftool-2 -t bool -s /apps/meld/show_line_numbers true
 gconftool-2 -t bool -s /apps/meld/show_whitespace true
@@ -1763,7 +1766,7 @@ gconftool-2 -t bool -s /apps/meld/use_syntax_highlighting true
 gconftool-2 -t int -s /apps/meld/edit_wrap_lines 2
 
 
-###### Install nessus    #*** Doesn't automate
+##### Install nessus    #*** Doesn't automate
 #echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}nessus${RESET} ~ vulnerability scanner"
 #--- Get download link
 #xdg-open http://www.tenable.com/products/nessus/select-your-operating-system    *** #wget -q "http://downloads.nessus.org/<file>" -O /usr/local/src/nessus.deb   #***!!! Hardcoded version value
@@ -1781,7 +1784,7 @@ gconftool-2 -t int -s /apps/meld/edit_wrap_lines 2
 #systemctl disable nessusd
 
 
-###### Install Nexpose    #*** Doesn't automate
+##### Install Nexpose    #*** Doesn't automate
 #/opt/rapid7/nexpose/nsc/nsc.sh
 #--- Remove from start up
 #systemctl disable nexposeconsole.rc
@@ -1790,12 +1793,12 @@ gconftool-2 -t int -s /apps/meld/edit_wrap_lines 2
 ##### Install OpenVAS
 if [ "${openVAS}" != "false" ]; then
   echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}OpenVAS${RESET} ~ vulnerability scanner"
-  apt-get -y -qq install openvas || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+  apt-get -y -qq install openvas || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
   openvas-setup
   #--- Bug fix (target credentials creation)
   mkdir -p /var/lib/openvas/gnupg/
   #--- Bug fix (keys)
-  #curl --progress -k -L -f "http://www.openvas.org/OpenVAS_TI.asc" | gpg --import -   # || echo -e ' '${RED}'[!]'$RESET" Issue downloading OpenVAS_TI.asc" 1>&2
+  #curl --progress -k -L -f "http://www.openvas.org/OpenVAS_TI.asc" | gpg --import -   # || echo -e ' '${RED}'[!]'${RESET}" Issue downloading OpenVAS_TI.asc" 1>&2
   #--- Bug fix (Timeout - https://bugs.kali.org/view.php?id=2340)
   #file=/etc/init.d/openvas-manager;   #[ -e "${file}" ] && cp -n $file{,.bkup}
   #sed -i 's/^DODTIME=.*/DODTIME=25/' $file
@@ -1805,7 +1808,7 @@ if [ "${openVAS}" != "false" ]; then
   username="root"
   password="toor"
   (openvasmd --get-users | grep -q ^admin$) && echo -n 'admin user: ' && openvasmd --delete-user=admin
-  (openvasmd --get-users | grep -q "^${username}$") || (echo -n "$username user: "; openvasmd --create-user="${username}"; openvasmd --user="${username}" --new-password="${password}" >/dev/null)   # You will want to alter it to something (much) more secure!
+  (openvasmd --get-users | grep -q "^${username}$") || (echo -n "${username} user: "; openvasmd --create-user="${username}"; openvasmd --user="${username}" --new-password="${password}" >/dev/null)   # You will want to alter it to something (much) more secure!
   echo -e " ${YELLOW}[i]${RESET} OpenVAS username: ${username}"
   echo -e " ${YELLOW}[i]${RESET} OpenVAS password: ${password}   *** ${BOLD}CHANGE THIS ASAP${RESET}.   Run: # openvasmd --user=root --new-password='<NEW_PASSWORD>'"
   #--- Check
@@ -1824,15 +1827,15 @@ else
 fi
 
 
-###### Install vFeed
+##### Install vFeed
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}vFeed${RESET} ~ vulnerability database"
-apt-get -y -qq install vfeed || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install vfeed || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
 ##### Install Burp Proxy
 if [ "${burpFree}" != "false" ]; then
   echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}Burp Proxy${RESET} ~ web application proxy"
-  apt-get -y -qq install burpsuite curl || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+  apt-get -y -qq install burpsuite curl || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
   mkdir -p /root/.java/.userPrefs/burp/
   file=/root/.java/.userPrefs/burp/prefs.xml;   #[ -e "${file}" ] && cp -n $file{,.bkup}
   [ -e "${file}" ] || cat <<EOF > "${file}"
@@ -1854,14 +1857,14 @@ EOF
   rm -f /tmp/burp.crt
   while test -d /proc/${PID}; do
     sleep 1
-    curl --progress -k -L -f "http://burp/cert" -o /tmp/burp.crt 2>/dev/null      # || echo -e ' '${RED}'[!]'$RESET" Issue downloading burp.crt" 1>&2
+    curl --progress -k -L -f "http://burp/cert" -o /tmp/burp.crt 2>/dev/null      # || echo -e ' '${RED}'[!]'${RESET}" Issue downloading burp.crt" 1>&2
     [ -f /tmp/burp.crt ] && break
   done
   timeout 5 kill ${PID} 2>/dev/null
   unset http_proxy
   #--- Installing CA
   if [ -f /tmp/burp.crt ]; then
-    apt-get -y -qq install libnss3-tools || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+    apt-get -y -qq install libnss3-tools || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
     folder=$(find /root/.mozilla/firefox/ -maxdepth 1 -type d -name '*.default' -print -quit)
     certutil -A -n Burp -t "CT,c,c" -d "$folder" -i /tmp/burp.crt
     timeout 15 iceweasel >/dev/null 2>&1
@@ -1884,10 +1887,55 @@ else
 fi
 
 
-##### Install sparta: https://bugs.kali.org/view.php?id=2021
+##### Configure pythcon console - all users
+echo -e "\n ${GREEN}[+]${RESET} Configuring ${GREEN}pythcon console${RESET} ~ tab complete & history support"
+export PYTHONSTARTUP=$HOME/.pythonstartup
+file=/etc/bash.bashrc; [ -e "${file}" ] && cp -n $file{,.bkup}    #/root/.bashrc
+grep -q PYTHONSTARTUP $file || echo 'export PYTHONSTARTUP=$HOME/.pythonstartup' >> "${file}"
+#--- Python start up file
+cat <<EOF > /root/.pythonstartup
+import readline
+import rlcompleter
+import atexit
+import os
+
+## Tab completion
+readline.parse_and_bind('tab: complete')
+
+## History file
+histfile = os.path.join(os.environ['HOME'], '.pythonhistory')
+try:
+    readline.read_history_file(histfile)
+except IOError:
+    pass
+
+atexit.register(readline.write_history_file, histfile)
+
+## Quit
+del os, histfile, readline, rlcompleter
+EOF
+if [[ "${SHELL}" == "/bin/zsh" ]]; then source ~/.zshrc else source "${file}"; fi
+
+
+##### Install virtualenvwrapper
+echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}virtualenvwrapper${RESET} ~ virtual environment wrapper"
+apt-get -y -qq install virtualenvwrapper || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
+
+
+##### Install go
+echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}go${RESET} ~ programming language"
+apt-get -y -qq install golang || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
+
+
+##### Install gitg
+echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}gitg${RESET} ~ GUI git client"
+apt-get -y -qq install gitg || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
+
+
+##### Install sparta (https://bugs.kali.org/view.php?id=2021)
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}sparta${RESET} ~ GUI automatic wrapper"
-apt-get -y -qq install sparta || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
-#apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install sparta || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
+#apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 #git clone -q https://github.com/secforce/sparta.git /opt/sparta-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
 #pushd /opt/sparta-git/ >/dev/null
 #git pull -q
@@ -1915,9 +1963,9 @@ sed -i 's/^disable_lua = .*/disable_lua = true/' "${file}"
 
 ##### Install silver searcher
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}silver searcher${RESET} ~ code searching"
-apt-get -y -qq install silversearcher-ag || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
-#apt-get -y -qq install git automake pkg-config libpcre3-dev zlib1g-dev liblzma-dev || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
-#git clone -q https://github.com/ggreer/the_silver_searcher.git /usr/local/src/the_silver_searcher || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install silversearcher-ag || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
+#apt-get -y -qq install git automake pkg-config libpcre3-dev zlib1g-dev liblzma-dev || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
+#git clone -q https://github.com/ggreer/the_silver_searcher.git /usr/local/src/the_silver_searcher || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 #pushd /usr/local/src/the_silver_searcher/ >/dev/null
 #git pull -q
 #bash ./build.sh
@@ -1928,7 +1976,7 @@ apt-get -y -qq install silversearcher-ag || echo -e ' '${RED}'[!] Issue when git
 
 ##### Install rips
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}rips${RESET} ~ source code scanner"
-apt-get -y -qq install apache2 php5 git || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install apache2 php5 git || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 git clone -q https://github.com/ripsscanner/rips.git /opt/rips-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
 pushd /opt/rips-git/ >/dev/null
 git pull -q
@@ -1952,94 +2000,94 @@ systemctl restart apache2
 
 ##### Install libreoffice
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}libreoffice${RESET} ~ GUI office suite"
-apt-get -y -qq install libreoffice || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install libreoffice || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
-###### Install cherrytree
+##### Install cherrytree
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}cherrytree${RESET} ~ GUI note taking"
-apt-get -y -qq install cherrytree || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install cherrytree || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
-###### Install ipcalc & sipcalc
+##### Install ipcalc & sipcalc
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}ipcalc${RESET} & ${GREEN}sipcalc${RESET} ~ CLI subnet calculators"
-apt-get -y -qq install ipcalc sipcalc || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install ipcalc sipcalc || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
 ##### Install recordmydesktop
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}RecordMyDesktop${RESET} ~ GUI video screen capture"
-apt-get -y -qq install recordmydesktop || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install recordmydesktop || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 #--- Installing GUI front end
-apt-get -y -qq install gtk-recordmydesktop || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install gtk-recordmydesktop || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
-###### Install asciinema
+##### Install asciinema
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}asciinema${RESET} ~ CLI terminal recorder"
 curl -s -L https://asciinema.org/install | sh
 
 
-###### Install gimp
+##### Install gimp
 #echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}gimp${RESET} ~ GUI image editing"
-#apt-get -y -qq install gimp || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+#apt-get -y -qq install gimp || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
 ##### Install shutter
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}shutter${RESET} ~ GUI static screen capture"
-apt-get -y -qq install shutter || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install shutter || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
-###### Install gdebi
+##### Install gdebi
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}gdebi${RESET} ~ GUI package installer"
-apt-get -y -qq install gdebi || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install gdebi || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
 ##### Install psmisc ~ allows for 'killall command' to be used
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}psmisc${RESET} ~ suite to help with running processes"
-apt-get -y -qq install psmisc || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install psmisc || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
 ###### Setup pipe viewer
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}pipe viewer${RESET} ~ CLI progress bar"
-apt-get install -y -qq pv || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get install -y -qq pv || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
 ###### Setup pwgen
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}pwgen${RESET} ~ password generator"
-apt-get install -y -qq pwgen || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get install -y -qq pwgen || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
-###### Install midnight commander
+##### Install midnight commander
 #echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}midnight commander${RESET} ~ CLI file manager"
-#apt-get -y -qq install mc || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+#apt-get -y -qq install mc || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
 ##### Install htop
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}htop${RESET} ~ CLI process viewer"
-apt-get -y -qq install htop || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install htop || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
 ##### Install powertop
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}powertop${RESET} ~ CLI power consumption viewer"
-apt-get -y -qq install powertop || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install powertop || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
 ##### Install iotop
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}iotop${RESET} ~ CLI I/O usage"
-apt-get -y -qq install iotop || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install iotop || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
-###### Install glance
+##### Install glance
 #echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}glance${RESET} ~ CLI process viewer"
-#apt-get -y -qq install glance || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+#apt-get -y -qq install glance || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
 ##### Install ca-certificates
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}ca-certificates${RESET} ~ HTTPS/SSL/TLS"
-apt-get -y -qq install ca-certificates || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install ca-certificates || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
 ##### Install axel
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}axel${RESET} ~ CLI download manager"
-apt-get -y -qq install axel || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install axel || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 #--- Setup alias
 file=/root/.bash_aliases; [ -e "${file}" ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
 ([[ -e "${file}" && "$(tail -c 1 $file)" != "" ]]) && echo >> "${file}"
@@ -2050,17 +2098,17 @@ if [[ "${SHELL}" == "/bin/zsh" ]]; then source ~/.zshrc else source "${file}"; f
 
 ##### Install gparted
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}gparted${RESET} ~ GUI partition manager"
-apt-get -y -qq install gparted || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install gparted || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
 ##### Install daemonfs
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}daemonfs${RESET} ~ GUI file monitor"
-apt-get -y -qq install daemonfs || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install daemonfs || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
 ##### Install filezilla (geany gets installed later)
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}filezilla${RESET} ~ GUI file transfer"
-apt-get -y -qq install filezilla || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install filezilla || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 #--- Configure filezilla
 export DISPLAY=:0.0   #[[ -z $SSH_CONNECTION ]] || export DISPLAY=:0.0
 timeout 5 filezilla >/dev/null 2>&1    #filezilla & sleep 5; killall -q -w filezilla >/dev/null     # Start and kill. Files needed for first time run
@@ -2069,57 +2117,57 @@ touch "${file}"
 sed -i 's#^.*"Default editor".*#\t<Setting name="Default editor">2/usr/bin/geany</Setting>#' "${file}"
 
 
-###### Install remmina
+##### Install remmina
 #echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}remmina${RESET} ~ GUI remote desktop"
-#apt-get -y -qq install remmina remmina-plugin-xdmcp remmina-plugin-rdp remmina-plugin-vnc || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+#apt-get -y -qq install remmina remmina-plugin-xdmcp remmina-plugin-rdp remmina-plugin-vnc || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
-###### Install xrdp
+##### Install xrdp
 #echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}xrdp${RESET} ~ GUI remote desktop"
-#apt-get -y -qq install xrdp || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+#apt-get -y -qq install xrdp || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
-###### Install x2go client
+##### Install x2go client
 #echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}x2go client${RESET} ~ GUI remote desktop"
-#apt-get -y -qq install x2goclient || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+#apt-get -y -qq install x2goclient || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
 ##### Install lynx
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}lynx${RESET} ~ CLI web browser"
-apt-get -y -qq install lynx || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install lynx || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
 ##### Install p7zip
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}p7zip${RESET} ~ CLI file extractor"
-apt-get -y -qq install p7zip-full || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install p7zip-full || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
 ##### Install zip & unzip
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}zip${RESET} & ${GREEN}unzip${RESET} ~ CLI file extractors"
-apt-get -y -qq install zip || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}     # Compress
-apt-get -y -qq install unzip || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}   # Decompress
+apt-get -y -qq install zip || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}     # Compress
+apt-get -y -qq install unzip || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}   # Decompress
 
 
 ##### Install file roller
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}file roller${RESET} ~ GUI file extractor"
-apt-get -y -qq install file-roller || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}                                            # GUI program
-apt-get -y -qq install unace unrar rar unzip zip p7zip p7zip-full p7zip-rar || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}   # Supported file compressions types
+apt-get -y -qq install file-roller || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}                                            # GUI program
+apt-get -y -qq install unace unrar rar unzip zip p7zip p7zip-full p7zip-rar || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}   # Supported file compressions types
 
 
 ##### Install VPN support
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}VPN${RESET} support for Network-Manager"
 #*** I know its messy...
 for FILE in network-manager-openvpn network-manager-pptp network-manager-vpnc network-manager-openconnect network-manager-iodine; do
-  apt-get -y -qq install "${FILE}" || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+  apt-get -y -qq install "${FILE}" || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 done
 
 ##### Install flash
 #echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}flash${RESET} ~ multimedia web plugin"
-#apt-get -y -qq install flashplugin-nonfree || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+#apt-get -y -qq install flashplugin-nonfree || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 #update-flashplugin-nonfree --install
 
 
-###### Install java
+##### Install java
 #echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}java${RESET} ~ web plugin"
 #*** Insert bash fu here for either open jdk vs oracle jdk
 #update-java-alternatives --jre -s java-1.7.0-openjdk-amd64
@@ -2127,22 +2175,22 @@ done
 
 ##### Install hashid
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}hashid${RESET} ~ identify hash types"
-apt-get -y -qq install hashid || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install hashid || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
 ##### Install httprint
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}httprint${RESET} ~ GUI web server fingerprint"
-apt-get -y -qq install httprint || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install httprint || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
 ##### Install lbd
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}lbd${RESET} ~ load balancing detector"
-apt-get -y -qq install lbd || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install lbd || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
 ##### Install wafw00f
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}wafw00f${RESET} ~ WAF detector"
-apt-get -y -qq install git python python-pip || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install git python python-pip || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 git clone -q https://github.com/sandrogauci/wafw00f.git /opt/wafw00f-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
 pushd /opt/wafw00f-git/ >/dev/null
 git pull -q
@@ -2150,19 +2198,19 @@ python setup.py install
 popd >/dev/null
 
 
-###### Install waffit
+##### Install waffit
 #echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}waffit${RESET} ~ WAF detector"
-#apt-get -y -qq install waffit || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+#apt-get -y -qq install waffit || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
 ##### Install aircrack-ng
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}aircrack-ng${RESET} ~ Wi-Fi cracking suite"
-apt-get -y -qq install aircrack-ng curl || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install aircrack-ng curl || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 #--- Setup hardware database
 mkdir -p /etc/aircrack-ng/
-(timeout 60 airodump-ng-oui-update 2>/dev/null) || timeout 60 curl --progress -k -L -f "http://standards.ieee.org/develop/regauth/oui/oui.txt" > /etc/aircrack-ng/oui.txt          #***!!! hardcoded path! # || echo -e ' '${RED}'[!]'$RESET" Issue downloading oui.txt" 1>&2
+(timeout 60 airodump-ng-oui-update 2>/dev/null) || timeout 60 curl --progress -k -L -f "http://standards.ieee.org/develop/regauth/oui/oui.txt" > /etc/aircrack-ng/oui.txt          #***!!! hardcoded path! # || echo -e ' '${RED}'[!]'${RESET}" Issue downloading oui.txt" 1>&2
 [[ -e /etc/aircrack-ng/oui.txt ]] && (\grep "(hex)" /etc/aircrack-ng/oui.txt | sed 's/^[ \t]*//g;s/[ \t]*$//g' > /etc/aircrack-ng/airodump-ng-oui.txt)
-[[ ! -f /etc/aircrack-ng/airodump-ng-oui.txt ]] && echo -e ' '${RED}'[!]'$RESET" Issue downloading oui.txt" 1>&2
+[[ ! -f /etc/aircrack-ng/airodump-ng-oui.txt ]] && echo -e ' '${RED}'[!]'${RESET}" Issue downloading oui.txt" 1>&2
 #--- Setup alias
 file=/root/.bash_aliases; [ -e "${file}" ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
 ([[ -e "${file}" && "$(tail -c 1 $file)" != "" ]]) && echo >> "${file}"
@@ -2172,24 +2220,24 @@ grep -q '^## airodump-ng' "${file}" 2>/dev/null || echo -e '## airodump-ng \nali
 
 ##### Install reaver (Community Fork)
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}reaver (Community Fork)${RESET} ~ WPS pin brute force + Pixie Attack"
-apt-get -y -qq install reaver pixiewps || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install reaver pixiewps || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
 ##### Install bully
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}bully${RESET} ~ WPS pin brute force"
-apt-get -y -qq install bully || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install bully || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
 ##### Install wifite
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}wifite${RESET} ~ automated Wi-Fi tool"
-apt-get -y -qq install wifite || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install wifite || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
 ##### Install vulscan script for nmap
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}vulscan script for nmap${RESET} ~ vulnerability scanner add-on"
-apt-get -y -qq install nmap curl || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install nmap curl || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 mkdir -p /usr/share/nmap/scripts/vulscan/
-curl --progress -k -L -f "http://www.computec.ch/projekte/vulscan/download/nmap_nse_vulscan-2.0.tar.gz" > /tmp/nmap_nse_vulscan.tar.gz || echo -e ' '${RED}'[!]'$RESET" Issue downloading file" 1>&2      #***!!! hardcoded version! Need to manually check for updates
+curl --progress -k -L -f "http://www.computec.ch/projekte/vulscan/download/nmap_nse_vulscan-2.0.tar.gz" > /tmp/nmap_nse_vulscan.tar.gz || echo -e ' '${RED}'[!]'${RESET}" Issue downloading file" 1>&2      #***!!! hardcoded version! Need to manually check for updates
 gunzip /tmp/nmap_nse_vulscan.tar.gz
 tar -xf /tmp/nmap_nse_vulscan.tar -C /usr/share/nmap/scripts/
 #--- Fix permissions (by default its 0777)
@@ -2200,12 +2248,12 @@ rm -f /tmp/nmap_nse_vulscan.tar*
 
 ##### Install unicornscan
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}unicornscan${RESET} ~ fast port scanner"
-apt-get -y -qq install unicornscan || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install unicornscan || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
 ##### Install onetwopunch
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}onetwopunch${RESET} ~ unicornscan & nmap wrapper"
-apt-get -y -qq install git nmap unicornscan || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install git nmap unicornscan || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 git clone -q https://github.com/superkojiman/onetwopunch.git /opt/onetwopunch-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
 pushd /opt/onetwopunch-git/ >/dev/null
 git pull -q
@@ -2222,9 +2270,9 @@ chmod +x "${file}"
 
 ##### Install udp-proto-scanner
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}udp-proto-scanner${RESET} ~ common UDP port scanner"
-apt-get -y -qq install curl || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install curl || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 #mkdir -p /usr/share/udp-proto-scanner/
-curl --progress -k -L -f "https://labs.portcullis.co.uk/download/udp-proto-scanner-1.1.tar.gz" -o /tmp/udp-proto-scanner.tar.gz || echo -e ' '${RED}'[!]'$RESET" Issue downloading udp-proto-scanner.tar.gz" 1>&2
+curl --progress -k -L -f "https://labs.portcullis.co.uk/download/udp-proto-scanner-1.1.tar.gz" -o /tmp/udp-proto-scanner.tar.gz || echo -e ' '${RED}'[!]'${RESET}" Issue downloading udp-proto-scanner.tar.gz" 1>&2
 gunzip /tmp/udp-proto-scanner.tar.gz
 tar -xf /tmp/udp-proto-scanner.tar -C /usr/share/
 mv -f /usr/share/udp-proto-scanner{-1.1,}
@@ -2241,17 +2289,17 @@ rm -f /tmp/udp-proto-scanner.tar*
 
 ##### Install clusterd
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}clusterd${RESET} ~ clustered attack toolkit (jboss, coldfusion, weblogic, tomcat etc)"
-apt-get -y -qq install clusterd || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install clusterd || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
 ##### Install webhandler
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}webhandler${RESET} ~ shell TTY handler"
-apt-get -y -qq install webhandler || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install webhandler || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
 ##### Install azazel
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}azazel${RESET} ~ linux userland rootkit"
-apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 git clone -q https://github.com/chokepoint/azazel.git /opt/azazel-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
 pushd /opt/azazel-git/ >/dev/null
 git pull -q
@@ -2260,26 +2308,26 @@ popd >/dev/null
 
 ##### Install b374k (https://bugs.kali.org/view.php?id=1097)
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}b374k${RESET} ~ (PHP) web shell"
-apt-get -y -qq install git php5-cli || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install git php5-cli || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 git clone -q https://github.com/b374k/b374k.git /opt/b374k-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
 pushd /opt/b374k-git/ >/dev/null
 git pull -q
 php index.php -o b374k.php -s
 popd >/dev/null
 #--- Link to others
-apt-get -y -qq install webshells || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install webshells || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 ln -sf /usr/share/b374k-git /usr/share/webshells/php/b374k
 
 
-###### Install DAws
+##### Install DAws
 #echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}DAws${RESET} ~ (PHP) web shell"
-#apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+#apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 #git clone -q https://github.com/dotcppfile/DAws.git /opt/daws-git/
 #pushd /opt/daws-git/ >/dev/null
 #git pull -q
 #popd >/dev/null
 #--- Link to others
-#apt-get -y -qq install webshells || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+#apt-get -y -qq install webshells || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 #ln -sf /usr/share/daws-git /usr/share/webshells/php/daws
 #--- Bug
 #PHP Fatal error:  Call to undefined function rglob() in /var/www/DAws.php on line 241
@@ -2292,24 +2340,24 @@ ln -sf /usr/share/b374k-git /usr/share/webshells/php/b374k
 
 ##### Install cmdsql
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}cmdsql${RESET} ~ (ASPX) web shell"
-apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 git clone -q https://github.com/NetSPI/cmdsql.git /opt/cmdsql-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
 pushd /opt/b374k-git/ >/dev/null
 git pull -q
 popd >/dev/null
 #--- Link to others
-apt-get -y -qq install webshells || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install webshells || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 ln -sf /usr/share/cmdsql-git /usr/share/webshells/aspx/cmdsql
 
 
 ##### Install JSP file browser
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}JSP file browser${RESET} ~ (JSP) web shell"
-apt-get -y -qq install curl || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install curl || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 mkdir -p /usr/share/jsp-filebrowser/
-curl --progress -k -L -f "http://www.vonloesch.de/files/browser.zip" > /tmp/jsp.zip || echo -e ' '${RED}'[!]'$RESET" Issue downloading jsp.zip" 1>&2    #***!!! hardcoded path!
+curl --progress -k -L -f "http://www.vonloesch.de/files/browser.zip" > /tmp/jsp.zip || echo -e ' '${RED}'[!]'${RESET}" Issue downloading jsp.zip" 1>&2    #***!!! hardcoded path!
 unzip -q -o -d /usr/share/jsp-filebrowser/ /tmp/jsp.zip
 #--- Link to others
-apt-get -y -qq install webshells || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install webshells || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 ln -sf /usr/share/jsp-filebrowser /usr/share/webshells/jsp/jsp-filebrowser
 #--- Remove old temp files
 rm -f /tmp/jsp.zip
@@ -2317,15 +2365,15 @@ rm -f /tmp/jsp.zip
 
 ##### Install htshells
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}htShells${RESET} ~ (htdocs/apache) web shells"
-apt-get -y -qq install htshells || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install htshells || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 #--- Link to others
-apt-get -y -qq install webshells || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install webshells || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 ln -sf /usr/share/htshells /usr/share/webshells/htshells
 
 
-###### Install python-pty-shells
+##### Install python-pty-shells
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}python-pty-shells${RESET} ~ PTY shells"
-apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 git clone -q https://github.com/infodox/python-pty-shells.git /opt/python-pty-shells-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
 pushd /opt/python-pty-shells-git/ >/dev/null
 git pull -q
@@ -2334,18 +2382,18 @@ popd >/dev/null
 
 ##### Install bridge-utils
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}bridge-utils${RESET} ~ bridge network interfaces"
-apt-get -y -qq install bridge-utils || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install bridge-utils || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
 ##### Install FruityWifi
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}FruityWifi${RESET} ~ wireless network auditing tool"
-apt-get -y -qq install fruitywifi || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install fruitywifi || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 # URL: https://localhost:8443
 
 
 ##### Install WPA2-HalfHandshake-Crack
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}WPA2-HalfHandshake-Crack${RESET} ~ rogue AP todo WPA2 handshakes without AP"
-apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 git clone -q https://github.com/dxa4481/WPA2-HalfHandshake-Crack.git /opt/wpa2-halfhandshake-crack-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
 pushd /opt/wpa2-halfhandshake-crack-git/ >/dev/null
 git pull -q
@@ -2354,12 +2402,12 @@ popd >/dev/null
 
 ##### Install mana toolkit
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}mana toolkit${RESET} ~ rogue AP todo MITM Wi-Fi"
-apt-get -y -qq install mana-toolkit || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install mana-toolkit || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
 ##### Install wifiphisher
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}wifiphisher${RESET} ~ automated Wi-Fi phishing"
-apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 git clone -q https://github.com/sophron/wifiphisher.git /opt/wifiphisher-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
 pushd /opt/wifiphisher-git/ >/dev/null
 git pull -q
@@ -2376,7 +2424,7 @@ chmod +x "${file}"
 
 ##### Install hostapd-wpe-extended
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}hostapd-wpe-extended${RESET} ~ rogue AP for WPA-Enterprise"
-apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 git clone -q https://github.com/NerdyProjects/hostapd-wpe-extended.git /opt/hostapd-wpe-extended-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
 pushd /opt/hostapd-wpe-extended-git/ >/dev/null
 git pull -q
@@ -2385,7 +2433,7 @@ popd >/dev/null
 
 ##### Install proxychains-ng (https://bugs.kali.org/view.php?id=2037)
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}proxychains-ng${RESET} ~ proxifier"
-apt-get -y -qq install git gcc || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install git gcc || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 git clone -q https://github.com/rofl0r/proxychains-ng.git /opt/proxychains-ng-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
 pushd /opt/proxychains-ng-git/ >/dev/null
 git pull -q
@@ -2399,19 +2447,19 @@ ln -sf /usr/bin/proxychains4 /usr/bin/proxychains-ng
 
 ##### Install httptunnel
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}httptunnel${RESET} ~ tunnels data streams in HTTP requests"
-apt-get -y -qq install http-tunnel || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install http-tunnel || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
 ##### Install sshuttle
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}sshuttle${RESET} ~ VPN over SSH"
-apt-get -y -qq install sshuttle || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install sshuttle || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 #--- Example
 #sshuttle --dns --remote root@123.9.9.9 0/0 -vv
 
 
 ##### Install iodine
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}iodine${RESET} ~ DNS tunneling (IP over DNS)"
-apt-get -y -qq install iodine || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install iodine || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 #--- Example
 #iodined -f -P password1 10.0.0.1 dns.mydomain.com
 #iodine -f -P password1 123.9.9.9 dns.mydomain.com; ssh -C -D 8081 root@10.0.0.1
@@ -2419,14 +2467,14 @@ apt-get -y -qq install iodine || echo -e ' '${RED}'[!] Issue when git cloning'${
 
 ##### Install dns2tcp
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}dns2tcp${RESET} ~ DNS tunneling (TCP over DNS)"
-apt-get -y -qq install dns2tcp || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install dns2tcp || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 #file=/etc/dns2tcpd.conf; [ -e "${file}" ] && cp -n $file{,.bkup}; echo -e "listen = 0.0.0.0\nport = 53\nuser = nobody\nchroot = /tmp\ndomain = dnstunnel.mydomain.com\nkey = password1\nressources = ssh:127.0.0.1:22" > "${file}"; dns2tcpd -F -d 1 -f /etc/dns2tcpd.conf
 #file=/etc/dns2tcpc.conf; [ -e "${file}" ] && cp -n $file{,.bkup}; echo -e "domain = dnstunnel.mydomain.com\nkey = password1\nresources = ssh\nlocal_port = 8000\ndebug_level=1" > "${file}"; dns2tcpc -f /etc/dns2tcpc.conf 178.62.206.227; ssh -C -D 8081 -p 8000 root@127.0.0.1
 
 
 ##### Install ptunnel
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}ptunnel${RESET} ~ IMCP tunneling"
-apt-get -y -qq install ptunnel || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install ptunnel || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 #--- Example
 #ptunnel -x password1
 #ptunnel -x password1 -p 123.9.9.9 -lp 8000 -da 127.0.0.1 -dp 22; ssh -C -D 8081 -p 8000 root@127.0.0.1
@@ -2434,17 +2482,17 @@ apt-get -y -qq install ptunnel || echo -e ' '${RED}'[!] Issue when git cloning'$
 
 ##### Install stunnel
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}stunnel${RESET} ~ SSL wrapper"
-apt-get -y -qq install stunnel || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install stunnel || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 #--- Remove from start up
 systemctl disable stunnel4
 
 
 ##### Install zerofree
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}zerofree${RESET} ~ CLI nulls free blocks on a HDD"
-apt-get -y -qq install zerofree || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install zerofree || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 #--- Example
 #fdisk -l
-#zerofree -v /dev/sda1   #for i in $(mount | grep sda | grep ext | cut -b 9); do  mount -o remount,ro /dev/sda$i && zerofree -v /dev/sda$i && mount -o remount,rw /dev/sda$i; done
+#zerofree -v /dev/sda1   #for i in $(mount | grep sda | grep ext | cut -b 9); do  mount -o remount,ro /dev/sda${i} && zerofree -v /dev/sda${i} && mount -o remount,rw /dev/sda${i}; done
 
 
 ##### Install gcc & multilib
@@ -2465,19 +2513,19 @@ done
 
 ##### Install WINE
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}WINE${RESET} ~ run Windows programs on *nix"
-apt-get -y -qq install wine winetricks || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install wine winetricks || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 #--- Using x64?
 if [[ "$(uname -m)" == 'x86_64' ]]; then
   echo -e " ${GREEN}[+]${RESET} Configuring ${GREEN}WINE (x64)${RESET}"
   dpkg --add-architecture i386
   apt-get -qq update
-  apt-get -y -qq install wine-bin:i386 || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+  apt-get -y -qq install wine-bin:i386 || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
   #apt-get -y -qq remove wine64
-  apt-get -y -qq install wine32 || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+  apt-get -y -qq install wine32 || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 fi
 #--- Mono
-curl --progress -k -L -f "http://winezeug.googlecode.com/svn/trunk/install-addons.sh" | sed 's/^set -x$//' | bash -   # || echo -e ' '${RED}'[!]'$RESET" Issue downloading install-addons.sh" 1>&2
-apt-get -y -qq install mono-vbnc || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}   #mono-complete || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+curl --progress -k -L -f "http://winezeug.googlecode.com/svn/trunk/install-addons.sh" | sed 's/^set -x$//' | bash -   # || echo -e ' '${RED}'[!]'${RESET}" Issue downloading install-addons.sh" 1>&2
+apt-get -y -qq install mono-vbnc || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}   #mono-complete || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 #--- Run WINE for the first time
 [ -e /usr/share/windows-binaries/whoami.exe ] && wine /usr/share/windows-binaries/whoami.exe &>/dev/null
 #--- Winetricks: Disable 'axel' support - BUG too many redirects.
@@ -2491,8 +2539,8 @@ echo -e 'application/x-ms-dos-executable=wine.desktop' >> "${file}"
 
 ##### Install MinGW (Windows) ~ cross compiling suite
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}mingw (Windows)${RESET} ~ cross compiling suite"
-#curl --progress -k -L -f "http://sourceforge.net/projects/mingw/files/Installer/mingw-get-setup.exe/download" > /tmp/mingw-get-setup.exe || echo -e ' '${RED}'[!]'$RESET" Issue downloading mingw-get-setup.exe" 1>&2                                                                #***!!! hardcoded path!
-curl --progress -k -L -f "http://sourceforge.net/projects/mingw/files/Installer/mingw-get/mingw-get-0.6.2-beta-20131004-1/mingw-get-0.6.2-mingw32-beta-20131004-1-bin.zip/download" > /tmp/mingw-get.zip || echo -e ' '${RED}'[!]'$RESET" Issue downloading mingw-get.zip" 1>&2       #***!!! hardcoded path!
+#curl --progress -k -L -f "http://sourceforge.net/projects/mingw/files/Installer/mingw-get-setup.exe/download" > /tmp/mingw-get-setup.exe || echo -e ' '${RED}'[!]'${RESET}" Issue downloading mingw-get-setup.exe" 1>&2                                                                #***!!! hardcoded path!
+curl --progress -k -L -f "http://sourceforge.net/projects/mingw/files/Installer/mingw-get/mingw-get-0.6.2-beta-20131004-1/mingw-get-0.6.2-mingw32-beta-20131004-1-bin.zip/download" > /tmp/mingw-get.zip || echo -e ' '${RED}'[!]'${RESET}" Issue downloading mingw-get.zip" 1>&2       #***!!! hardcoded path!
 mkdir -p ~/.wine/drive_c/MinGW/bin/
 unzip -q -o -d ~/.wine/drive_c/MinGW/ /tmp/mingw-get.zip
 pushd ~/.wine/drive_c/MinGW/ >/dev/null
@@ -2506,24 +2554,24 @@ grep '^"PATH"=.*C:\\\\MinGW\\\\bin' /root/.wine/system.reg || sed -i '/^"PATH"=/
 
 ##### Downloading AccessChk.exe
 echo -e "\n ${GREEN}[+]${RESET} Downloading ${GREEN}AccessChk.exe${RESET} ~ Windows environment tester"
-apt-get -y -qq install curl || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
-curl --progress -k -L -f "https://download.sysinternals.com/files/AccessChk.zip" > /usr/share/windows-binaries/AccessChk.zip || echo -e ' '${RED}'[!]'$RESET" Issue downloading AccessChk.zip" 1>&2          #***!!! hardcoded path!
+apt-get -y -qq install curl || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
+curl --progress -k -L -f "https://download.sysinternals.com/files/AccessChk.zip" > /usr/share/windows-binaries/AccessChk.zip || echo -e ' '${RED}'[!]'${RESET}" Issue downloading AccessChk.zip" 1>&2          #***!!! hardcoded path!
 unzip -q -o -d /usr/share/windows-binaries/ /usr/share/windows-binaries/AccessChk.zip
 rm -f /usr/share/windows-binaries/{AccessChk.zip,Eula.txt}
 
 
-###### Install Python (Windows via WINE) *** WINE is too dated =(  (try again with debian 8 / kali 2.0)
+##### Install Python (Windows via WINE) *** WINE is too dated =(  (try again with debian 8 / kali 2.0)
 #echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}Python${RESET} ~ python on Windows"
-#curl --progress -k -L -f "https://www.python.org/ftp/python/2.3/Python-2.3.exe" > /tmp/python.exe || echo -e ' '${RED}'[!]'$RESET" Issue downloading python.exe" 1>&2                                                          #***!!! hardcoded path!
+#curl --progress -k -L -f "https://www.python.org/ftp/python/2.3/Python-2.3.exe" > /tmp/python.exe || echo -e ' '${RED}'[!]'${RESET}" Issue downloading python.exe" 1>&2                                                          #***!!! hardcoded path!
 #wine /tmp/python.exe /s
-#curl --progress -k -L -f "http://sourceforge.net/projects/pywin32/files/pywin32/Build%20218/pywin32-218.win32-py2.3.exe/download" > /tmp/pywin32.exe || echo -e ' '${RED}'[!]'$RESET" Issue downloading pywin32.exe" 1>&2      #***!!! hardcoded path!
+#curl --progress -k -L -f "http://sourceforge.net/projects/pywin32/files/pywin32/Build%20218/pywin32-218.win32-py2.3.exe/download" > /tmp/pywin32.exe || echo -e ' '${RED}'[!]'${RESET}" Issue downloading pywin32.exe" 1>&2      #***!!! hardcoded path!
 #wine /tmp/pywin32.exe
 #
 #winetricks python26
 #
-#curl --progress -k -L -f "https://www.python.org/ftp/python/2.7.9/python-2.7.9.msi" > /tmp/python.msi || echo -e ' '${RED}'[!]'$RESET" Issue downloading python.msi" 1>&2                                                      #***!!! hardcoded path!
+#curl --progress -k -L -f "https://www.python.org/ftp/python/2.7.9/python-2.7.9.msi" > /tmp/python.msi || echo -e ' '${RED}'[!]'${RESET}" Issue downloading python.msi" 1>&2                                                      #***!!! hardcoded path!
 #wine msiexec /i /tmp/python.msi /qb
-#curl --progress -k -L -f "http://sourceforge.net/projects/pywin32/files/pywin32/Build%20219/pywin32-219.win32-py2.7.exe/download" > /tmp/pywin32.exe || echo -e ' '${RED}'[!]'$RESET" Issue downloading pywin32.exe" 1>&2      #***!!! hardcoded path!
+#curl --progress -k -L -f "http://sourceforge.net/projects/pywin32/files/pywin32/Build%20219/pywin32-219.win32-py2.7.exe/download" > /tmp/pywin32.exe || echo -e ' '${RED}'[!]'${RESET}" Issue downloading pywin32.exe" 1>&2      #***!!! hardcoded path!
 #wine /tmp/pywin32.exe /s
 
 
@@ -2531,10 +2579,10 @@ rm -f /usr/share/windows-binaries/{AccessChk.zip,Eula.txt}
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}veil-evasion framework${RESET} ~ bypassing anti-virus"
 if [[ "$(uname -m)" == 'x86_64' ]]; then
   #dpkg --add-architecture i386 && apt-get -qq update
-  #apt-get -y -qq install veil-evasion:i386 || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
-  echo -e ' '${RED}'[!]'$RESET" veil-evasion has issues with x64. Skipping..." 1>&2
+  #apt-get -y -qq install veil-evasion:i386 || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
+  echo -e ' '${RED}'[!]'${RESET}" veil-evasion has issues with x64. Skipping..." 1>&2
 else
-  apt-get -y -qq install veil-evasion || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+  apt-get -y -qq install veil-evasion || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
   bash /usr/share/veil-evasion/setup/setup.sh --silent
   touch /etc/veil/settings.py
   sed -i 's/TERMINAL_CLEAR=".*"/TERMINAL_CLEAR="false"/' /etc/veil/settings.py
@@ -2543,11 +2591,11 @@ fi
 
 ##### Install OP packers
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}OP packers${RESET} ~ bypassing anti-virus"
-apt-get -y -qq install upx-ucl curl || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}   #wget -q "http://upx.sourceforge.net/download/upx309w.zip" -P /usr/share/packers/ && unzip -q -o -d /usr/share/packers/ /usr/share/packers/upx309w.zip; rm -f /usr/share/packers/upx309w.zip
+apt-get -y -qq install upx-ucl curl || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}   #wget -q "http://upx.sourceforge.net/download/upx309w.zip" -P /usr/share/packers/ && unzip -q -o -d /usr/share/packers/ /usr/share/packers/upx309w.zip; rm -f /usr/share/packers/upx309w.zip
 mkdir -p /usr/share/packers/
-curl --progress -k -L -f "http://www.eskimo.com/~scottlu/win/cexe.exe" > /usr/share/packers/cexe.exe || echo -e ' '${RED}'[!]'$RESET" Issue downloading cexe.exe" 1>&2                                                                                                             #***!!! hardcoded path!    #***!!! hardcoded version! Need to manually check for updates
-curl --progress -k -L -f "http://www.farbrausch.de/~fg/kkrunchy/kkrunchy_023a2.zip" > /usr/share/packers/kkrunchy.zip && unzip -q -o -d /usr/share/packers/ /usr/share/packers/kkrunchy.zip|| echo -e ' '${RED}'[!]'$RESET" Issue downloading kkrunchy.zip" 1>&2                   #***!!! hardcoded version! Need to manually check for updates
-curl --progress -k -L -f "https://pescrambler.googlecode.com/files/PEScrambler_v0_1.zip" > /usr/share/packers/PEScrambler.zip && unzip -q -o -d /usr/share/packers/ /usr/share/packers/PEScrambler.zip|| echo -e ' '${RED}'[!]'$RESET" Issue downloading PEScrambler.zip" 1>&2     #***!!! hardcoded version! Need to manually check for updates
+curl --progress -k -L -f "http://www.eskimo.com/~scottlu/win/cexe.exe" > /usr/share/packers/cexe.exe || echo -e ' '${RED}'[!]'${RESET}" Issue downloading cexe.exe" 1>&2                                                                                                             #***!!! hardcoded path!    #***!!! hardcoded version! Need to manually check for updates
+curl --progress -k -L -f "http://www.farbrausch.de/~fg/kkrunchy/kkrunchy_023a2.zip" > /usr/share/packers/kkrunchy.zip && unzip -q -o -d /usr/share/packers/ /usr/share/packers/kkrunchy.zip|| echo -e ' '${RED}'[!]'${RESET}" Issue downloading kkrunchy.zip" 1>&2                   #***!!! hardcoded version! Need to manually check for updates
+curl --progress -k -L -f "https://pescrambler.googlecode.com/files/PEScrambler_v0_1.zip" > /usr/share/packers/PEScrambler.zip && unzip -q -o -d /usr/share/packers/ /usr/share/packers/PEScrambler.zip|| echo -e ' '${RED}'[!]'${RESET}" Issue downloading PEScrambler.zip" 1>&2     #***!!! hardcoded version! Need to manually check for updates
 #*** Need to make a bash script like hyperion...
 #--- Remove old temp files
 rm -f /usr/share/packers/kkrunchy*.zip
@@ -2597,28 +2645,28 @@ EOF
 chmod +x "${file}"
 
 
-###### Install shellter
+##### Install shellter
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}shellter${RESET} ~ dynamic shellcode injector"
-apt-get -y -qq install shellter || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install shellter || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
-###### Install the backdoor factory
+##### Install the backdoor factory
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}Backdoor Factory${RESET} ~ bypassing anti-virus"
-apt-get -y -qq install backdoor-factory || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install backdoor-factory || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
-###### Install the Backdoor Factory Proxy (BDFProxy)
+##### Install the Backdoor Factory Proxy (BDFProxy)
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}Backdoor Factory Proxy (BDFProxy)${RESET} ~ patches binaries files during a MITM"
-apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 git clone -q https://github.com/secretsquirrel/BDFProxy.git /opt/bdfproxy-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
 pushd /opt/bdfproxy-git/ >/dev/null
 git pull -q
 popd >/dev/null
 
 
-###### Install the BetterCap
+##### Install the BetterCap
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}BetterCap${RESET} ~ MITM framework"
-apt-get -y -qq install git ruby-dev libpcap-dev || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install git ruby-dev libpcap-dev || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 git clone -q https://github.com/evilsocket/bettercap.git /opt/bettercap-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
 pushd /opt/bettercap-git/ >/dev/null
 git pull -q
@@ -2627,10 +2675,10 @@ gem install bettercap*.gem
 popd >/dev/null
 
 
-####### Install the MITMf (GIT)
+##### Install the MITMf (GIT)
 #echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}MITMf${RESET} (GIT) ~ framework for MITM attacks"
-##apt-get -y -qq install mitmf || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}     # repo version. stable, but dated
-#apt-get -y -qq install git  || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}       #  git version. bleeding edge
+##apt-get -y -qq install mitmf || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}     # repo version. stable, but dated
+#apt-get -y -qq install git  || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}       #  git version. bleeding edge
 #git clone -q https://github.com/byt3bl33d3r/MITMf.git /opt/mitmf-git/
 #pushd /opt/mitmf-git/ >/dev/null
 #git pull -q
@@ -2645,12 +2693,12 @@ popd >/dev/null
 
 ##### Install seclist
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}seclist${RESET} ~ multiple types of (word)lists (and similar things)"
-apt-get -y -qq install seclists || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install seclists || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
 ##### Update wordlists
 echo -e "\n ${GREEN}[+]${RESET} Updating ${GREEN}wordlists${RESET} ~ collection of wordlists"
-apt-get -y -qq install curl || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install curl || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 #--- Extract rockyou wordlist
 [ -e /usr/share/wordlists/rockyou.txt.gz ] && gzip -dc < /usr/share/wordlists/rockyou.txt.gz > /usr/share/wordlists/rockyou.txt   #gunzip rockyou.txt.gz
 #rm -f /usr/share/wordlists/rockyou.txt.gz
@@ -2658,7 +2706,7 @@ apt-get -y -qq install curl || echo -e ' '${RED}'[!] Issue when git cloning'${RE
 #unzip -o -d /usr/share/sqlmap/txt/ /usr/share/sqlmap/txt/wordlist.zip
 #--- Add 10,000 Top/Worst/Common Passwords
 mkdir -p /usr/share/wordlists/
-(curl --progress -k -L -f "http://xato.net/files/10k most common.zip" > /tmp/10kcommon.zip 2>/dev/null || curl --progress -k -L -f "http://download.g0tmi1k.com/wordlists/common-10k_most_common.zip" > /tmp/10kcommon.zip 2>/dev/null) || echo -e ' '${RED}'[!]'$RESET" Issue downloading 10kcommon.zip" 1>&2
+(curl --progress -k -L -f "http://xato.net/files/10k most common.zip" > /tmp/10kcommon.zip 2>/dev/null || curl --progress -k -L -f "http://download.g0tmi1k.com/wordlists/common-10k_most_common.zip" > /tmp/10kcommon.zip 2>/dev/null) || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 10kcommon.zip" 1>&2
 unzip -q -o -d /usr/share/wordlists/ /tmp/10kcommon.zip 2>/dev/null   #***!!! hardcoded version! Need to manually check for updates
 mv -f /usr/share/wordlists/10k{\ most\ ,_most_}common.txt
 #--- Linking to more - folders
@@ -2674,65 +2722,65 @@ rm -f /tmp/10kcommon.zip
 
 ##### Install apt-file
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}apt-file${RESET} ~ which package includes a specific file"
-apt-get -y -qq install apt-file || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install apt-file || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 apt-file update
 
 
 ##### Install apt-show-versions
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}apt-show-versions${RESET} ~ which package version in repo"
-apt-get -y -qq install apt-show-versions || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install apt-show-versions || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
-###### Install Debian weak SSH keys
+##### Install Debian weak SSH keys
 #echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}Debian weak SSH keys${RESET} ~ OpenSSL predictable PRNG"
 #dpkg --remove --force-depends openssh-blacklist
 #grep -q '^PermitBlacklistedKeys yes' /etc/ssh/sshd_config || echo PermitBlacklistedKeys yes >> /etc/ssh/sshd_config
-#apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+#apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 #git clone -q https://github.com/g0tmi1k/debian-ssh.git /opt/exploit-debianssh-git/
 #pushd /opt/exploit-debianssh/ >/dev/null
 #git pull -q
 #popd >/dev/null
 
 
-###### Install Exploit-DB binaries
+##### Install Exploit-DB binaries
 #echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}Installing Exploit-DB binaries${RESET} ~ pre-compiled exploits"
-#apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+#apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 #git clone -q https://github.com/offensive-security/exploit-database-bin-sploits.git /opt/exploitdb-bin-git/
 #pushd /opt/exploitdb-bin/ >/dev/null
 #git pull -q
 #popd >/dev/null
 
 
-###### Install Babel scripts
+##### Install Babel scripts
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}Babel scripts${RESET} ~ post exploitation scripts"
-apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 git clone -q https://github.com/attackdebris/babel-sf.git /opt/babel-sf-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
 pushd /opt/babel-sf-git/ >/dev/null
 git pull -q
 popd >/dev/null
 
 
-###### Install pwntools (https://bugs.kali.org/view.php?id=1236)
+##### Install pwntools (https://bugs.kali.org/view.php?id=1236)
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}pwntools${RESET} ~ handy CTF tools"
-apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 git clone -q https://github.com/Gallopsled/pwntools.git /opt/pwntools-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
 pushd /opt/pwntools-git/ >/dev/null
 git pull -q
 popd >/dev/null
 
 
-###### Install nullsecurity tool suite
+##### Install nullsecurity tool suite
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}nullsecurity tool suite${RESET} ~ collection of tools"
-apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 git clone -q https://github.com/nullsecuritynet/tools.git /opt/nullsecuritynet-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
 pushd /opt/nullsecuritynet-git/ >/dev/null
 git pull -q
 popd >/dev/null
 
 
-###### Install gdb-peda (https://bugs.kali.org/view.php?id=2327)
+##### Install gdb-peda (https://bugs.kali.org/view.php?id=2327)
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}gdb-peda${RESET} ~ GDB exploit development assistance"
-apt-get -y -qq install git gdb || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install git gdb || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 git clone -q https://github.com/longld/peda.git /opt/gdb-peda-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
 pushd /opt/gdb-peda-git/ >/dev/null
 git pull -q
@@ -2740,9 +2788,9 @@ popd >/dev/null
 echo "source ~/peda/peda.py" >> ~/.gdbinit
 
 
-###### Install radare2 (https://bugs.kali.org/view.php?id=2169)
+##### Install radare2 (https://bugs.kali.org/view.php?id=2169)
 #echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}radare2${RESET} ~ reverse engineering framework"
-#apt-get -y -qq install git gdb || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+#apt-get -y -qq install git gdb || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 #git clone -q https://github.com/radare/radare2.git /opt/radare2-git/
 #pushd /opt/radare2-git/ >/dev/null
 #git pull -q
@@ -2750,9 +2798,9 @@ echo "source ~/peda/peda.py" >> ~/.gdbinit
 #popd >/dev/null
 
 
-###### Install ropeme (https://bugs.kali.org/view.php?id=2328)
+##### Install ropeme (https://bugs.kali.org/view.php?id=2328)
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}ropeme${RESET} ~ generate ROP gadgets and payload"
-apt-get -y -qq install git python-distorm3 libdistorm64-1 libdistorm64-dev binutils || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install git python-distorm3 libdistorm64-1 libdistorm64-dev binutils || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 git clone -q https://github.com/packz/ropeme.git /opt/ropeme-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
 pushd /opt/ropeme-git/ >/dev/null
 git reset --hard HEAD
@@ -2769,9 +2817,9 @@ EOF
 chmod +x "${file}"
 
 
-###### Install ropper (https://bugs.kali.org/view.php?id=2329)
+##### Install ropper (https://bugs.kali.org/view.php?id=2329)
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}ropper${RESET} ~ generate ROP gadgets and payload"
-apt-get -y -qq install git python-capstone || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install git python-capstone || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 git clone -q https://github.com/sashs/Ropper.git /opt/ropper-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
 pushd /opt/ropper-git/ >/dev/null
 git pull -q
@@ -2779,28 +2827,28 @@ python setup.py install
 popd >/dev/null
 
 
-###### Install dissy
+##### Install dissy
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}dissy${RESET} ~ GUI objdump"
-apt-get -y -qq install dissy binutils || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install dissy binutils || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
-###### Install shellnoob
+##### Install shellnoob
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}shellnoob${RESET} ~ shellcode writing toolkit"
-apt-get -y -qq install shellnoob || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install shellnoob || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
 ##### Install checksec
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}checksec${RESET} ~ check *nix OS for security features"
-apt-get -y -qq install curl || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install curl || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 mkdir -p /usr/share/checksec/
 file=/usr/share/checksec/checksec.sh
-curl --progress -k -L -f "http://www.trapkit.de/tools/checksec.sh" > "${file}" || echo -e ' '${RED}'[!]'$RESET" Issue downloading checksec.zip" 1>&2     #***!!! hardcoded patch
+curl --progress -k -L -f "http://www.trapkit.de/tools/checksec.sh" > "${file}" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading checksec.zip" 1>&2     #***!!! hardcoded patch
 chmod +x "${file}"
 
 
 ##### Install shellconv
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}shellconv${RESET} ~ shellcode disassembler"
-apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 git clone -q https://github.com/hasherezade/shellconv.git /opt/shellconv-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
 pushd /opt/shellconv-git/ >/dev/null
 git pull -q
@@ -2817,23 +2865,23 @@ chmod +x "${file}"
 
 ##### Install bless
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}bless${RESET} ~ GUI hex editor"
-apt-get -y -qq install bless || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install bless || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
 ##### Install dhex
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}dhex${RESET} ~ CLI hex compare"
-apt-get -y -qq install dhex || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install dhex || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
 ##### Install firmware-mod-kit
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}firmware-mod-kit${RESET} ~ customize firmware"
-apt-get -y -qq install firmware-mod-kit || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install firmware-mod-kit || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
 if [[ "$(uname -m)" == "x86_64" ]]; then
   ##### Install lnav
   echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}lnav${RESET} (x64) ~ CLI log veiwer"
-# apt-get -y -qq install git ncurses-dev libsqlite3-dev libgpm-dev || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+# apt-get -y -qq install git ncurses-dev libsqlite3-dev libgpm-dev || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 # git clone -q https://github.com/tstack/lnav.git /usr/local/src/tstack-git/
 # pushd /usr/local/src/tstack >/dev/null
 # git pull -q
@@ -2841,7 +2889,7 @@ if [[ "$(uname -m)" == "x86_64" ]]; then
 # ./configure
 # make -s && make -s install
 # popd >/dev/null
-  curl --progress -k -L -f "https://github.com/tstack/lnav/releases/download/v0.7.3/lnav-0.7.3-linux-64bit.zip" > /tmp/lnav.zip || echo -e ' '${RED}'[!]'$RESET" Issue downloading lnav.zip" 1>&2   #***!!! hardcoded version! Need to manually check for updates
+  curl --progress -k -L -f "https://github.com/tstack/lnav/releases/download/v0.7.3/lnav-0.7.3-linux-64bit.zip" > /tmp/lnav.zip || echo -e ' '${RED}'[!]'${RESET}" Issue downloading lnav.zip" 1>&2   #***!!! hardcoded version! Need to manually check for updates
   unzip -q -o -d /tmp/ /tmp/lnav.zip
   #--- Add to path
   mv -f /tmp/lnav-*/lnav /usr/bin/
@@ -2850,7 +2898,7 @@ fi
 
 ##### Install sqlmap (GIT)
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}sqlmap${RESET} (GIT) ~ automatic SQL injection"
-apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 git clone -q https://github.com/sqlmapproject/sqlmap.git /opt/sqlmap-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
 pushd /opt/sqlmap-git/ >/dev/null
 git pull -q
@@ -2867,7 +2915,7 @@ chmod +x "${file}"
 
 ##### Install commix (https://bugs.kali.org/view.php?id=2201)
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}commix${RESET} ~ automatic command injection"
-apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 git clone -q https://github.com/stasinopoulos/commix.git /opt/commix-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
 pushd /opt/commix-git/ >/dev/null
 git pull -q
@@ -2884,17 +2932,17 @@ chmod +x "${file}"
 
 ##### Install fimap
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}fimap${RESET} ~ automatic LFI/RFI tool"
-apt-get -y -qq install fimap || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install fimap || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
 ##### Install smbmap
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}smbmap${RESET} ~ SMB enumeration tool"
-apt-get -y -qq install smbmap || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install smbmap || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
 ##### Install wig (https://bugs.kali.org/view.php?id=1932)
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}wig${RESET} ~ web application detection"
-apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 git clone -q https://github.com/jekyc/wig.git /opt/wig-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
 pushd /opt/wig-git/ >/dev/null
 git pull -q
@@ -2911,7 +2959,7 @@ chmod +x "${file}"
 
 ##### Install CMSmap
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}CMSmap${RESET} ~ CMS detection"
-apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 git clone -q https://github.com/Dionach/CMSmap.git /opt/cmsmap-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
 pushd /opt/cmsmap-git/ >/dev/null
 git pull -q
@@ -2926,9 +2974,9 @@ EOF
 chmod +x "${file}"
 
 
-###### Install CMSScanner
+##### Install CMSScanner
 #echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}CMSScanner${RESET} ~ CMS detection"
-#apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+#apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 #git clone -q https://github.com/wpscanteam/CMSScanner.git /opt/cmsscanner-git/
 #pushd /opt/cmsscanner-git/ >/dev/null
 #git pull -q
@@ -2938,7 +2986,7 @@ chmod +x "${file}"
 
 ##### Install droopescan
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}DroopeScan${RESET} ~ Drupal vulnerability scanner"
-apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 git clone -q https://github.com/droope/droopescan.git /opt/droopescan-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
 pushd /opt/droopescan-git/ >/dev/null
 git pull -q
@@ -2955,7 +3003,7 @@ chmod +x "${file}"
 
 ##### Install wpscan (GIT)
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}wpscan${RESET} (GIT) ~ WordPress vulnerability scanner"
-apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 git clone -q https://github.com/wpscanteam/wpscan.git /opt/wpscan-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
 pushd /opt/wpscan-git/ >/dev/null
 git pull -q
@@ -2972,7 +3020,7 @@ chmod +x "${file}"
 
 ##### Install BeEF XSS
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}BeEF XSS${RESET} ~ XSS framework"
-apt-get -y -qq install beef-xss || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install beef-xss || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 #--- Configure beef
 file=/usr/share/beef-xss/config.yaml; [ -e "${file}" ] && cp -n $file{,.bkup}
 username="root"
@@ -2987,7 +3035,7 @@ echo -e " ${YELLOW}[i]${RESET} BeEF password: ${password}   *** ${BOLD}CHANGE TH
 
 ##### Install patator (GIT)
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}patator${RESET} (GIT) ~ brute force"
-apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 git clone -q https://github.com/lanjelot/patator.git /opt/patator-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
 pushd /opt/patator-git/ >/dev/null
 git pull -q
@@ -3004,7 +3052,7 @@ chmod +x "${file}"
 
 ##### Install crowbar
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}crowbar${RESET} ~ brute force"
-apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 git clone -q https://github.com/galkan/crowbar.git /opt/crowbar-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
 pushd /opt/crowbar-git/ >/dev/null
 git pull -q
@@ -3021,24 +3069,24 @@ chmod +x "${file}"
 
 ##### Install xprobe
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}xprobe${RESET} ~ os fingerprinting"
-apt-get install -y -qq xprobe || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get install -y -qq xprobe || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
 ##### Install p0f
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}p0f${RESET} ~ os fingerprinting"
-apt-get install -y -qq p0f || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get install -y -qq p0f || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 #p0f -i eth0 -p & curl 192.168.0.1
 
 
 ##### Install nbtscan ~ http://unixwiz.net/tools/nbtscan.html vs http://inetcat.org/software/nbtscan.html (see http://sectools.org/tool/nbtscan/)
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}nbtscan${RESET} (${GREEN}inetcat${RESET} & ${GREEN}unixwiz${RESET}) ~ netbios scanner"
 #--- inetcat - 1.5.x
-apt-get install -y -qq nbtscan || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get install -y -qq nbtscan || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 #nbtscan -r 192.168.0.1/24
 #nbtscan -r 192.168.0.1/24 -v
 #--- unixwiz - 1.0.x
 mkdir -p /usr/local/src/nbtscan-unixwiz/
-curl --progress -k -L -f "http://unixwiz.net/tools/nbtscan-source-1.0.35.tgz" > /usr/local/src/nbtscan-unixwiz/nbtscan.tgz || echo -e ' '${RED}'[!]'$RESET" Issue downloading nbtscan.tgz" 1>&2    #***!!! hardcoded version! Need to manually check for updates
+curl --progress -k -L -f "http://unixwiz.net/tools/nbtscan-source-1.0.35.tgz" > /usr/local/src/nbtscan-unixwiz/nbtscan.tgz || echo -e ' '${RED}'[!]'${RESET}" Issue downloading nbtscan.tgz" 1>&2    #***!!! hardcoded version! Need to manually check for updates
 tar -zxf /usr/local/src/nbtscan-unixwiz/nbtscan.tgz -C /usr/local/src/nbtscan-unixwiz/
 pushd /usr/local/src/nbtscan-unixwiz/ >/dev/null
 make -s clean; make -s 2>/dev/null    # bad, but it gives errors which might be confusing (still builds)
@@ -3049,8 +3097,8 @@ ln -sf /usr/local/src/nbtscan-unixwiz/nbtscan /usr/bin/nbtscan-uw
 
 ##### Setup tftp client & server
 echo -e "\n ${GREEN}[+]${RESET} Setting up ${GREEN}tftp client${RESET} & ${GREEN}server${RESET} ~ file transfer methods"
-apt-get -y -qq install tftp   || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}   # tftp client
-apt-get -y -qq install atftpd || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}   # tftp server
+apt-get -y -qq install tftp   || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}   # tftp client
+apt-get -y -qq install atftpd || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}   # tftp server
 #--- Configure atftpd
 file=/etc/default/atftpd; [ -e "${file}" ] && cp -n $file{,.bkup}
 echo -e 'USE_INETD=false\nOPTIONS="--tftpd-timeout 300 --retry-timeout 5 --maxthread 100 --verbose=5 --daemon --port 69 /var/tftp"' > "${file}"
@@ -3070,7 +3118,7 @@ systemctl disable atftpd
 
 ##### Install Pure-FTPd
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}Pure-FTPd${RESET} ~ FTP server/file transfer method"
-apt-get -y -qq install pure-ftpd || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install pure-ftpd || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 #--- Setup pure-ftpd
 mkdir -p /var/ftp/
 groupdel ftpgroup 2>/dev/null; groupadd ftpgroup
@@ -3093,7 +3141,7 @@ echo "30768 31768" > /etc/pure-ftpd/conf/PassivePortRange             #cat /proc
 echo "/etc/pure-ftpd/welcome.msg" > /etc/pure-ftpd/conf/FortunesFile  #/etc/motd
 echo "FTP" > /etc/pure-ftpd/welcome.msg
 #--- 'Better' MOTD
-apt-get install -y -qq cowsay || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get install -y -qq cowsay || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 echo "Moo" | /usr/games/cowsay > /etc/pure-ftpd/welcome.msg
 #--- SSL
 #mkdir -p /etc/ssl/private/
@@ -3115,8 +3163,8 @@ systemctl disable pure-ftpd
 ##### Install samba
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}samba${RESET} ~ file transfer method"
 #--- Installing samba
-apt-get -y -qq install samba || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
-apt-get -y -qq install cifs-utils || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install samba || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
+apt-get -y -qq install cifs-utils || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 #--- Create samba user
 groupdel smbgroup 2>/dev/null; groupadd smbgroup
 userdel samba 2>/dev/null; useradd -r -M -d /nonexistent -s /bin/false -c "Samba user" -g smbgroup samba
@@ -3171,22 +3219,22 @@ grep -q '^## www' "${file}" 2>/dev/null || echo -e '## www\nalias wwwroot="cd /v
 apt-get -y -qq install php5 php5-cli php5-curl
 
 
-###### Install rsh-client
+##### Install rsh-client
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}rsh-client${RESET} ~ remote shell connections"
-apt-get -y -qq install rsh-client || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install rsh-client || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
 ##### Install sshpass
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}sshpass${RESET} ~ automating SSH connections"
-apt-get -y -qq install sshpass || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install sshpass || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
 ##### Install DBeaver
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}DBeaver${RESET} ~ GUI DB manager"
-apt-get -y -qq install curl || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install curl || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 arch="i386"
 [[ "$(uname -m)" == "x86_64" ]] && arch="amd64"
-curl --progress -k -L -f "http://dbeaver.jkiss.org/files/dbeaver_3.4.1_$arch.deb" > /tmp/dbeaver.deb || echo -e ' '${RED}'[!]'$RESET" Issue downloading dbeaver.deb" 1>&2   #***!!! hardcoded version! Need to manually check for updates
+curl --progress -k -L -f "http://dbeaver.jkiss.org/files/dbeaver_3.4.1_${arch}.deb" > /tmp/dbeaver.deb || echo -e ' '${RED}'[!]'${RESET}" Issue downloading dbeaver.deb" 1>&2   #***!!! hardcoded version! Need to manually check for updates
 dpkg -i /tmp/dbeaver.deb
 #--- Add to path
 ln -sf /usr/share/dbeaver/dbeaver /usr/bin/dbeaver
@@ -3194,7 +3242,7 @@ ln -sf /usr/share/dbeaver/dbeaver /usr/bin/dbeaver
 
 ##### Setup a jail ~ http://allanfeid.com/content/creating-chroot-jail-ssh-access
 echo -e "\n ${GREEN}[+]${RESET} Setting up a ${GREEN}jail${RESET} ~ testing environment"
-apt-get -y -qq install debootstrap curl || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install debootstrap curl || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 #mkdir -p /var/jail/
 #debootstrap wheezy /var/jail/
 #SHELL=/bin/bash
@@ -3207,59 +3255,14 @@ apt-get -y -qq install debootstrap curl || echo -e ' '${RED}'[!] Issue when git 
 #cp -f /etc/ld.so.cache /etc/ld.so.cache /etc/ld.so.conf /etc/nsswitch.conf /etc/hosts /var/jail/etc/
 #cp -f /bin/ls /bin/bash /var/jail/bin/
 ##ldd /bin/ls
-#curl --progress -k -L -f "http://www.cyberciti.biz/files/lighttpd/l2chroot.txt" > /usr/sbin/l2chroot || echo -e ' '${RED}'[!]'$RESET" Issue downloading l2chroot" 1>&2        #***!!! hardcoded path!
+#curl --progress -k -L -f "http://www.cyberciti.biz/files/lighttpd/l2chroot.txt" > /usr/sbin/l2chroot || echo -e ' '${RED}'[!]'${RESET}" Issue downloading l2chroot" 1>&2        #***!!! hardcoded path!
 #sed -i 's#^BASE=".*"#BASE="/var/jail"#' /usr/sbin/l2chroot
 #chmod +x /usr/sbin/l2chroot
 
 
-##### Configure pythcon console - all users
-echo -e "\n ${GREEN}[+]${RESET} Configuring ${GREEN}pythcon console${RESET} ~ tab complete & history support"
-export PYTHONSTARTUP=$HOME/.pythonstartup
-file=/etc/bash.bashrc; [ -e "${file}" ] && cp -n $file{,.bkup}    #/root/.bashrc
-grep -q PYTHONSTARTUP $file || echo 'export PYTHONSTARTUP=$HOME/.pythonstartup' >> "${file}"
-#--- Python start up file
-cat <<EOF > /root/.pythonstartup
-import readline
-import rlcompleter
-import atexit
-import os
-
-## Tab completion
-readline.parse_and_bind('tab: complete')
-
-## History file
-histfile = os.path.join(os.environ['HOME'], '.pythonhistory')
-try:
-    readline.read_history_file(histfile)
-except IOError:
-    pass
-
-atexit.register(readline.write_history_file, histfile)
-
-## Quit
-del os, histfile, readline, rlcompleter
-EOF
-if [[ "${SHELL}" == "/bin/zsh" ]]; then source ~/.zshrc else source "${file}"; fi
-
-
-###### Install virtualenvwrapper
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}virtualenvwrapper${RESET} ~ virtual environment wrapper"
-apt-get -y -qq install virtualenvwrapper || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
-
-
-###### Install go
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}go${RESET} ~ programming language"
-apt-get -y -qq install golang || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
-
-
-###### Install gitg
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}gitg${RESET} ~ GUI git client"
-apt-get -y -qq install gitg || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
-
-
 ##### Setup SSH
 echo -e "\n ${GREEN}[+]${RESET} Setting up ${GREEN}SSH${RESET} ~ CLI access"
-apt-get -y -qq install openssh-server || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get -y -qq install openssh-server || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 #--- Wipe current keys
 rm -f /etc/ssh/ssh_host_*
 find /root/.ssh/ -type f ! -name authorized_keys -delete 2>/dev/null   #rm -f "/root/.ssh/!(authorized_keys)" 2>/dev/null
@@ -3271,7 +3274,7 @@ ssh-keygen -b 1024 -t dsa -f /etc/ssh/ssh_host_dsa_key -P ""
 ssh-keygen -b 521 -t ecdsa -f /etc/ssh/ssh_host_ecdsa_key -P ""
 ssh-keygen -b 4096 -t rsa -f /root/.ssh/id_rsa -P ""
 #--- Change MOTD
-apt-get install -y -qq cowsay || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+apt-get install -y -qq cowsay || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 echo "Moo" | /usr/games/cowsay > /etc/motd
 #--- Change SSH settings
 file=/etc/ssh/sshd_config; [ -e "${file}" ] && cp -n $file{,.bkup}
@@ -3283,7 +3286,7 @@ sed -i 's/^PermitRootLogin .*/PermitRootLogin yes/g' "${file}"    # Accept passw
 
 ###### Setup G/UFW
 #echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}G/UFW${RESET} ~ firewall rule generator"
-#apt-get -y -qq install ufw gufw || echo -e ' '${RED}'[!] Issue when git cloning'${RESET}
+#apt-get -y -qq install ufw gufw || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 
 
 ##### Clean the system
@@ -3298,14 +3301,14 @@ cd ~/ &>/dev/null
 #--- Remove any history files (as they could contain sensitive info)
 [[ "${SHELL}" == "/bin/zsh" ]] || history -c
 for i in $(cut -d: -f6 /etc/passwd | sort -u); do
-  [ -e "$i" ] && find "$i" -type f -name '.*_history' -delete
+  [ -e "${i}" ] && find "${i}" -type f -name '.*_history' -delete
 done
 
 if [ "${freezeDEB}" != "false" ]; then
   ##### Don't ever update these packages (during this install!)
   echo -e "\n ${GREEN}[+]${RESET} ${GREEN}Don't update${RESET} these packages:"
   for x in metasploit-framework; do
-    echo -e " ${YELLOW}[i]${RESET}   + $x"
+    echo -e " ${YELLOW}[i]${RESET}   + ${x}"
     echo "${x} install" | dpkg --set-selections
   done
 fi
