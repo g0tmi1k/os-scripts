@@ -3,7 +3,7 @@
 #   Designed for: Kali Linux [1.0.5 x86]                            #
 #   Last Updated: 2013-11-22                                        #
 #-Author------------------------------------------------------------#
-#   g0tmilk ~ http://g0tmi1k.com                                    #
+#  g0tmilk ~ https://blog.g0tmi1k.com/                              #
 #-Notes-------------------------------------------------------------#
 #   Tested used Kali Linux (x86/x64) as the base OS                 #
 #                                                                   #

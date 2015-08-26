@@ -3,7 +3,7 @@
 #   Designed for: Kali Linux [1.0.5 x86]                #
 #   Last Updated: 2013-11-18                            #
 #-Author------------------------------------------------#
-#   g0tmilk ~ http://g0tmi1k.com                        #
+#  g0tmilk ~ https://blog.g0tmi1k.com/                  #
 #-Notes-------------------------------------------------#
 #  Useful reading:                                      #
 #     http://docs.kali.org/downloading/live-build-a-custom-kali-iso

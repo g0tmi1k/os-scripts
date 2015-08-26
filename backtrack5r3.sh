@@ -4,7 +4,7 @@
 #              [x64 & x86]                #
 # Working on: 2012-09-14                  #
 #Author####################################
-# g0tmilk ~ http://g0tmi1k.blogspot.com   #
+#  g0tmilk ~ https://blog.g0tmi1k.com/    #
 #Note######################################
 # Everything has been automated EXECPT... #
 # 1.) Altering root's password            #
