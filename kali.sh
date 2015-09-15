@@ -1,13 +1,13 @@
 #!/bin/bash
 #-Metadata----------------------------------------------------#
-#  Filename: kali.sh                     (Update: 2015-08-30) #
+#  Filename: kali.sh                     (Update: 2015-09-15) #
 #-Info--------------------------------------------------------#
 #  Personal post-install script for Kali Linux 2.0.           #
 #-Author(s)---------------------------------------------------#
 #  g0tmilk ~ https://blog.g0tmi1k.com/                        #
 #-Operating System--------------------------------------------#
 #  Designed for: Kali Linux 2.0.0 [x64] (VM - VMware)         #
-#     Tested on: Kali Linux 2.0.0 [x64/x84/full/light/mini/vm]#
+#     Tested on: Kali Linux 2.0.0 x64/x84/full/light/mini/vm  #
 #-Licence-----------------------------------------------------#
 #  MIT License ~ http://opensource.org/licenses/MIT           #
 #-Notes-------------------------------------------------------#
@@ -17,15 +17,16 @@
 #  By default it will set the time zone & keyboard to UK/GB.  #
 #                             ---                             #
 #  Command line arguments:                                    #
-#    --burp    = Automates configuring Burp Proxy (Free)      #
-#    --dns     = Use Google's DNS and locks permissions       #
-#    --hold    = Disable updating certain packages (e.g. msf) #
-#    --openvas = Installs & configures OpenVAS vuln scanner   #
-#    --osx     = Configures Apple keyboard layout             #
+#    --burp     = Automates configuring Burp Proxy (Free)     #
+#    --dns      = Use Google's DNS and locks permissions      #
+#    --hold     = Disable updating certain packages (eg. msf) #
+#    --openvas  = Installs & configures OpenVAS vuln scanner  #
+#    --osx      = Configures Apple keyboard layout            #
 #                                                             #
-#    e.g. # bash kali.sh --osx --burp --openvas               #
-#                             ---                             #
-#  Incomplete/buggy/hidden stuff - search for '***'.          #
+#    --keyboard <value> = Change the keyboard layout language #
+#    --timezone <value> = Change the timezone location        #
+#                                                             #
+#    e.g. # bash kali.sh --osx --burp --openvas --keyboard gb #
 #                             ---                             #
 #             ** This script is meant for _ME_. **            #
 #         ** EDIT this to meet _YOUR_ requirements! **        #
@@ -34,9 +35,9 @@
 
 if [ 1 -eq 0 ]; then    # This is never true, thus it acts as block comments ;)
 ### One liner - Grab the latest version and execute! ###########################
-wget -qO /tmp/kali.sh https://raw.github.com/g0tmi1k/os-scripts/master/kali.sh && bash /tmp/kali.sh --osx --dns --burp --openvas
+wget -qO /tmp/kali.sh https://raw.github.com/g0tmi1k/os-scripts/master/kali.sh && bash /tmp/kali.sh --osx --dns --burp --openvas --keyboard gb --timezone "Europe/London"
 ################################################################################
-## Shorten URL: >>>   wget -qO- http://bit.do/postkali | bash   <<<
+## Shorten URL: >->->   wget -qO- http://bit.do/postkali | bash   <-<-<
 ##  Alt Method: curl -s -L -k https://raw.github.com/g0tmi1k/kali-postinstall/master/kali_postinstall.sh > kali.sh | nohup bash
 ################################################################################
 fi
@@ -47,14 +48,14 @@ fi
 
 ##### Location information
 keyboardApple=false         # Using a Apple/Macintosh keyboard? Change to anything other than 'false' to enable   [ --osx ]
-keyboardLayout="gb"         # Great Britain
-timezone="Europe/London"    # London, Europe
+keyboardLayout=""           # Set keyboard layout                                                                 [ --keyboard gb]
+timezone=""                 # Set timezone location                                                               [ --timezone Europe/London ]
 
 ##### Optional steps
-hardenDNS=false             # Set static & lock DNS name server                              [ --dns ]
-freezeDEB=false             # Disable updating certain packages (e.g. Metasploit)            [ --hold ]
-burpFree=false              # Disable configuring Burp Proxy Free (for Burp Pro users...)    [ --burp ]
-openVAS=false               # Install & configure OpenVAS (not everyone wants it...)         [ --openvas ]
+hardenDNS=false             # Set static & lock DNS name server                                                   [ --dns ]
+freezeDEB=false             # Disable updating certain packages (e.g. Metasploit)                                 [ --hold ]
+burpFree=false              # Disable configuring Burp Proxy Free (for Burp Pro users...)                         [ --burp ]
+openVAS=false               # Install & configure OpenVAS (not everyone wants it...)                              [ --openvas ]
 
 ##### (Optional) Enable debug mode?
 #set -x
@@ -72,22 +73,54 @@ RESET="\033[00m"       # Normal
 
 
 ##### Read command line arguments
-for x in $( tr '[:upper:]' '[:lower:]' <<< "$@" ); do
-  if [[ "${x}" == "--osx" || "${x}" == "--apple" ]]; then
-    keyboardApple=true
-  elif [ "${x}" == "--dns" ]; then
-    hardenDNS=true
-  elif [ "${x}" == "--hold" ]; then
-    freezeDEB=true
-  elif [ "${x}" == "--burp" ]; then
-    burpFree=true
-  elif [ "${x}" == "--openvas" ]; then
-    openVAS=true
-  else
-    echo -e ' '${RED}'[!]'${RESET}" Unknown option: ${RED}${x}${RESET}" 1>&2
+while [[ "${#}" -gt 0 && ."${1}" == .-* ]]; do
+  opt="${1}";
+  shift;
+  case "$(echo ${opt} | tr '[:upper:]' '[:lower:]')" in
+    -|-- ) break 2;;
+
+    -osx|--osx )
+      keyboardApple=true;;
+    -apple|--apple )
+      keyboardApple=true;;
+
+    -dns|--dns )
+      hardenDNS=true;;
+
+    -hold|--hold )
+      freezeDEB=true;;
+
+    -openvas|--openvas )
+      openVAS=true;;
+
+    -burp|--burp )
+      burpFree=true;;
+
+    -keyboard|--keyboard )
+       keyboardLayout="${1}"; shift;;
+    -keyboard=*|--keyboard=* )
+       keyboardLayout="${opt#*=}";;
+
+    -timezone|--timezone )
+       timezone="${1}"; shift;;
+    -timezone=*|--timezone=* )
+       timezone="${opt#*=}";;
+
+    *) echo -e ' '${RED}'[!]'${RESET}" Unknown option: ${RED}${x}${RESET}" 1>&2 && exit 1;;
+   esac
+done
+
+
+##### Check user inputs
+if [[ -n "${timezone}" && ! -f "/usr/share/zoneinfo/${timezone}" ]]; then
+  echo -e ' '${RED}'[!]'${RESET}" Looks like the ${RED}timezone '${timezone}'${RESET} is incorrect/not supported (Example: Europe/London). Quitting..." 1>&2
+  exit 1
+elif [[ -n "${keyboardLayout}" && -e /usr/share/X11/xkb/rules/xorg.lst ]]; then
+  if ! $(grep -q " ${keyboardLayout} " /usr/share/X11/xkb/rules/xorg.lst); then
+    echo -e ' '${RED}'[!]'${RESET}" Looks like the ${RED}keyboard layout '${keyboardLayout}'${RESET} is incorrect/not supported (Example: gb). Quitting..." 1>&2
     exit 1
   fi
-done
+fi
 
 
 #-Start----------------------------------------------------------------#
@@ -280,8 +313,9 @@ echo -e "\n ${GREEN}[+]${RESET} Updating ${GREEN}location information${RESET} ~ 
 [ "${keyboardApple}" != "false" ]  && echo -e "\n ${GREEN}[+]${RESET} Applying ${GREEN}Apple hardware${RESET} profile"
 #keyboardLayout="gb"          # Great Britain
 #timezone="Europe/London"     # London, Europe
+#[ -z "${timezone}" ] && timezone=Etc/UTC    #Etc/GMT vs Etc/UTC vs UTC vs Europe/London
 #--- Configure keyboard layout
-if [ ! -z "${keyboardLayout}" ]; then
+if [[ -n "${keyboardLayout}" ]]; then
   geoip_keyboard=$(curl -s http://ifconfig.io/country_code | tr '[:upper:]' '[:lower:]')
   [ "${geoip_keyboard}" != "${keyboardLayout}" ] && echo -e " ${YELLOW}[i]${RESET} Keyboard layout (${BOLD}${keyboardLayout}${RESET}}) doesn't match what's been detected via GeoIP (${BOLD}${geoip_keyboard}${RESET}})"
   file=/etc/default/keyboard; #[ -e "${file}" ] && cp -n $file{,.bkup}
@@ -290,10 +324,11 @@ if [ ! -z "${keyboardLayout}" ]; then
   #dpkg-reconfigure -f noninteractive keyboard-configuration   #dpkg-reconfigure console-setup   #dpkg-reconfigure keyboard-configuration -u    # Need to restart xserver for effect
 fi
 #--- Changing time zone
-[ -z "${timezone}" ] && timezone=Etc/UTC     #Etc/GMT vs Etc/UTC vs UTC
-echo "${timezone}" > /etc/timezone           #Etc/GMT vs Etc/UTC vs UTC vs Europe/London
-ln -sf "/usr/share/zoneinfo/$(cat /etc/timezone)" /etc/localtime
-dpkg-reconfigure -f noninteractive tzdata
+if [[ -n "${timezone}" ]]; then
+  echo "${timezone}" > /etc/timezone
+  ln -sf "/usr/share/zoneinfo/$(cat /etc/timezone)" /etc/localtime
+  dpkg-reconfigure -f noninteractive tzdata
+fi
 #--- Setting locale    # Cant't do due to user input
 #sed -i 's/^# en_/en_/' /etc/locale.gen   #en_GB en_US
 #locale-gen
@@ -611,6 +646,9 @@ cat <<EOF > /root/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortc
       <property name="Right" type="string" value="right_key"/>
       <property name="Up" type="string" value="up_key"/>
       <property name="override" type="bool" value="true"/>
+      <property name="&lt;Super&gt;Left" type="string" value="tile_left_key"/>
+      <property name="&lt;Super&gt;Right" type="string" value="tile_right_key"/>
+      <property name="&lt;Super&gt;Up" type="string" value="maximize_window_key"/>
     </property>
   </property>
   <property name="providers" type="array">
@@ -1059,7 +1097,7 @@ grep -q '^## tftp' "${file}" 2>/dev/null || echo -e '## tftp\nalias tftproot="cd
 grep -q '^## smb' "${file}" 2>/dev/null || echo -e '## smb\nalias sambaroot="cd /var/samba/"\n#alias smbroot="cd /var/samba/"\n' >> "${file}"       # systemctl samba start
 (dmidecode | grep -iq vmware) && (grep -q '^## vmware' "${file}" 2>/dev/null || echo -e '## vmware\nalias vmroot="cd /mnt/hgfs/"\n' >> "${file}")
 grep -q '^## edb' "${file}" 2>/dev/null || echo -e '## edb\nalias edb="cd /usr/share/exploitdb/"\nalias edbroot="cd /usr/share/exploitdb/"\n' >> "${file}"
-grep -q '^## wordlist' "${file}" 2>/dev/null || echo -e '## wordlist\nalias wordlist="cd /usr/share/wordlist/"\nalias wordls="cd /usr/share/wordlist/"\n' >> "${file}"
+grep -q '^## wordlist' "${file}" 2>/dev/null || echo -e '## wordlist\nalias wordlist="cd /usr/share/wordlists/"\nalias wordls="cd /usr/share/wordlists/"\n' >> "${file}"
 #--- Apply new aliases
 if [[ "${SHELL}" == "/bin/zsh" ]]; then source ~/.zshrc else source "${file}"; fi
 #--- Check
@@ -1616,13 +1654,13 @@ cat <<EOF > "${file}"
 setg TimestampOutput true
 setg VERBOSE true
 
-use exploit/multi/handler
-set AutoRunScript 'multi_console_command -rc "/root/.msf4/msf_autorunscript.rc"'
-set ExitOnSession false
-set EnableStageEncoding true
-set PAYLOAD windows/meterpreter/reverse_https
-set LHOST 0.0.0.0
-set LPORT 443
+#use exploit/multi/handler
+#set AutoRunScript 'multi_console_command -rc "/root/.msf4/msf_autorunscript.rc"'
+#set ExitOnSession false
+#set EnableStageEncoding true
+#set PAYLOAD windows/meterpreter/reverse_https
+#set LHOST 0.0.0.0
+#set LPORT 443
 EOF
 #--- First time run
 #echo -e 'sleep 10\ndb_status\n#db_rebuild_cache\n#sleep 310\nexit' > /tmp/msf.rc && msfconsole -r /tmp/msf.rc
@@ -1675,7 +1713,7 @@ rm -f /tmp/msf.rc
 
 ##### Install Metasploit Framework (GIT)
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}Metasploit Framework${RESET} (GIT) ~ exploit framework"
-apt-get -y -qq install git libsqlite3-dev libpq-dev || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
+apt-get -y -qq install git libsqlite3-dev libpq-dev libpcap-dev || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 git clone -q https://github.com/rapid7/metasploit-framework.git /opt/metasploit-framework-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET} 1>&2
 pushd /opt/metasploit-framework-git/ >/dev/null; bundle install; popd >/dev/null
 ln -sf /opt/metasploit-framework-git/msfconsole /usr/local/bin/msfconsole-git; ln -sf /opt/metasploit-framework-git/msfupdate /usr/local/bin/msfupdate-git
@@ -1731,7 +1769,7 @@ fi
 timeout 5 geany >/dev/null 2>&1   #geany & sleep 5s; killall -q -w geany >/dev/null   # Start and kill. Files needed for first time run
 # Geany -> Edit -> Preferences. Editor -> Newline strips trailing spaces: Enable. -> Indentation -> Type: Spaces. -> Files -> Strip trailing spaces and tabs: Enable. Replace tabs by space: Enable. -> Apply -> Ok
 file=/root/.config/geany/geany.conf; [ -e "${file}" ] && cp -n $file{,.bkup}
-touch "${file}"
+touch ${file}  # *** this will not work as geany now only writes its config after a 'clean' quit.
 sed -i 's/^.*sidebar_pos=.*/sidebar_pos=1/' "${file}"
 sed -i 's/^.*check_detect_indent=.*/check_detect_indent=true/' "${file}"
 sed -i 's/^.*detect_indent_width=.*/detect_indent_width=true/' "${file}"
@@ -2132,6 +2170,11 @@ grep -q '^alias axel' "${file}" 2>/dev/null || echo -e '## axel\nalias axel="axe
 if [[ "${SHELL}" == "/bin/zsh" ]]; then source ~/.zshrc else source "${file}"; fi
 
 
+##### Install html2text
+echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}html2text${RESET} ~ CLI html rendering"
+apt-get -y -qq install html2text || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
+
+
 ##### Install gparted
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}GParted${RESET} ~ GUI partition manager"
 apt-get -y -qq install gparted || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
@@ -2459,6 +2502,7 @@ popd >/dev/null
 ##### Install mana toolkit
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}MANA toolkit${RESET} ~ rogue AP to do MITM Wi-Fi"
 apt-get -y -qq install mana-toolkit || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
+mkdir -p /usr/share/mana-toolkit/www/facebook/
 #--- Disable profile
 a2dissite 000-mana-toolkit; a2ensite 000-default
 #--- Setup alias
@@ -2757,6 +2801,7 @@ popd >/dev/null
 ##### Install seclist
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}seclist${RESET} ~ multiple types of (word)lists (and similar things)"
 apt-get -y -qq install seclists || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
+[ -e /usr/share/seclists ] && ln -sf /usr/share/seclists /usr/share/wordlists/seclists
 
 
 ##### Update wordlists
@@ -2774,6 +2819,7 @@ unzip -q -o -d /usr/share/wordlists/ /tmp/10kcommon.zip 2>/dev/null   #***!!! ha
 mv -f /usr/share/wordlists/10k{\ most\ ,_most_}common.txt
 #--- Linking to more - folders
 [ -e /usr/share/dirb/wordlists ] && ln -sf /usr/share/dirb/wordlists /usr/share/wordlists/dirb
+#[ -e /usr/share/seclists ] && ln -sf /usr/share/seclists /usr/share/wordlists/seclists
 #--- Linking to more - files
 #ln -sf /usr/share/sqlmap/txt/wordlist.txt /usr/share/wordlists/sqlmap.txt
 ##--- Not enough? Want more? Check below!
@@ -3408,7 +3454,7 @@ fi
 
 ##### Time taken
 finish_time=$(date +%s)
-echo -e "\n ${YELLOW}[i]${RESET} Time (roughly) taken: ${YELLOW}$(( $(( finish_time - start_time )) / 60 ))${RESET} minutes"
+echo -e "\n ${YELLOW}[i]${RESET} Time (roughly) taken: ${YELLOW}$(( $(( finish_time - start_time )) / 60 )) minutes${RESET}"
 
 
 #-Done-----------------------------------------------------------------#
@@ -3419,7 +3465,8 @@ echo -e "\n ${YELLOW}[i]${RESET} Don't forget to:"
 echo -e " ${YELLOW}[i]${RESET}   + Check the above output (Did everything install? Any errors? (${RED}HINT: What's in RED${RESET}?)"
 echo -e " ${YELLOW}[i]${RESET}   + Manually install: Nessus, Nexpose, and/or Metasploit Community"
 echo -e " ${YELLOW}[i]${RESET}   + Agree/Accept to: Maltego, OWASP ZAP, w3af, etc"
-echo -e " ${YELLOW}[i]${RESET}   + ${YELLOW}Change time zone${RESET} & ${YELLOW}keyboard layout${RESET} (...if not ${BOLD}${timezone}${RESET} & ${BOLD}${keyboardLayout}${RESET})"
+echo -e " ${YELLOW}[i]${RESET}   + Setup git:   git config --global user.name <name>;git config --global user.email <email>"
+#echo -e " ${YELLOW}[i]${RESET}   + ${YELLOW}Change time zone${RESET} & ${YELLOW}keyboard layout${RESET} (...if not ${BOLD}${timezone}${RESET} & ${BOLD}${keyboardLayout}${RESET})"
 echo -e " ${YELLOW}[i]${RESET}   + ${YELLOW}Change default passwords${RESET}: PostgreSQL/MSF, MySQL, OpenVAS, BeEF XSS, etc"
 echo -e " ${YELLOW}[i]${RESET}   + ${YELLOW}Reboot${RESET}"
 (dmidecode | grep -iq virtual) && echo -e " ${YELLOW}[i]${RESET}   + Take a snapshot   (Virtual machine detected!)"
