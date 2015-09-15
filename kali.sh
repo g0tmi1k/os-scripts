@@ -109,7 +109,7 @@ export TERM=xterm
 
 if [[ $(which gnome-shell) ]]; then
 ##### Disabe Notification Package Updater
-echo -e "\n ${GREEN}[+]${RESET} Disabling Notification ${GREEN}Package Updater${RESET} service ~ incase it runs during this script"
+echo -e "\n ${GREEN}[+]${RESET} Disabling Notification ${GREEN}Package Updater${RESET} service ~ in case it runs during this script"
 export DISPLAY=:0.0   #[[ -z $SSH_CONNECTION ]] || export DISPLAY=:0.0
   dconf write /org/gnome/settings-daemon/plugins/updates/active false
   dconf write /org/gnome/desktop/notifications/application/gpk-update-viewer/active false
@@ -164,7 +164,7 @@ sed -i '/kali/ s/^\( \|\t\|\)deb cdrom/#deb cdrom/g' "${file}"
 apt-get -qq update
 if [[ "$?" -ne 0 ]]; then
   echo -e ' '${RED}'[!]'${RESET}" There was an ${RED}issue accessing network repositories${RESET}" 1>&2
-  echo -e " ${YELLOW}[i]${RESET} Is the remote network repositories ${YELLOW}currently being sync'd${RESET}?"
+  echo -e " ${YELLOW}[i]${RESET} Are the remote network repositories ${YELLOW}currently being sync'd${RESET}?"
   exit 1
 fi
 
@@ -185,7 +185,7 @@ if [ -e "/etc/vmware-tools" ]; then
   echo -e '\n '${RED}'[!]'${RESET}" VMware Tools is ${RED}already installed${RESET}. Skipping..." 1>&2
 elif (dmidecode | grep -iq vmware); then
   ##### Install virtual machines tools ~ http://docs.kali.org/general-use/install-vmware-tools-kali-guest
-  echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}virtual machines tools${RESET}"
+  echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}virtual machine tools${RESET}"
   #--- VM -> Install VMware Tools.
   mkdir -p /mnt/cdrom/
   umount -f /mnt/cdrom 2>/dev/null
@@ -205,16 +205,16 @@ elif (dmidecode | grep -iq vmware); then
     popd >/dev/null
     umount -f /mnt/cdrom 2>/dev/null
   else                                                       # The fallback is 'open vm tools' ~ http://open-vm-tools.sourceforge.net/about.php
-    echo -e " ${YELLOW}[i]${RESET} VMware Tools CD/ISO isnt mounted"
+    echo -e " ${YELLOW}[i]${RESET} VMware Tools CD/ISO isn't mounted"
     echo -e " ${YELLOW}[i]${RESET} Skipping 'Native VMware Tools', switching to 'Open VM Tools'"
     apt-get -y -qq install open-vm-tools open-vm-tools-desktop open-vm-tools-dkms || echo -e ' '${RED}'[!] Issue when git cloning'${RESET} 1>&2
     apt-get -y -qq install make || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}    # nags afterwards
   fi
 elif [ -e "/etc/init.d/vboxadd" ]; then
-  echo -e '\n '${RED}'[!]'${RESET}" Virtualbox Guest Additions is ${RED}already installed${RESET}. Skipping..." 1>&2
+  echo -e '\n '${RED}'[!]'${RESET}" VirtualBox Guest Additions is ${RED}already installed${RESET}. Skipping..." 1>&2
 elif (dmidecode | grep -iq virtualbox); then
   ##### (Optional) Installing Virtualbox Guest Additions.   Note: Need VirtualBox 4.2.xx+ (http://docs.kali.org/general-use/kali-linux-virtual-box-guest)
-  echo -e "\n ${GREEN}[+]${RESET} (Optional) Installing ${GREEN}Virtualbox Guest Additions${RESET}"
+  echo -e "\n ${GREEN}[+]${RESET} (Optional) Installing ${GREEN}VirtualBox Guest Additions${RESET}"
   #--- Devices -> Install Guest Additions CD image...
   mkdir -p /mnt/cdrom/
   umount -f /mnt/cdrom 2>/dev/null
@@ -283,7 +283,7 @@ echo -e "\n ${GREEN}[+]${RESET} Updating ${GREEN}location information${RESET} ~ 
 #--- Configure keyboard layout
 if [ ! -z "${keyboardLayout}" ]; then
   geoip_keyboard=$(curl -s http://ifconfig.io/country_code | tr '[:upper:]' '[:lower:]')
-  [ "${geoip_keyboard}" != "${keyboardLayout}" ] && echo -e " ${YELLOW}[i]${RESET} Keyboard layout (${BOLD}${keyboardLayout}${RESET}}) doesn't match whats been detected via GeoIP (${BOLD}${geoip_keyboard}${RESET}})"
+  [ "${geoip_keyboard}" != "${keyboardLayout}" ] && echo -e " ${YELLOW}[i]${RESET} Keyboard layout (${BOLD}${keyboardLayout}${RESET}}) doesn't match what's been detected via GeoIP (${BOLD}${geoip_keyboard}${RESET}})"
   file=/etc/default/keyboard; #[ -e "${file}" ] && cp -n $file{,.bkup}
   sed -i 's/XKBLAYOUT=".*"/XKBLAYOUT="'${keyboardLayout}'"/' "${file}"
   [ "${keyboardApple}" != "false" ] && sed -i 's/XKBVARIANT=".*"/XKBVARIANT="mac"/' "${file}"   # Enable if you are using Apple based products.
@@ -883,7 +883,7 @@ xfconf-query -n -c xsettings -p /Net/IconThemeName -s "Vibrancy-Kali-Dark"
 mkdir -p /usr/share/wallpapers/
 curl --progress -k -L -f "http://www.kali.org/images/wallpapers-01/kali-wp-june-2014_1920x1080_A.png" > /usr/share/wallpapers/kali_blue_3d_a.png || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_blue_3d_a.png" 1>&2     #***!!! hardcoded paths!
 curl --progress -k -L -f "http://www.kali.org/images/wallpapers-01/kali-wp-june-2014_1920x1080_B.png" > /usr/share/wallpapers/kali_blue_3d_b.png || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_blue_3d_b.png" 1>&2
-curl --progress -k -L -f "http://www.kali.org/images/wallpapers-01/kali-wp-june-2014_1920x1080_G.png" > /usr/share/wallpapers/kali_black_honeycomb.png || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_blue_splat.png" 1>&2
+curl --progress -k -L -f "http://www.kali.org/images/wallpapers-01/kali-wp-june-2014_1920x1080_G.png" > /usr/share/wallpapers/kali_black_honeycomb.png || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_black_honeycomb.png" 1>&2
 curl --progress -k -L -f "http://imageshack.us/a/img17/4646/vzex.png" > /usr/share/wallpapers/kali_blue_splat.png || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_blue_splat.png" 1>&2
 curl --progress -k -L -f "http://em3rgency.com/wp-content/uploads/2012/12/Kali-Linux-faded-no-Dragon-small-text.png" > /usr/share/wallpapers/kali_black_clean.png || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_black_clean.png" 1>&2
 curl --progress -k -L -f "http://www.hdwallpapers.im/download/kali_linux-wallpaper.jpg" > /usr/share/wallpapers/kali_black_stripes.jpg || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_black_stripes.jpg" 1>&2
@@ -1426,7 +1426,7 @@ sleep 3s
 #--- Configure foxyproxy
 file=$(find /root/.mozilla/firefox/*.default*/ -maxdepth 1 -type f -name 'foxyproxy.xml' -print -quit)   #&& [ -e "${file}" ] && cp -n $file{,.bkup}
 if [ -z "${file}" ]; then
-  echo -e ' '${RED}'[!]'${RESET}' Something went wrong with the foxyproxy iceweasel extension (did any extensions install?). Skipping...' 1>&2
+  echo -e ' '${RED}'[!]'${RESET}' Something went wrong with the FoxyProxy iceweasel extension (did any extensions install?). Skipping...' 1>&2
 elif [ -e "${file}" ]; then
   grep -q 'localhost:8080' "${file}" 2>/dev/null || sed -i 's#<proxy name="Default"#<proxy name="localhost:8080" id="1145138293" notes="e.g. Burp, w3af" fromSubscription="false" enabled="true" mode="manual" selectedTabIndex="0" lastresort="false" animatedIcons="true" includeInCycle="false" color="\#07753E" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="true" clearCookiesBeforeUse="false" rejectCookies="false"><matches/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="127.0.0.1" port="8080" socksversion="5" isSocks="false" username="" password="" domain=""/></proxy><proxy name="Default"#' "${file}"          # localhost:8080
   grep -q 'localhost:8081' "${file}" 2>/dev/null || sed -i 's#<proxy name="Default"#<proxy name="localhost:8081 (socket5)" id="212586674" notes="e.g. SSH" fromSubscription="false" enabled="true" mode="manual" selectedTabIndex="0" lastresort="false" animatedIcons="true" includeInCycle="false" color="\#917504" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="true" clearCookiesBeforeUse="false" rejectCookies="false"><matches/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="127.0.0.1" port="8081" socksversion="5" isSocks="true" username="" password="" domain=""/></proxy><proxy name="Default"#' "${file}"         # localhost:8081 (socket5)
@@ -1987,7 +1987,7 @@ apt-get -y -qq install sparta || echo -e ' '${RED}'[!] Issue with apt-get'${RESE
 
 
 ##### Install wireshark
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}wireshark${RESET} ~ GUI network protocol analyzer"
+echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}Wireshark${RESET} ~ GUI network protocol analyzer"
 #--- Hide running as root warning
 mkdir -p /root/.wireshark/
 file=/root/.wireshark/recent_common;   #[ -e "${file}" ] && cp -n $file{,.bkup}
@@ -2035,7 +2035,7 @@ systemctl restart apache2
 
 
 ##### Install libreoffice
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}libreoffice${RESET} ~ GUI office suite"
+echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}LibreOffice${RESET} ~ GUI office suite"
 apt-get -y -qq install libreoffice || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 
 
@@ -2133,7 +2133,7 @@ if [[ "${SHELL}" == "/bin/zsh" ]]; then source ~/.zshrc else source "${file}"; f
 
 
 ##### Install gparted
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}gparted${RESET} ~ GUI partition manager"
+echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}GParted${RESET} ~ GUI partition manager"
 apt-get -y -qq install gparted || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 
 
@@ -2143,7 +2143,7 @@ apt-get -y -qq install daemonfs || echo -e ' '${RED}'[!] Issue with apt-get'${RE
 
 
 ##### Install filezilla (geany gets installed later)
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}filezilla${RESET} ~ GUI file transfer"
+echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}FileZilla${RESET} ~ GUI file transfer"
 apt-get -y -qq install filezilla || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 #--- Configure filezilla
 export DISPLAY=:0.0   #[[ -z $SSH_CONNECTION ]] || export DISPLAY=:0.0
@@ -2240,7 +2240,7 @@ popd >/dev/null
 
 
 ##### Install aircrack-ng
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}aircrack-ng${RESET} ~ Wi-Fi cracking suite"
+echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}Aircrack-ng${RESET} ~ Wi-Fi cracking suite"
 apt-get -y -qq install aircrack-ng curl || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 #--- Setup hardware database
 mkdir -p /etc/aircrack-ng/
@@ -2270,7 +2270,7 @@ apt-get -y -qq install wifite || echo -e ' '${RED}'[!] Issue with apt-get'${RESE
 
 
 ##### Install vulscan script for nmap
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}vulscan script for nmap${RESET} ~ vulnerability scanner add-on"
+echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}vulscan script for Nmap${RESET} ~ vulnerability scanner add-on"
 apt-get -y -qq install nmap curl || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 mkdir -p /usr/share/nmap/scripts/vulscan/
 curl --progress -k -L -f "http://www.computec.ch/projekte/vulscan/download/nmap_nse_vulscan-2.0.tar.gz" > /tmp/nmap_nse_vulscan.tar.gz || echo -e ' '${RED}'[!]'${RESET}" Issue downloading file" 1>&2      #***!!! hardcoded version! Need to manually check for updates
@@ -2448,7 +2448,7 @@ fi
 
 
 ##### Install WPA2-HalfHandshake-Crack
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}WPA2-HalfHandshake-Crack${RESET} ~ rogue AP todo WPA2 handshakes without AP"
+echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}WPA2-HalfHandshake-Crack${RESET} ~ rogue AP to do WPA2 handshakes without AP"
 apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 git clone -q https://github.com/dxa4481/WPA2-HalfHandshake-Crack.git /opt/wpa2-halfhandshake-crack-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET} 1>&2
 pushd /opt/wpa2-halfhandshake-crack-git/ >/dev/null
@@ -2457,7 +2457,7 @@ popd >/dev/null
 
 
 ##### Install mana toolkit
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}mana toolkit${RESET} ~ rogue AP todo MITM Wi-Fi"
+echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}MANA toolkit${RESET} ~ rogue AP to do MITM Wi-Fi"
 apt-get -y -qq install mana-toolkit || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 #--- Disable profile
 a2dissite 000-mana-toolkit; a2ensite 000-default
@@ -2536,7 +2536,7 @@ apt-get -y -qq install dns2tcp || echo -e ' '${RED}'[!] Issue with apt-get'${RES
 
 
 ##### Install ptunnel
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}ptunnel${RESET} ~ IMCP tunneling"
+echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}ptunnel${RESET} ~ ICMP tunneling"
 apt-get -y -qq install ptunnel || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 #--- Example
 #ptunnel -x password1
@@ -2567,7 +2567,7 @@ done
 
 
 ##### Install MinGW ~ cross compiling suite
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}mingw${RESET} ~ cross compiling suite"
+echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}MinGW${RESET} ~ cross compiling suite"
 #*** I know its messy...
 for FILE in mingw-w64 binutils-mingw-w64 gcc-mingw-w64 cmake   mingw-w64-dev mingw-w64-tools   gcc-mingw-w64-i686 gcc-mingw-w64-x86-64   mingw32; do
   apt-get -y -qq install "${FILE}" 2>/dev/null
@@ -2601,7 +2601,7 @@ echo -e 'application/x-ms-dos-executable=wine.desktop' >> "${file}"
 
 
 ##### Install MinGW (Windows) ~ cross compiling suite
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}mingw (Windows)${RESET} ~ cross compiling suite"
+echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}MinGW (Windows)${RESET} ~ cross compiling suite"
 #curl --progress -k -L -f "http://sourceforge.net/projects/mingw/files/Installer/mingw-get-setup.exe/download" > /tmp/mingw-get-setup.exe || echo -e ' '${RED}'[!]'${RESET}" Issue downloading mingw-get-setup.exe" 1>&2                                                                #***!!! hardcoded path!
 curl --progress -k -L -f "http://sourceforge.net/projects/mingw/files/Installer/mingw-get/mingw-get-0.6.2-beta-20131004-1/mingw-get-0.6.2-mingw32-beta-20131004-1-bin.zip/download" > /tmp/mingw-get.zip || echo -e ' '${RED}'[!]'${RESET}" Issue downloading mingw-get.zip" 1>&2       #***!!! hardcoded path!
 mkdir -p ~/.wine/drive_c/MinGW/bin/
@@ -3065,7 +3065,7 @@ chmod +x "${file}"
 
 
 ##### Install wpscan (GIT)
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}wpscan${RESET} (GIT) ~ WordPress vulnerability scanner"
+echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}WPScan${RESET} (GIT) ~ WordPress vulnerability scanner"
 apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 git clone -q https://github.com/wpscanteam/wpscan.git /opt/wpscan-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET} 1>&2
 pushd /opt/wpscan-git/ >/dev/null
@@ -3416,11 +3416,11 @@ echo -e "\n ${YELLOW}[i]${RESET} Time (roughly) taken: ${YELLOW}$(( $(( finish_t
 
 ##### Done!
 echo -e "\n ${YELLOW}[i]${RESET} Don't forget to:"
-echo -e " ${YELLOW}[i]${RESET}   + Check the above output (Did everything installed? Any errors? (${RED}HINT: Whats in RED${RESET}?)"
-echo -e " ${YELLOW}[i]${RESET}   + Manually install: Nessus, Nexpose and/or Metasploit Community"
-echo -e " ${YELLOW}[i]${RESET}   + Agree/Accept to: Maltego, OWASP ZAP, w3af etc"
+echo -e " ${YELLOW}[i]${RESET}   + Check the above output (Did everything install? Any errors? (${RED}HINT: What's in RED${RESET}?)"
+echo -e " ${YELLOW}[i]${RESET}   + Manually install: Nessus, Nexpose, and/or Metasploit Community"
+echo -e " ${YELLOW}[i]${RESET}   + Agree/Accept to: Maltego, OWASP ZAP, w3af, etc"
 echo -e " ${YELLOW}[i]${RESET}   + ${YELLOW}Change time zone${RESET} & ${YELLOW}keyboard layout${RESET} (...if not ${BOLD}${timezone}${RESET} & ${BOLD}${keyboardLayout}${RESET})"
-echo -e " ${YELLOW}[i]${RESET}   + ${YELLOW}Change default passwords${RESET}: PostgreSQL/MSF, MySQL, OpenVAS, BeEF XSS etc"
+echo -e " ${YELLOW}[i]${RESET}   + ${YELLOW}Change default passwords${RESET}: PostgreSQL/MSF, MySQL, OpenVAS, BeEF XSS, etc"
 echo -e " ${YELLOW}[i]${RESET}   + ${YELLOW}Reboot${RESET}"
 (dmidecode | grep -iq virtual) && echo -e " ${YELLOW}[i]${RESET}   + Take a snapshot   (Virtual machine detected!)"
 
