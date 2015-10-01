@@ -1,6 +1,6 @@
 #!/bin/bash
 #-Metadata----------------------------------------------------#
-#  Filename: kali.sh                     (Update: 2015-09-15) #
+#  Filename: kali.sh                     (Update: 2015-10-01) #
 #-Info--------------------------------------------------------#
 #  Personal post-install script for Kali Linux 2.0.           #
 #-Author(s)---------------------------------------------------#
@@ -140,9 +140,13 @@ export DISPLAY=:0.0   #[[ -z $SSH_CONNECTION ]] || export DISPLAY=:0.0
 export TERM=xterm
 
 
+## Give VM users a little heads up to get ready
+(dmidecode | grep -iq virtual) && echo -e " ${YELLOW}[i]${RESET} VM Detected. Please be sure to have the ${YELLOW}correct tools ISO mounted${RESET}." && sleep 5s
+
+
 if [[ $(which gnome-shell) ]]; then
-##### Disabe Notification Package Updater
-echo -e "\n ${GREEN}[+]${RESET} Disabling Notification ${GREEN}Package Updater${RESET} service ~ in case it runs during this script"
+##### Disabe notification package Updater
+echo -e "\n ${GREEN}[+]${RESET} Disabling notification ${GREEN}package updater${RESET} service ~ in case it runs during this script"
 export DISPLAY=:0.0   #[[ -z $SSH_CONNECTION ]] || export DISPLAY=:0.0
   dconf write /org/gnome/settings-daemon/plugins/updates/active false
   dconf write /org/gnome/desktop/notifications/application/gpk-update-viewer/active false
@@ -198,6 +202,8 @@ apt-get -qq update
 if [[ "$?" -ne 0 ]]; then
   echo -e ' '${RED}'[!]'${RESET}" There was an ${RED}issue accessing network repositories${RESET}" 1>&2
   echo -e " ${YELLOW}[i]${RESET} Are the remote network repositories ${YELLOW}currently being sync'd${RESET}?"
+  echo -e " ${YELLOW}[i]${RESET} ${YELLOW}Repositories information${RESET}:"
+  curl -sI http://http.kali.org/README
   exit 1
 fi
 
@@ -223,7 +229,7 @@ elif (dmidecode | grep -iq vmware); then
   mkdir -p /mnt/cdrom/
   umount -f /mnt/cdrom 2>/dev/null
   sleep 2s
-  mount -o ro /dev/cdrom /mnt/cdrom 2>/dev/null; _mount=$?   # This will only check the first CD drive (if there are multiple bays)
+  mount -o ro /dev/cdrom /mnt/cdrom 2>/dev/null; _mount="$?"   # This will only check the first CD drive (if there are multiple bays)
   sleep 2s
   file=$(find /mnt/cdrom/ -maxdepth 1 -type f -name 'VMwareTools-*.tar.gz' -print -quit)
   ([[ "${_mount}" == 0 && -z "${file}" ]]) && echo -e ' '${RED}'[!]'${RESET}' Incorrect CD/ISO mounted' 1>&2
@@ -234,9 +240,9 @@ elif (dmidecode | grep -iq vmware); then
     cp -f "${file}" /tmp/vmware-tools-patches/downloads/
     pushd /tmp/vmware-tools-patches/ >/dev/null
     bash untar-and-patch-and-compile.sh
-    /usr/bin/vmware-user
     popd >/dev/null
     umount -f /mnt/cdrom 2>/dev/null
+    /usr/bin/vmware-user
   else                                                       # The fallback is 'open vm tools' ~ http://open-vm-tools.sourceforge.net/about.php
     echo -e " ${YELLOW}[i]${RESET} VMware Tools CD/ISO isn't mounted"
     echo -e " ${YELLOW}[i]${RESET} Skipping 'Native VMware Tools', switching to 'Open VM Tools'"
@@ -922,7 +928,7 @@ mkdir -p /usr/share/wallpapers/
 curl --progress -k -L -f "http://www.kali.org/images/wallpapers-01/kali-wp-june-2014_1920x1080_A.png" > /usr/share/wallpapers/kali_blue_3d_a.png || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_blue_3d_a.png" 1>&2     #***!!! hardcoded paths!
 curl --progress -k -L -f "http://www.kali.org/images/wallpapers-01/kali-wp-june-2014_1920x1080_B.png" > /usr/share/wallpapers/kali_blue_3d_b.png || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_blue_3d_b.png" 1>&2
 curl --progress -k -L -f "http://www.kali.org/images/wallpapers-01/kali-wp-june-2014_1920x1080_G.png" > /usr/share/wallpapers/kali_black_honeycomb.png || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_black_honeycomb.png" 1>&2
-curl --progress -k -L -f "http://imageshack.us/a/img17/4646/vzex.png" > /usr/share/wallpapers/kali_blue_splat.png || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_blue_splat.png" 1>&2
+#curl --progress -k -L -f "http://imageshack.us/a/img17/4646/vzex.png" > /usr/share/wallpapers/kali_blue_splat.png || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_blue_splat.png" 1>&2
 curl --progress -k -L -f "http://em3rgency.com/wp-content/uploads/2012/12/Kali-Linux-faded-no-Dragon-small-text.png" > /usr/share/wallpapers/kali_black_clean.png || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_black_clean.png" 1>&2
 curl --progress -k -L -f "http://www.hdwallpapers.im/download/kali_linux-wallpaper.jpg" > /usr/share/wallpapers/kali_black_stripes.jpg || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_black_stripes.jpg" 1>&2
 curl --progress -k -L -f "http://fc01.deviantart.net/fs71/f/2011/118/e/3/bt___edb_wallpaper_by_xxdigipxx-d3f4nxv.png" > /usr/share/wallpapers/kali_bt_edb.jpg || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_bt_edb.jpg" 1>&2
@@ -990,7 +996,7 @@ dconf write /org/gnome/nautilus/preferences/show-hidden-files true
 file=/root/.gtk-bookmarks; [ -e "${file}" ] && cp -n $file{,.bkup}
 ([[ -e "${file}" && "$(tail -c 1 $file)" != "" ]]) && echo >> "${file}"
 grep -q '^file:///root/Downloads ' "${file}" 2>/dev/null || echo 'file:///root/Downloads Downloads' >> "${file}"
-(dmidecode | grep -iq vmware) && (mkdir -p /mnt/hgfs/; grep -q '^file:///mnt/hgfs ' "${file}" 2>/dev/null || echo 'file:///mnt/hgfs VMShare' >> "${file}")
+(dmidecode | grep -iq vmware) && (mkdir -p /mnt/hgfs/ 2>/dev/null; grep -q '^file:///mnt/hgfs ' "${file}" 2>/dev/null || echo 'file:///mnt/hgfs VMShare' >> "${file}")
 grep -q '^file:///tmp ' "${file}" 2>/dev/null || echo 'file:///tmp TMP' >> "${file}"
 grep -q '^file:///usr/local/src ' "${file}" 2>/dev/null || echo 'file:///usr/local/src SRC' >> "${file}"
 grep -q '^file:///usr/share ' "${file}" 2>/dev/null || echo 'file:///usr/share Kali Tools' >> "${file}"
@@ -1035,6 +1041,29 @@ grep -q "^alias l='ls $LS_OPTIONS -lA'" "${file}" 2>/dev/null || echo "alias l='
 file=/etc/skel/.bashrc   #; [ -e "${file}" ] && cp -n $file{,.bkup}
 sed -i 's/.*force_color_prompt=.*/force_color_prompt=yes/' "${file}"
 #--- Apply new colours
+if [[ "${SHELL}" == "/bin/zsh" ]]; then source ~/.zshrc else source "${file}"; fi
+
+
+##### Install grc
+echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}grc${RESET} ~ colours shell output"
+apt-get -y -qq install grc || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
+#--- Setup aliases
+file=/root/.bash_aliases; [ -e "${file}" ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
+([[ -e "${file}" && "$(tail -c 1 $file)" != "" ]]) && echo >> "${file}"
+grep -q '^## grc diff alias' "${file}" 2>/dev/null || echo -e "## grc diff alias\nalias diff='$(whereis grc) $(whereis diff)'\n" >> "${file}"
+grep -q '^## grc dig alias' "${file}" 2>/dev/null || echo -e "## grc dig alias\nalias dig='$(whereis grc) $(whereis dig)'\n" >> "${file}"
+grep -q '^## grc gcc alias' "${file}" 2>/dev/null || echo -e "## grc gcc alias\nalias gcc='$(whereis grc) $(whereis gcc)'\n" >> "${file}"
+grep -q '^## grc ifconfig alias' "${file}" 2>/dev/null || echo -e "## grc ifconfig alias\nalias ifconfig='$(whereis grc) $(whereis ifconfig)'\n" >> "${file}"
+grep -q '^## grc mount alias' "${file}" 2>/dev/null || echo -e "## grc mount alias\nalias mount='$(whereis grc) $(whereis mount)'\n" >> "${file}"
+#grep -q '^## grc mount alias' "${file}" 2>/dev/null || echo -e "## grc mount alias\nalias mount='$(whereis grc) $(whereis mount) | $(whereis column -t)'\n" >> "${file}"
+grep -q '^## grc netstat alias' "${file}" 2>/dev/null || echo -e "## grc netstat alias\nalias netstat='$(whereis grc) $(whereis netstat)'\n" >> "${file}"
+grep -q '^## grc ping alias' "${file}" 2>/dev/null || echo -e "## grc ping alias\nalias ping='$(whereis grc) $(whereis ping)'\n" >> "${file}"
+grep -q '^## grc ps alias' "${file}" 2>/dev/null || echo -e "## grc ps alias\nalias ps='$(whereis grc) $(whereis ps)'\n" >> "${file}"
+grep -q '^## grc tail alias' "${file}" 2>/dev/null || echo -e "## grc tail alias\nalias tail='$(whereis grc) $(whereis tail)'\n" >> "${file}"
+grep -q '^## grc traceroute alias' "${file}" 2>/dev/null || echo -e "## grc traceroute alias\nalias traceroute='$(whereis grc) $(whereis traceroute)'\n" >> "${file}"
+grep -q '^## grc wdiff alias' "${file}" 2>/dev/null || echo -e "## grc wdiff alias\nalias wdiff='$(whereis grc) $(whereis wdiff)'\n" >> "${file}"
+#configure  #esperanto  #ldap  #e  #cvs  #log  #mtr  #ls  #irclog  #mount2
+#--- Apply new aliases
 if [[ "${SHELL}" == "/bin/zsh" ]]; then source ~/.zshrc else source "${file}"; fi
 
 
@@ -1096,7 +1125,7 @@ grep -q '^## ftp' "${file}" 2>/dev/null || echo -e '## ftp\nalias ftproot="cd /v
 grep -q '^## tftp' "${file}" 2>/dev/null || echo -e '## tftp\nalias tftproot="cd /var/tftp/"\n' >> "${file}"                                        # systemctl atftpd start
 grep -q '^## smb' "${file}" 2>/dev/null || echo -e '## smb\nalias sambaroot="cd /var/samba/"\n#alias smbroot="cd /var/samba/"\n' >> "${file}"       # systemctl samba start
 (dmidecode | grep -iq vmware) && (grep -q '^## vmware' "${file}" 2>/dev/null || echo -e '## vmware\nalias vmroot="cd /mnt/hgfs/"\n' >> "${file}")
-grep -q '^## edb' "${file}" 2>/dev/null || echo -e '## edb\nalias edb="cd /usr/share/exploitdb/"\nalias edbroot="cd /usr/share/exploitdb/"\n' >> "${file}"
+grep -q '^## edb' "${file}" 2>/dev/null || echo -e '## edb\nalias edb="cd /usr/share/exploitdb/platform/"\nalias edbroot="cd /usr/share/exploitdb/platform/"\n' >> "${file}"
 grep -q '^## wordlist' "${file}" 2>/dev/null || echo -e '## wordlist\nalias wordlist="cd /usr/share/wordlists/"\nalias wordls="cd /usr/share/wordlists/"\n' >> "${file}"
 #--- Apply new aliases
 if [[ "${SHELL}" == "/bin/zsh" ]]; then source ~/.zshrc else source "${file}"; fi
@@ -1409,6 +1438,8 @@ rm -f /tmp/bookmarks_new.html
 
 ##### Setup iceweasel's plugins
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}iceweasel's plugins${RESET} ~ Useful addons"
+#--- Configure iceweasel
+export DISPLAY=:0.0   #[[ -z $SSH_CONNECTION ]] || export DISPLAY=:0.0
 #--- Download extensions
 ffpath="$(find /root/.mozilla/firefox/*.default*/ -maxdepth 0 -mindepth 0 -type d -name '*.default*' -print -quit)/extensions"
 [ "${ffpath}" == "/extensions" ] && echo -e ' '${RED}'[!]'${RESET}" Couldn't find Firefox/Iceweasel folder" 1>&2
@@ -1425,6 +1456,7 @@ curl --progress -k -L -f "https://www.eff.org/files/https-everywhere-latest.xpi"
 curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/3829/addon-3829-latest.xpi?src=dp-btn-primary" -o "$ffpath/{8f8fe09b-0bd3-4470-bc1b-8cad42b8203a}.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'Live HTTP Headers'" 1>&2                             # Live HTTP Headers
 curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/966/addon-966-latest.xpi?src=dp-btn-primary" -o "$ffpath/{9c51bd27-6ed8-4000-a2bf-36cb95c0c947}.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'Tamper Data'" 1>&2                                     # Tamper Data
 curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/300254/addon-300254-latest.xpi?src=dp-btn-primary" -o "$ffpath/check-compatibility@dactyl.googlecode.com.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'Disable Add-on Compatibility Checks'" 1>&2    # Disable Add-on Compatibility Checks
+curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/3899/addon-3899-latest.xpi?src=dp-btn-primary" -o "$ffpath/{F5DDF39C-9293-4d5e-9AA8-E04E6DD5E9B4}.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'HackBar'" 1>&2        # HackBar
 #--- Installing extensions
 for FILE in $(find "${ffpath}" -maxdepth 1 -type f -name '*.xpi'); do
   d="$(basename "${FILE}" .xpi)"
@@ -1460,7 +1492,13 @@ file=$(find /root/.mozilla/firefox/*.default*/ -maxdepth 1 -type f -name 'prefs.
 timeout 5 iceweasel >/dev/null 2>&1   # For extensions that just work without restarting
 sleep 3s
 timeout 5 iceweasel >/dev/null 2>&1   # ...for (most) extensions, as they need iceweasel to restart
-sleep 3s
+sleep 5s
+#--- Configure HackBar
+file=$(find /root/.mozilla/firefox/*.default*/ -maxdepth 1 -type f -name 'xulstore.json' -print -quit)   #&& [ -e "${file}" ] && cp -n $file{,.bkup}
+if [ -e "${file}" ]; then
+  sed -i 's/"hackBarToolbar":{"collapsed":".*"},/"hackBarToolbar":{"collapsed":"true"},/g' "${file}"                                   # Hide the bar on startup
+  grep -q "hackBarToolbar" "${file}" 2>/dev/null || sed -i 's/"nav-bar"/"hackBarToolbar":{"collapsed":"true"},"nav-bar"/g' "${file}"   # Hide the bar on startup
+fi
 #--- Configure foxyproxy
 file=$(find /root/.mozilla/firefox/*.default*/ -maxdepth 1 -type f -name 'foxyproxy.xml' -print -quit)   #&& [ -e "${file}" ] && cp -n $file{,.bkup}
 if [ -z "${file}" ]; then
@@ -1470,7 +1508,7 @@ elif [ -e "${file}" ]; then
   grep -q 'localhost:8081' "${file}" 2>/dev/null || sed -i 's#<proxy name="Default"#<proxy name="localhost:8081 (socket5)" id="212586674" notes="e.g. SSH" fromSubscription="false" enabled="true" mode="manual" selectedTabIndex="0" lastresort="false" animatedIcons="true" includeInCycle="false" color="\#917504" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="true" clearCookiesBeforeUse="false" rejectCookies="false"><matches/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="127.0.0.1" port="8081" socksversion="5" isSocks="true" username="" password="" domain=""/></proxy><proxy name="Default"#' "${file}"         # localhost:8081 (socket5)
   grep -q '"No Caching"' "${file}" 2>/dev/null   || sed -i 's#<proxy name="Default"#<proxy name="No Caching" id="3884644610" notes="" fromSubscription="false" enabled="true" mode="system" selectedTabIndex="0" lastresort="false" animatedIcons="true" includeInCycle="false" color="\#990DA6" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="true" clearCookiesBeforeUse="false" rejectCookies="false"><matches/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="" port="" socksversion="5" isSocks="false" username="" password="" domain=""/></proxy><proxy name="Default"#' "${file}"                                          # No caching
 else
-  echo -ne '<?xml version="1.0" encoding="UTF-8"?>\n<foxyproxy mode="disabled" selectedTabIndex="0" toolbaricon="true" toolsMenu="true" contextMenu="true" advancedMenus="false" previousMode="disabled" resetIconColors="true" useStatusBarPrefix="true" excludePatternsFromCycling="false" excludeDisabledFromCycling="false" ignoreProxyScheme="false" apiDisabled="false" proxyForVersionCheck=""><random includeDirect="false" includeDisabled="false"/><statusbar icon="true" text="false" left="options" middle="cycle" right="contextmenu" width="0"/><toolbar left="options" middle="cycle" right="contextmenu"/><logg enabled="false" maxSize="500" noURLs="false" header="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;\n&lt;!DOCTYPE html PUBLIC &quot;-//W3C//DTD XHTML 1.0 Strict//EN&quot; &quot;http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd&quot;&gt;\n&lt;html xmlns=&quot;http://www.w3.org/1999/xhtml&quot;&gt;&lt;head&gt;&lt;title&gt;&lt;/title&gt;&lt;link rel=&quot;icon&quot; href=&quot;http://getfoxyproxy.org/favicon.ico&quot;/&gt;&lt;link rel=&quot;shortcut icon&quot; href=&quot;http://getfoxyproxy.org/favicon.ico&quot;/&gt;&lt;link rel=&quot;stylesheet&quot; href=&quot;http://getfoxyproxy.org/styles/log.css&quot; type=&quot;text/css&quot;/&gt;&lt;/head&gt;&lt;body&gt;&lt;table class=&quot;log-table&quot;&gt;&lt;thead&gt;&lt;tr&gt;&lt;td class=&quot;heading&quot;&gt;${timestamp-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${url-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${proxy-name-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${proxy-notes-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-name-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-case-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-type-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-color-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pac-result-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${error-msg-heading}&lt;/td&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tfoot&gt;&lt;tr&gt;&lt;td/&gt;&lt;/tr&gt;&lt;/tfoot&gt;&lt;tbody&gt;" row="&lt;tr&gt;&lt;td class=&quot;timestamp&quot;&gt;${timestamp}&lt;/td&gt;&lt;td class=&quot;url&quot;&gt;&lt;a href=&quot;${url}&quot;&gt;${url}&lt;/a&gt;&lt;/td&gt;&lt;td class=&quot;proxy-name&quot;&gt;${proxy-name}&lt;/td&gt;&lt;td class=&quot;proxy-notes&quot;&gt;${proxy-notes}&lt;/td&gt;&lt;td class=&quot;pattern-name&quot;&gt;${pattern-name}&lt;/td&gt;&lt;td class=&quot;pattern&quot;&gt;${pattern}&lt;/td&gt;&lt;td class=&quot;pattern-case&quot;&gt;${pattern-case}&lt;/td&gt;&lt;td class=&quot;pattern-type&quot;&gt;${pattern-type}&lt;/td&gt;&lt;td class=&quot;pattern-color&quot;&gt;${pattern-color}&lt;/td&gt;&lt;td class=&quot;pac-result&quot;&gt;${pac-result}&lt;/td&gt;&lt;td class=&quot;error-msg&quot;&gt;${error-msg}&lt;/td&gt;&lt;/tr&gt;" footer="&lt;/tbody&gt;&lt;/table&gt;&lt;/body&gt;&lt;/html&gt;"/><warnings/><autoadd enabled="false" temp="false" reload="true" notify="true" notifyWhenCanceled="true" prompt="true"><match enabled="true" name="Dynamic AutoAdd Pattern" pattern="*://${3}${6}/*" isRegEx="false" isBlackList="false" isMultiLine="false" caseSensitive="false" fromSubscription="false"/><match enabled="true" name="" pattern="*You are not authorized to view this page*" isRegEx="false" isBlackList="false" isMultiLine="true" caseSensitive="false" fromSubscription="false"/></autoadd><quickadd enabled="false" temp="false" reload="true" notify="true" notifyWhenCanceled="true" prompt="true"><match enabled="true" name="Dynamic QuickAdd Pattern" pattern="*://${3}${6}/*" isRegEx="false" isBlackList="false" isMultiLine="false" caseSensitive="false" fromSubscription="false"/></quickadd><defaultPrefs origPrefetch="null"/><proxies>' > "${file}"
+  echo -ne '<?xml version="1.0" encoding="UTF-8"?>\n<foxyproxy mode="disabled" selectedTabIndex="0" toolbaricon="true" toolsMenu="true" contextMenu="false" advancedMenus="false" previousMode="disabled" resetIconColors="true" useStatusBarPrefix="true" excludePatternsFromCycling="false" excludeDisabledFromCycling="false" ignoreProxyScheme="false" apiDisabled="false" proxyForVersionCheck=""><random includeDirect="false" includeDisabled="false"/><statusbar icon="true" text="false" left="options" middle="cycle" right="contextmenu" width="0"/><toolbar left="options" middle="cycle" right="contextmenu"/><logg enabled="false" maxSize="500" noURLs="false" header="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;\n&lt;!DOCTYPE html PUBLIC &quot;-//W3C//DTD XHTML 1.0 Strict//EN&quot; &quot;http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd&quot;&gt;\n&lt;html xmlns=&quot;http://www.w3.org/1999/xhtml&quot;&gt;&lt;head&gt;&lt;title&gt;&lt;/title&gt;&lt;link rel=&quot;icon&quot; href=&quot;http://getfoxyproxy.org/favicon.ico&quot;/&gt;&lt;link rel=&quot;shortcut icon&quot; href=&quot;http://getfoxyproxy.org/favicon.ico&quot;/&gt;&lt;link rel=&quot;stylesheet&quot; href=&quot;http://getfoxyproxy.org/styles/log.css&quot; type=&quot;text/css&quot;/&gt;&lt;/head&gt;&lt;body&gt;&lt;table class=&quot;log-table&quot;&gt;&lt;thead&gt;&lt;tr&gt;&lt;td class=&quot;heading&quot;&gt;${timestamp-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${url-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${proxy-name-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${proxy-notes-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-name-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-case-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-type-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-color-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pac-result-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${error-msg-heading}&lt;/td&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tfoot&gt;&lt;tr&gt;&lt;td/&gt;&lt;/tr&gt;&lt;/tfoot&gt;&lt;tbody&gt;" row="&lt;tr&gt;&lt;td class=&quot;timestamp&quot;&gt;${timestamp}&lt;/td&gt;&lt;td class=&quot;url&quot;&gt;&lt;a href=&quot;${url}&quot;&gt;${url}&lt;/a&gt;&lt;/td&gt;&lt;td class=&quot;proxy-name&quot;&gt;${proxy-name}&lt;/td&gt;&lt;td class=&quot;proxy-notes&quot;&gt;${proxy-notes}&lt;/td&gt;&lt;td class=&quot;pattern-name&quot;&gt;${pattern-name}&lt;/td&gt;&lt;td class=&quot;pattern&quot;&gt;${pattern}&lt;/td&gt;&lt;td class=&quot;pattern-case&quot;&gt;${pattern-case}&lt;/td&gt;&lt;td class=&quot;pattern-type&quot;&gt;${pattern-type}&lt;/td&gt;&lt;td class=&quot;pattern-color&quot;&gt;${pattern-color}&lt;/td&gt;&lt;td class=&quot;pac-result&quot;&gt;${pac-result}&lt;/td&gt;&lt;td class=&quot;error-msg&quot;&gt;${error-msg}&lt;/td&gt;&lt;/tr&gt;" footer="&lt;/tbody&gt;&lt;/table&gt;&lt;/body&gt;&lt;/html&gt;"/><warnings/><autoadd enabled="false" temp="false" reload="true" notify="true" notifyWhenCanceled="true" prompt="true"><match enabled="true" name="Dynamic AutoAdd Pattern" pattern="*://${3}${6}/*" isRegEx="false" isBlackList="false" isMultiLine="false" caseSensitive="false" fromSubscription="false"/><match enabled="true" name="" pattern="*You are not authorized to view this page*" isRegEx="false" isBlackList="false" isMultiLine="true" caseSensitive="false" fromSubscription="false"/></autoadd><quickadd enabled="false" temp="false" reload="true" notify="true" notifyWhenCanceled="true" prompt="true"><match enabled="true" name="Dynamic QuickAdd Pattern" pattern="*://${3}${6}/*" isRegEx="false" isBlackList="false" isMultiLine="false" caseSensitive="false" fromSubscription="false"/></quickadd><defaultPrefs origPrefetch="null"/><proxies>' > "${file}"
   echo -ne '<proxy name="localhost:8080" id="1145138293" notes="e.g. Burp, w3af" fromSubscription="false" enabled="true" mode="manual" selectedTabIndex="0" lastresort="false" animatedIcons="true" includeInCycle="false" color="#07753E" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="true" clearCookiesBeforeUse="false" rejectCookies="false"><matches/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="127.0.0.1" port="8080" socksversion="5" isSocks="false" username="" password="" domain=""/></proxy>' >> "${file}"
   echo -ne '<proxy name="localhost:8081 (socket5)" id="212586674" notes="e.g. SSH" fromSubscription="false" enabled="true" mode="manual" selectedTabIndex="0" lastresort="false" animatedIcons="true" includeInCycle="false" color="#917504" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="true" clearCookiesBeforeUse="false" rejectCookies="false"><matches/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="127.0.0.1" port="8081" socksversion="5" isSocks="true" username="" password="" domain=""/></proxy>' >> "${file}"
   echo -ne '<proxy name="No Caching" id="3884644610" notes="" fromSubscription="false" enabled="true" mode="system" selectedTabIndex="0" lastresort="false" animatedIcons="true" includeInCycle="false" color="#990DA6" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="true" clearCookiesBeforeUse="false" rejectCookies="false"><matches/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="" port="" socksversion="5" isSocks="false" username="" password="" domain=""/></proxy>' >> "${file}"
@@ -1792,7 +1830,7 @@ sed -i 's/^.*pref_toolbar_icon_size=/pref_toolbar_icon_size=2/' "${file}"
 sed -i 's/^.*treeview_position=.*/treeview_position=744/' "${file}"
 sed -i 's/^.*msgwindow_position=.*/msgwindow_position=405/' "${file}"
 sed -i 's/^.*pref_search_hide_find_dialog=.*/pref_search_hide_find_dialog=true/' "${file}"
-sed -i 's_^.*project_file_path=.*_project_file_path=/root/_' "${file}"
+sed -i 's#^.*project_file_path=.*#project_file_path=/root/#' "${file}"
 #sed -i 's/^pref_toolbar_show=.*/pref_toolbar_show=false/' "${file}"
 #sed -i 's/^sidebar_visible=.*/sidebar_visible=false/' "${file}"
 grep -q '^custom_commands=sort;' "${file}" || sed -i 's/\[geany\]/[geany]\ncustom_commands=sort;/' "${file}"
@@ -1824,10 +1862,15 @@ EOF
 
 ##### Install PyCharm (Community Edition)
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}PyCharm (Community Edition)${RESET} ~ Python IDE"
-curl --progress -k -L -f "https://download.jetbrains.com/python/pycharm-community-4.5.2.tar.gz" > /tmp/pycharms-community.tar.gz || echo -e ' '${RED}'[!]'${RESET}" Issue downloading pycharms-community.tar.gz" 1>&2       #***!!! hardcoded version!
+curl --progress -k -L -f "https://download.jetbrains.com/python/pycharm-community-4.5.4.tar.gz" > /tmp/pycharms-community.tar.gz || echo -e ' '${RED}'[!]'${RESET}" Issue downloading pycharms-community.tar.gz" 1>&2       #***!!! hardcoded version!
 tar -xf /tmp/pycharms-community.tar.gz -C /tmp/
 mv /tmp/pycharm-community-*/ /usr/share/pycharms
 ln -sf /usr/share/pycharms/bin/pycharm.sh /usr/bin/pycharms
+
+
+##### Install wdiff
+echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}wdiff${RESET} ~ Compares two files word by word"
+apt-get -y -qq install wdiff wdiff-doc || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 
 
 ##### Install Meld
@@ -2072,6 +2115,20 @@ ln -sf /etc/apache2/conf-available/rips.conf /etc/apache2/conf-enabled/rips.conf
 systemctl restart apache2
 
 
+##### Install graudit
+echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}graudit${RESET} ~ source code auditing"
+apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
+git clone -q https://github.com/wireghoul/graudit.git /opt/graudit-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET} 1>&2
+#--- Add to path
+file=/usr/local/bin/graudit-git
+cat <<EOF > "${file}"
+#!/bin/bash
+
+cd /opt/graudit-git/ && bash graudit.sh "\$@"
+EOF
+chmod +x "${file}"
+
+
 ##### Install libreoffice
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}LibreOffice${RESET} ~ GUI office suite"
 apt-get -y -qq install libreoffice || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
@@ -2157,6 +2214,28 @@ apt-get -y -qq install iotop || echo -e ' '${RED}'[!] Issue with apt-get'${RESET
 ##### Install ca-certificates
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}ca-certificates${RESET} ~ HTTPS/SSL/TLS"
 apt-get -y -qq install ca-certificates || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
+
+
+##### Install testssl
+echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}testssl${RESET} ~ Testing TLS/SSL encryption"
+apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
+git clone -q https://github.com/drwetter/testssl.sh.git /opt/testssl-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET} 1>&2
+ln -sf /opt/testssl-git/testssl.sh /usr/local/bin/testssl-git
+chmod +x /opt/testssl-git/testssl.sh
+
+
+##### Install UACScript
+echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}UACScript${RESET} ~ UAC Bypass for Windows 7"
+apt-get -y -qq install git windows-binaries || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
+git clone -q https://github.com/Vozzie/uacscript.git /opt/uacscript-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET} 1>&2
+ln -sf /usr/share/windows-binaries/uac-win7 /opt/uacscript-git/
+
+
+##### Install MiniReverse_Shell_With_Parameters
+echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}MiniReverse_Shell_With_Parameters${RESET} ~ Generate shellcode for a reverse shell"
+apt-get -y -qq install git windows-binaries || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
+git clone -q https://github.com/xillwillx/MiniReverse_Shell_With_Parameters.git /opt/minireverse-shell-with-parameters-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET} 1>&2
+ln -sf /usr/share/windows-binaries/MiniReverse /opt/minireverse-shell-with-parameters-git/
 
 
 ##### Install axel
@@ -2287,7 +2366,7 @@ echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}Aircrack-ng${RESET} ~ Wi-Fi c
 apt-get -y -qq install aircrack-ng curl || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 #--- Setup hardware database
 mkdir -p /etc/aircrack-ng/
-(timeout 60 airodump-ng-oui-update 2>/dev/null) || timeout 60 curl --progress -k -L -f "http://standards.ieee.org/develop/regauth/oui/oui.txt" > /etc/aircrack-ng/oui.txt          #***!!! hardcoded path! # || echo -e ' '${RED}'[!]'${RESET}" Issue downloading oui.txt" 1>&2
+(timeout 180 airodump-ng-oui-update 2>/dev/null) || timeout 180 curl --progress -k -L -f "http://standards.ieee.org/develop/regauth/oui/oui.txt" > /etc/aircrack-ng/oui.txt          #***!!! hardcoded path! # || echo -e ' '${RED}'[!]'${RESET}" Issue downloading oui.txt" 1>&2
 [[ -e /etc/aircrack-ng/oui.txt ]] && (\grep "(hex)" /etc/aircrack-ng/oui.txt | sed 's/^[ \t]*//g;s/[ \t]*$//g' > /etc/aircrack-ng/airodump-ng-oui.txt)
 [[ ! -f /etc/aircrack-ng/airodump-ng-oui.txt ]] && echo -e ' '${RED}'[!]'${RESET}" Issue downloading oui.txt" 1>&2
 #--- Setup alias
@@ -2367,7 +2446,7 @@ rm -f /tmp/udp-proto-scanner.tar*
 
 
 ##### Install clusterd
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}clusterd${RESET} ~ clustered attack toolkit (jboss, coldfusion, weblogic, tomcat etc)"
+echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}clusterd${RESET} ~ clustered attack toolkit (JBoss, ColdFusion, WebLogic, Tomcat etc)"
 apt-get -y -qq install clusterd || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 
 
@@ -2377,12 +2456,24 @@ apt-get -y -qq install webhandler || echo -e ' '${RED}'[!] Issue with apt-get'${
 
 
 ##### Install azazel
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}azazel${RESET} ~ linux userland rootkit"
+echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}azazel${RESET} ~ Linux userland rootkit"
 apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 git clone -q https://github.com/chokepoint/azazel.git /opt/azazel-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET} 1>&2
 pushd /opt/azazel-git/ >/dev/null
 git pull -q
 popd >/dev/null
+
+
+##### Install Babadook
+echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}Babadook${RESET} ~ connection-less Powershell backdoor"
+apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
+git clone -q https://github.com/jseidl/Babadook.git /opt/babadook-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET} 1>&2
+
+
+##### Install pupy
+echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}pupy${RESET} ~ Remote Administration Tool"
+apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
+git clone -q https://github.com/n1nj4sec/pupy.git /opt/pupy-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET} 1>&2
 
 
 ##### Install gobuster (https://bugs.kali.org/view.php?id=2438)
@@ -2413,6 +2504,20 @@ popd >/dev/null
 #--- Link to others
 apt-get -y -qq install webshells || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 ln -sf /usr/share/b374k-git /usr/share/webshells/php/b374k
+
+
+##### Install adminer
+echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}adminer${RESET} ~ Database management in a single PHP file"
+apt-get -y -qq install git webshells || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
+git clone -q https://github.com/vrana/adminer.git /opt/adminer-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET} 1>&2
+ln -sf /opt/adminer-git/ /usr/share/webshells/php/adminer
+
+
+##### Install WeBaCoo
+echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}WeBaCoo${RESET} ~ Web backdoor cookie"
+apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
+git clone -q https://github.com/anestisb/WeBaCoo.git /opt/webacoo-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET} 1>&2
+ln -sf /opt/webacoo-git/ /usr/share/webshells/php/webacoo
 
 
 ##### Install DAws
@@ -2499,6 +2604,18 @@ git pull -q
 popd >/dev/null
 
 
+##### Install HT-WPS-Breaker
+echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}HT-WPS-Breaker${RESET} ~ Auto WPS tool"
+apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
+git clone -q https://github.com/SilentGhostX/HT-WPS-Breaker.git /opt/ht-wps-breaker-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET} 1>&2
+
+
+##### Install dot11decrypt
+echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}dot11decrypt${RESET} ~ On-the-fly WEP/WPA2 decrypter"
+apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
+git clone -q https://github.com/mfontanini/dot11decrypt.git /opt/dot11decrypt-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET} 1>&2
+
+
 ##### Install mana toolkit
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}MANA toolkit${RESET} ~ rogue AP to do MITM Wi-Fi"
 apt-get -y -qq install mana-toolkit || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
@@ -2562,6 +2679,24 @@ echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}sshuttle${RESET} ~ VPN over S
 apt-get -y -qq install sshuttle || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 #--- Example
 #sshuttle --dns --remote root@123.9.9.9 0/0 -vv
+
+
+##### Install pfi
+echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}pfi${RESET} ~ Port Forwarding Interceptor"
+apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
+git clone -q https://github.com/s7ephen/pfi.git /opt/pfi-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET} 1>&2
+
+
+##### Install icmpsh
+echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}icmpsh${RESET} ~ reverse ICMP shell"
+apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
+git clone -q https://github.com/inquisb/icmpsh.git /opt/icmpsh-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET} 1>&2
+
+
+##### Install dnsftp
+echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}dnsftp${RESET} ~ transfer files over DNS"
+apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
+git clone -q https://github.com/breenmachine/dnsftp.git /opt/dnsftp-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET} 1>&2
 
 
 ##### Install iodine
@@ -2687,7 +2822,7 @@ echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}veil-evasion framework${RESET
 if [[ "$(uname -m)" == 'x86_64' ]]; then
   #dpkg --add-architecture i386 && apt-get -qq update
   #apt-get -y -qq install veil-evasion:i386 || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
-  echo -e ' '${RED}'[!]'${RESET}" veil-evasion has issues with x64. Skipping..." 1>&2
+  echo -e ' '${RED}'[!]'${RESET}" veil-evasion has issues with x64. Skipping..." 1>&2   # (https://bugs.kali.org/view.php?id=2673)
 else
   apt-get -y -qq install veil-evasion || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
   bash /usr/share/veil-evasion/setup/setup.sh --silent
@@ -2992,9 +3127,10 @@ if [[ "$(uname -m)" == "x86_64" ]]; then
   echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}lnav${RESET} (x64) ~ CLI log veiwer"
 # apt-get -y -qq install git ncurses-dev libsqlite3-dev libgpm-dev || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 # git clone -q https://github.com/tstack/lnav.git /usr/local/src/tstack-git/
-# pushd /usr/local/src/tstack >/dev/null
+# pushd /usr/local/src/tstack-git >/dev/null
 # git pull -q
 # make -s clean
+# bash autogen.sh
 # ./configure
 # make -s && make -s install
 # popd >/dev/null
@@ -3047,6 +3183,30 @@ apt-get -y -qq install fimap || echo -e ' '${RED}'[!] Issue with apt-get'${RESET
 ##### Install smbmap
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}smbmap${RESET} ~ SMB enumeration tool"
 apt-get -y -qq install smbmap || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
+
+
+##### Install smbspider
+echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}smbspider${RESET} ~ search network shares"
+apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
+git clone -q https://github.com/T-S-A/smbspider.git /opt/smbspider-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET} 1>&2
+
+
+##### Install CrackMapExec
+echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}CrackMapExec${RESET} ~ Swiss army knife for Windows environments"
+apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
+git clone -q https://github.com/byt3bl33d3r/CrackMapExec.git /opt/crackmapexec-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET} 1>&2
+
+
+##### Install credcrack
+echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}credcrack${RESET} ~ credential harvester via Samba"
+apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
+git clone -q https://github.com/gojhonny/CredCrack.git /opt/credcrack-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET} 1>&2
+
+
+##### Install Empire
+echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}Empire${RESET} ~ PowerShell post-exploitation"
+apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
+git clone -q https://github.com/PowerShellEmpire/Empire.git /opt/empire-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET} 1>&2
 
 
 ##### Install wig (https://bugs.kali.org/view.php?id=1932)
@@ -3140,6 +3300,12 @@ echo -e " ${YELLOW}[i]${RESET} BeEF username: ${username}"
 echo -e " ${YELLOW}[i]${RESET} BeEF password: ${password}   *** ${BOLD}CHANGE THIS ASAP${RESET}.   Edit: /usr/share/beef-xss/config.yaml"
 #--- Example hook
 #<script src="http://192.168.155.175:3000/hook.js" type="text/javascript"></script>
+
+
+##### Install sonar.js
+echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}sonar.js${RESET} ~ Internal network framework"
+apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
+git clone -q https://github.com/mandatoryprogrammer/sonar.js.git /opt/sonar-js-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET} 1>&2
 
 
 ##### Install patator (GIT)
@@ -3368,10 +3534,22 @@ echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}DBeaver${RESET} ~ GUI DB mana
 apt-get -y -qq install curl || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 arch="i386"
 [[ "$(uname -m)" == "x86_64" ]] && arch="amd64"
-curl --progress -k -L -f "http://dbeaver.jkiss.org/files/dbeaver_3.4.1_${arch}.deb" > /tmp/dbeaver.deb || echo -e ' '${RED}'[!]'${RESET}" Issue downloading dbeaver.deb" 1>&2   #***!!! hardcoded version! Need to manually check for updates
+curl --progress -k -L -f "http://dbeaver.jkiss.org/files/dbeaver-ce_latest_${arch}.deb" > /tmp/dbeaver.deb || echo -e ' '${RED}'[!]'${RESET}" Issue downloading dbeaver.deb" 1>&2   #***!!! hardcoded version! Need to manually check for updates
 dpkg -i /tmp/dbeaver.deb
 #--- Add to path
 ln -sf /usr/share/dbeaver/dbeaver /usr/bin/dbeaver
+
+
+##### Install ashttp
+echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}ashttp${RESET} ~ Share your terminal via the web"
+apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
+git clone -q https://github.com/JulienPalard/ashttp.git /opt/ashttp-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET} 1>&2
+
+
+##### Install gotty
+echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}gotty${RESET} ~ Share your terminal via the web"
+apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
+git clone -q https://github.com/yudai/gotty.git /opt/gotty-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET} 1>&2
 
 
 ##### Setup a jail ~ http://allanfeid.com/content/creating-chroot-jail-ssh-access
