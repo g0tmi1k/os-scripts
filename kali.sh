@@ -1,6 +1,6 @@
 #!/bin/bash
 #-Metadata----------------------------------------------------#
-#  Filename: kali.sh                     (Update: 2015-10-01) #
+#  Filename: kali.sh                     (Update: 2015-10-02) #
 #-Info--------------------------------------------------------#
 #  Personal post-install script for Kali Linux 2.0.           #
 #-Author(s)---------------------------------------------------#
@@ -182,7 +182,7 @@ if [[ "$?" -ne 0 ]]; then
     exit 1
   fi
 fi
-curl --progress -k -L -f "https://status.github.com/api/status.json" | grep -q "good" || (echo -e ' '${RED}'[!]'${RESET}" ${RED}GitHub is currently having issues${RESET}. ${BOLD}Lots may fail${RESET}. See: https://status.github.com/" 1>&2 && sleep 10s)
+timeout 300 curl --progress -k -L -f "https://status.github.com/api/status.json" | grep -q "good" || (echo -e ' '${RED}'[!]'${RESET}" ${RED}GitHub is currently having issues${RESET}. ${BOLD}Lots may fail${RESET}. See: https://status.github.com/" 1>&2 && sleep 10s)
 
 
 ##### Enable default network repositories ~ http://docs.kali.org/general-use/kali-linux-sources-list-repositories & Fix 'KEYEXPIRED 1425567400'
@@ -466,7 +466,7 @@ echo -e "\n ${GREEN}[+]${RESET} Configuring ${GREEN}GNOME 3${RESET} ~ desktop en
 export DISPLAY=:0.0   #[[ -z $SSH_CONNECTION ]] || export DISPLAY=:0.0
 #-- Gnome Extension - Frippery (https://extensions.gnome.org/extension/13/applications-menu/)   *** TaskBar has more features
 mkdir -p ~/.local/share/gnome-shell/extensions/
-curl --progress -k -L -f "http://frippery.org/extensions/gnome-shell-frippery-0.9.3.tgz" > /tmp/frippery.tgz || echo -e ' '${RED}'[!]'${RESET}" Issue downloading frippery.tgz" 1>&2
+timeout 300 curl --progress -k -L -f "http://frippery.org/extensions/gnome-shell-frippery-0.9.3.tgz" > /tmp/frippery.tgz || echo -e ' '${RED}'[!]'${RESET}" Issue downloading frippery.tgz" 1>&2
 tar -zxf /tmp/frippery.tgz -C ~/
 #-- Gnome Extension - TopIcons (https://extensions.gnome.org/extension/495/topicons/)   # Doesn't work with v3.10
 #mkdir -p ~/.local/share/gnome-shell/extensions/topIcons@adel.gadllah@gmail.com/
@@ -914,26 +914,26 @@ echo -e "\n ${GREEN}[+]${RESET} ${GREEN}Cosmetics${RESET}${RESET} ~ Making it di
 mkdir -p /root/.themes/
 export DISPLAY=:0.0   #[[ -z $SSH_CONNECTION ]] || export DISPLAY=:0.0
 #--- shiki-colors-light v1.3 XFCE4 theme
-curl --progress -k -L -f "http://xfce-look.org/CONTENT/content-files/142110-Shiki-Colors-Light-Menus.tar.gz" > /tmp/Shiki-Colors-Light-Menus.tar.gz || echo -e ' '${RED}'[!]'${RESET}" Issue downloading Shiki-Colors-Light-Menus.tar.gz" 1>&2    #***!!! hardcoded path!
+timeout 300 curl --progress -k -L -f "http://xfce-look.org/CONTENT/content-files/142110-Shiki-Colors-Light-Menus.tar.gz" > /tmp/Shiki-Colors-Light-Menus.tar.gz || echo -e ' '${RED}'[!]'${RESET}" Issue downloading Shiki-Colors-Light-Menus.tar.gz" 1>&2    #***!!! hardcoded path!
 tar -zxf /tmp/Shiki-Colors-Light-Menus.tar.gz -C /root/.themes/
 #xfconf-query -n -c xsettings -p /Net/ThemeName -s "Shiki-Colors-Light-Menus"
 #xfconf-query -n -c xsettings -p /Net/IconThemeName -s "Vibrancy-Kali-Dark"
 #--- axiom / axiomd (May 18 2010) XFCE4 theme
-curl --progress -k -L -f "http://xfce-look.org/CONTENT/content-files/90145-axiom.tar.gz" > /tmp/axiom.tar.gz || echo -e ' '${RED}'[!]'${RESET}" Issue downloading axiom.tar.gz" 1>&2    #***!!! hardcoded path!
+timeout 300 curl --progress -k -L -f "http://xfce-look.org/CONTENT/content-files/90145-axiom.tar.gz" > /tmp/axiom.tar.gz || echo -e ' '${RED}'[!]'${RESET}" Issue downloading axiom.tar.gz" 1>&2    #***!!! hardcoded path!
 tar -zxf /tmp/axiom.tar.gz -C /root/.themes/
 xfconf-query -n -c xsettings -p /Net/ThemeName -s "axiomd"
 xfconf-query -n -c xsettings -p /Net/IconThemeName -s "Vibrancy-Kali-Dark"
 #--- Get new desktop wallpaper
 mkdir -p /usr/share/wallpapers/
-curl --progress -k -L -f "http://www.kali.org/images/wallpapers-01/kali-wp-june-2014_1920x1080_A.png" > /usr/share/wallpapers/kali_blue_3d_a.png || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_blue_3d_a.png" 1>&2     #***!!! hardcoded paths!
-curl --progress -k -L -f "http://www.kali.org/images/wallpapers-01/kali-wp-june-2014_1920x1080_B.png" > /usr/share/wallpapers/kali_blue_3d_b.png || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_blue_3d_b.png" 1>&2
-curl --progress -k -L -f "http://www.kali.org/images/wallpapers-01/kali-wp-june-2014_1920x1080_G.png" > /usr/share/wallpapers/kali_black_honeycomb.png || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_black_honeycomb.png" 1>&2
-#curl --progress -k -L -f "http://imageshack.us/a/img17/4646/vzex.png" > /usr/share/wallpapers/kali_blue_splat.png || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_blue_splat.png" 1>&2
-curl --progress -k -L -f "http://em3rgency.com/wp-content/uploads/2012/12/Kali-Linux-faded-no-Dragon-small-text.png" > /usr/share/wallpapers/kali_black_clean.png || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_black_clean.png" 1>&2
-curl --progress -k -L -f "http://www.hdwallpapers.im/download/kali_linux-wallpaper.jpg" > /usr/share/wallpapers/kali_black_stripes.jpg || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_black_stripes.jpg" 1>&2
-curl --progress -k -L -f "http://fc01.deviantart.net/fs71/f/2011/118/e/3/bt___edb_wallpaper_by_xxdigipxx-d3f4nxv.png" > /usr/share/wallpapers/kali_bt_edb.jpg || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_bt_edb.jpg" 1>&2
-curl --progress -k -L -f "http://pre07.deviantart.net/58d1/th/pre/i/2015/223/4/8/kali_2_0_alternate_wallpaper_by_xxdigipxx-d95800s.png" > /usr/share/wallpapers/kali_2_0_alternate_wallpaper.png || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_2_0_alternate_wallpaper.png" 1>&2
-curl --progress -k -L -f "http://pre01.deviantart.net/4210/th/pre/i/2015/195/3/d/kali_2_0__personal__wp_by_xxdigipxx-d91c8dq.png" > /usr/share/wallpapers/kali_2_0__personal.png || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_2_0__personal.png" 1>&2
+timeout 300 curl --progress -k -L -f "http://www.kali.org/images/wallpapers-01/kali-wp-june-2014_1920x1080_A.png" > /usr/share/wallpapers/kali_blue_3d_a.png || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_blue_3d_a.png" 1>&2     #***!!! hardcoded paths!
+timeout 300 curl --progress -k -L -f "http://www.kali.org/images/wallpapers-01/kali-wp-june-2014_1920x1080_B.png" > /usr/share/wallpapers/kali_blue_3d_b.png || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_blue_3d_b.png" 1>&2
+timeout 300 curl --progress -k -L -f "http://www.kali.org/images/wallpapers-01/kali-wp-june-2014_1920x1080_G.png" > /usr/share/wallpapers/kali_black_honeycomb.png || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_black_honeycomb.png" 1>&2
+#timeout 120 curl --progress -k -L -f "http://imageshack.us/a/img17/4646/vzex.png" > /usr/share/wallpapers/kali_blue_splat.png || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_blue_splat.png" 1>&2
+timeout 300 curl --progress -k -L -f "http://em3rgency.com/wp-content/uploads/2012/12/Kali-Linux-faded-no-Dragon-small-text.png" > /usr/share/wallpapers/kali_black_clean.png || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_black_clean.png" 1>&2
+timeout 300 curl --progress -k -L -f "http://www.hdwallpapers.im/download/kali_linux-wallpaper.jpg" > /usr/share/wallpapers/kali_black_stripes.jpg || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_black_stripes.jpg" 1>&2
+timeout 300 curl --progress -k -L -f "http://fc01.deviantart.net/fs71/f/2011/118/e/3/bt___edb_wallpaper_by_xxdigipxx-d3f4nxv.png" > /usr/share/wallpapers/kali_bt_edb.jpg || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_bt_edb.jpg" 1>&2
+timeout 300 curl --progress -k -L -f "http://pre07.deviantart.net/58d1/th/pre/i/2015/223/4/8/kali_2_0_alternate_wallpaper_by_xxdigipxx-d95800s.png" > /usr/share/wallpapers/kali_2_0_alternate_wallpaper.png || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_2_0_alternate_wallpaper.png" 1>&2
+timeout 300 curl --progress -k -L -f "http://pre01.deviantart.net/4210/th/pre/i/2015/195/3/d/kali_2_0__personal__wp_by_xxdigipxx-d91c8dq.png" > /usr/share/wallpapers/kali_2_0__personal.png || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_2_0__personal.png" 1>&2
 _TMP="$(find /usr/share/wallpapers/ -maxdepth 1 -type f \( -name 'kali_*' -o -empty \) | xargs -n1 file | grep -i 'HTML\|empty' | cut -d ':' -f1)"
 for FILE in $(echo ${_TMP}); do rm -f "${FILE}"; done
 [[ -e "/usr/share/wallpapers/kali_default-1440x900.jpg" ]] && ln -sf /usr/share/wallpapers/kali/contents/images/1440x900.png /usr/share/wallpapers/kali_default-1440x900.jpg                       # Kali1
@@ -1050,18 +1050,18 @@ apt-get -y -qq install grc || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 
 #--- Setup aliases
 file=/root/.bash_aliases; [ -e "${file}" ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
 ([[ -e "${file}" && "$(tail -c 1 $file)" != "" ]]) && echo >> "${file}"
-grep -q '^## grc diff alias' "${file}" 2>/dev/null || echo -e "## grc diff alias\nalias diff='$(whereis grc) $(whereis diff)'\n" >> "${file}"
-grep -q '^## grc dig alias' "${file}" 2>/dev/null || echo -e "## grc dig alias\nalias dig='$(whereis grc) $(whereis dig)'\n" >> "${file}"
-grep -q '^## grc gcc alias' "${file}" 2>/dev/null || echo -e "## grc gcc alias\nalias gcc='$(whereis grc) $(whereis gcc)'\n" >> "${file}"
-grep -q '^## grc ifconfig alias' "${file}" 2>/dev/null || echo -e "## grc ifconfig alias\nalias ifconfig='$(whereis grc) $(whereis ifconfig)'\n" >> "${file}"
-grep -q '^## grc mount alias' "${file}" 2>/dev/null || echo -e "## grc mount alias\nalias mount='$(whereis grc) $(whereis mount)'\n" >> "${file}"
-#grep -q '^## grc mount alias' "${file}" 2>/dev/null || echo -e "## grc mount alias\nalias mount='$(whereis grc) $(whereis mount) | $(whereis column -t)'\n" >> "${file}"
-grep -q '^## grc netstat alias' "${file}" 2>/dev/null || echo -e "## grc netstat alias\nalias netstat='$(whereis grc) $(whereis netstat)'\n" >> "${file}"
-grep -q '^## grc ping alias' "${file}" 2>/dev/null || echo -e "## grc ping alias\nalias ping='$(whereis grc) $(whereis ping)'\n" >> "${file}"
-grep -q '^## grc ps alias' "${file}" 2>/dev/null || echo -e "## grc ps alias\nalias ps='$(whereis grc) $(whereis ps)'\n" >> "${file}"
-grep -q '^## grc tail alias' "${file}" 2>/dev/null || echo -e "## grc tail alias\nalias tail='$(whereis grc) $(whereis tail)'\n" >> "${file}"
-grep -q '^## grc traceroute alias' "${file}" 2>/dev/null || echo -e "## grc traceroute alias\nalias traceroute='$(whereis grc) $(whereis traceroute)'\n" >> "${file}"
-grep -q '^## grc wdiff alias' "${file}" 2>/dev/null || echo -e "## grc wdiff alias\nalias wdiff='$(whereis grc) $(whereis wdiff)'\n" >> "${file}"
+grep -q '^## grc diff alias' "${file}" 2>/dev/null || echo -e "## grc diff alias\nalias diff='$(which grc) $(which diff)'\n" >> "${file}"
+grep -q '^## grc dig alias' "${file}" 2>/dev/null || echo -e "## grc dig alias\nalias dig='$(which grc) $(which dig)'\n" >> "${file}"
+grep -q '^## grc gcc alias' "${file}" 2>/dev/null || echo -e "## grc gcc alias\nalias gcc='$(which grc) $(which gcc)'\n" >> "${file}"
+grep -q '^## grc ifconfig alias' "${file}" 2>/dev/null || echo -e "## grc ifconfig alias\nalias ifconfig='$(which grc) $(which ifconfig)'\n" >> "${file}"
+grep -q '^## grc mount alias' "${file}" 2>/dev/null || echo -e "## grc mount alias\nalias mount='$(which grc) $(which mount)'\n" >> "${file}"
+#grep -q '^## grc mount alias' "${file}" 2>/dev/null || echo -e "## grc mount alias\nalias mount='$(which grc) $(which mount) | $(whereis column -t)'\n" >> "${file}"
+grep -q '^## grc netstat alias' "${file}" 2>/dev/null || echo -e "## grc netstat alias\nalias netstat='$(which grc) $(which netstat)'\n" >> "${file}"
+grep -q '^## grc ping alias' "${file}" 2>/dev/null || echo -e "## grc ping alias\nalias ping='$(which grc) $(which ping)'\n" >> "${file}"
+grep -q '^## grc ps alias' "${file}" 2>/dev/null || echo -e "## grc ps alias\nalias ps='$(which grc) $(which ps)'\n" >> "${file}"
+grep -q '^## grc tail alias' "${file}" 2>/dev/null || echo -e "## grc tail alias\nalias tail='$(which grc) $(which tail)'\n" >> "${file}"
+grep -q '^## grc traceroute alias' "${file}" 2>/dev/null || echo -e "## grc traceroute alias\nalias traceroute='$(which grc) $(which traceroute)'\n" >> "${file}"
+grep -q '^## grc wdiff alias' "${file}" 2>/dev/null || echo -e "## grc wdiff alias\nalias wdiff='$(which grc) $(which wdiff)'\n" >> "${file}"
 #configure  #esperanto  #ldap  #e  #cvs  #log  #mtr  #ls  #irclog  #mount2
 #--- Apply new aliases
 if [[ "${SHELL}" == "/bin/zsh" ]]; then source ~/.zshrc else source "${file}"; fi
@@ -1101,14 +1101,14 @@ grep -q '^## Force create folders' "${file}" 2>/dev/null || echo -e '## Force cr
 grep -q '^## List open ports' "${file}" 2>/dev/null || echo -e '## List open ports\nalias ports="netstat -tulanp"\n' >> "${file}"
 grep -q '^## Get header' "${file}" 2>/dev/null || echo -e '## Get header\nalias header="curl -I"\n' >> "${file}"
 grep -q '^## Get external IP address' "${file}" 2>/dev/null || echo -e '## Get external IP address\nalias ipx="curl -s http://ipinfo.io/ip"\n' >> "${file}"
-grep -q '^## Directory navigation aliases' "${file}" 2>/dev/null || echo -e '## Directory navigation aliases\nalias ..="cd .."\nalias ...="cd ../.."\nalias ....="cd ../../.."\nalias .....="cd ../../../.."\n' >> "${file}"
-grep -q '^## Add more aliases' "${file}" 2>/dev/null || echo -e '## Add more aliases\nalias upd="sudo apt-get update"\nalias upg="sudo apt-get upgrade"\nalias ins="sudo apt-get install"\nalias rem="sudo apt-get purge"\nalias fix="sudo apt-get install -f"\n' >> "${file}"
-grep -q '^## Extract file' "${file}" 2>/dev/null || echo -e '## Extract file, example. "ex package.tar.bz2"\nex() {\n  if [[ -f $1 ]]; then\n    case $1 in\n      *.tar.bz2)   tar xjf $1  ;;\n      *.tar.gz)  tar xzf $1  ;;\n      *.bz2)     bunzip2 $1  ;;\n      *.rar)     rar x $1  ;;\n      *.gz)    gunzip $1   ;;\n      *.tar)     tar xf $1   ;;\n      *.tbz2)    tar xjf $1  ;;\n      *.tgz)     tar xzf $1  ;;\n      *.zip)     unzip $1  ;;\n      *.Z)     uncompress $1  ;;\n      *.7z)    7z x $1   ;;\n      *)       echo $1 cannot be extracted ;;\n    esac\n  else\n    echo $1 is not a valid file\n  fi\n}\n' >> "${file}"
-grep -q '^## strings' "${file}" 2>/dev/null || echo -e '## strings\nalias strings="strings -a"\n' >> "${file}"
-grep -q '^## history' "${file}" 2>/dev/null || echo -e '## history\nalias hg="history | grep"\n' >> "${file}"
 grep -q '^## DNS - External IP #1' "${file}" 2>/dev/null || echo -e '## DNS - External IP #1\nalias dns1="dig +short @resolver1.opendns.com myip.opendns.com"\n' >> "${file}"
 grep -q '^## DNS - External IP #2' "${file}" 2>/dev/null || echo -e '## DNS - External IP #2\nalias dns2="dig +short @208.67.222.222 myip.opendns.com"\n' >> "${file}"
 grep -q '^## DNS - Check' "${file}" 2>/dev/null || echo -e '### DNS - Check ("#.abc" is Okay)\nalias dns3="dig +short @208.67.220.220 which.opendns.com txt"\n' >> "${file}"
+grep -q '^## Directory navigation aliases' "${file}" 2>/dev/null || echo -e '## Directory navigation aliases\nalias ..="cd .."\nalias ...="cd ../.."\nalias ....="cd ../../.."\nalias .....="cd ../../../.."\n' >> "${file}"
+grep -q '^## Extract file' "${file}" 2>/dev/null || echo -e '## Extract file, example. "ex package.tar.bz2"\nex() {\n  if [[ -f $1 ]]; then\n    case $1 in\n      *.tar.bz2)   tar xjf $1  ;;\n      *.tar.gz)  tar xzf $1  ;;\n      *.bz2)     bunzip2 $1  ;;\n      *.rar)     rar x $1  ;;\n      *.gz)    gunzip $1   ;;\n      *.tar)     tar xf $1   ;;\n      *.tbz2)    tar xjf $1  ;;\n      *.tgz)     tar xzf $1  ;;\n      *.zip)     unzip $1  ;;\n      *.Z)     uncompress $1  ;;\n      *.7z)    7z x $1   ;;\n      *)       echo $1 cannot be extracted ;;\n    esac\n  else\n    echo $1 is not a valid file\n  fi\n}\n' >> "${file}"
+grep -q '^## strings' "${file}" 2>/dev/null || echo -e '## strings\nalias strings="strings -a"\n' >> "${file}"
+grep -q '^## history' "${file}" 2>/dev/null || echo -e '## history\nalias hg="history | grep"\n' >> "${file}"
+grep -q '^## Add more aliases' "${file}" 2>/dev/null || echo -e '## Add more aliases\nalias upd="sudo apt-get update"\nalias upg="sudo apt-get upgrade"\nalias ins="sudo apt-get install"\nalias rem="sudo apt-get purge"\nalias fix="sudo apt-get install -f"\n' >> "${file}"
 #alias ll="ls -l --block-size=\'1 --color=auto"
 #--- Add in tools
 grep -q '^## nmap' "${file}" 2>/dev/null || echo -e '## nmap\nalias nmap="nmap --reason --open"\n' >> "${file}"
@@ -1188,7 +1188,7 @@ echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}ZSH${RESET} & ${GREEN}Oh-My-Z
 apt-get -y -qq install zsh git curl || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 #--- Setup oh-my-zsh
 #rm -rf ~/.oh-my-zsh/
-curl --progress -k -L -f "https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh" | zsh    #curl -s -L "https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh"  || echo -e ' '${RED}'[!]'${RESET}" Issue downloading file" 1>&2
+timeout 300 curl --progress -k -L -f "https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh" | zsh    #curl -s -L "https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh"  || echo -e ' '${RED}'[!]'${RESET}" Issue downloading file" 1>&2
 #--- Configure zsh
 file=/root/.zshrc; [ -e "${file}" ] && cp -n $file{,.bkup}   #/etc/zsh/zshrc
 ([[ -e "${file}" && "$(tail -c 1 $file)" != "" ]]) && echo >> "${file}"
@@ -1406,7 +1406,7 @@ sed -i 's/^.*extensions.https_everywhere._observatory.popup_shown.*/user_pref("e
 sed -i 's/^.network.security.ports.banned.override/user_pref("network.security.ports.banned.override", "1-65455");' "${file}" 2>/dev/null || echo 'user_pref("network.security.ports.banned.override", "1-65455");' >> "${file}"    # Remove "This address is restricted"
 #--- Replace bookmarks (base: http://pentest-bookmarks.googlecode.com)
 file=$(find /root/.mozilla/firefox/*.default*/ -maxdepth 1 -type f -name 'bookmarks.html' -print -quit) && [ -e "${file}" ] && cp -n $file{,.bkup}   #/etc/iceweasel/profile/bookmarks.html
-curl --progress -k -L -f "http://pentest-bookmarks.googlecode.com/files/bookmarksv1.5.html" > /tmp/bookmarks_new.html || echo -e ' '${RED}'[!]'${RESET}" Issue downloading bookmarks_new.html" 1>&2      #***!!! hardcoded version! Need to manually check for updates
+timeout 300 curl --progress -k -L -f "http://pentest-bookmarks.googlecode.com/files/bookmarksv1.5.html" > /tmp/bookmarks_new.html || echo -e ' '${RED}'[!]'${RESET}" Issue downloading bookmarks_new.html" 1>&2      #***!!! hardcoded version! Need to manually check for updates
 #--- Configure bookmarks
 awk '!a[$0]++' /tmp/bookmarks_new.html | \egrep -v ">(Latest Headlines|Getting Started|Recently Bookmarked|Recent Tags|Mozilla Firefox|Help and Tutorials|Customize Firefox|Get Involved|About Us|Hacker Media|Bookmarks Toolbar|Most Visited)</" | \egrep -v "^    </DL><p>" | \egrep -v "^<DD>Add" > "${file}"
 sed -i 's#^</DL><p>#        </DL><p>\n    </DL><p>\n</DL><p>#' "${file}"                                                          # Fix import issues from pentest-bookmarks...
@@ -1446,17 +1446,17 @@ ffpath="$(find /root/.mozilla/firefox/*.default*/ -maxdepth 0 -mindepth 0 -type 
 mkdir -p "${ffpath}/"
 #curl --progress -k -L -f "https://github.com/mozmark/ringleader/blob/master/fx_pnh.xpi?raw=true"  || echo -e ' '${RED}'[!]'${RESET}" Issue downloading fx_pnh.xpi" 1>&2                                                                                                                        # plug-n-hack
 #curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/284030/addon-284030-latest.xpi?src=dp-btn-primary" -o "$ffpath/{6bdc61ae-7b80-44a3-9476-e1d121ec2238}.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'HTTPS Finder'" 1>&2                             # HTTPS Finder
-curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/5817/addon-5817-latest.xpi?src=dp-btn-primary" -o "$ffpath/SQLiteManager@mrinalkant.blogspot.com.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'SQLite Manager'" 1>&2                                 # SQLite Manager
-curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/1865/addon-1865-latest.xpi?src=dp-btn-primary" -o "$ffpath/{d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d}.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'Adblock Plus'" 1>&2                                  # Adblock Plus
-curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/92079/addon-92079-latest.xpi?src=dp-btn-primary" -o "$ffpath/{bb6bc1bb-f824-4702-90cd-35e2fb24f25d}.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'Cookies Manager+'" 1>&2                            # Cookies Manager+
-curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/1843/addon-1843-latest.xpi?src=dp-btn-primary" -o "$ffpath/firebug@software.joehewitt.com.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'Firebug'" 1>&2                                               # Firebug
-curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/15023/addon-15023-latest.xpi?src=dp-btn-primary" -o "$ffpath/foxyproxy-basic@eric.h.jung.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'FoxyProxy Basic'" 1>&2                                        # FoxyProxy Basic
-curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/429678/addon-429678-latest.xpi?src=dp-btn-primary" -o "$ffpath/useragentoverrider@qixinglu.com.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'User Agent Overrider'" 1>&2                             # User Agent Overrider
-curl --progress -k -L -f "https://www.eff.org/files/https-everywhere-latest.xpi" -o "$ffpath/https-everywhere@eff.org.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'HTTPS Everywhere'" 1>&2                                                                                        # HTTPS Everywhere
-curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/3829/addon-3829-latest.xpi?src=dp-btn-primary" -o "$ffpath/{8f8fe09b-0bd3-4470-bc1b-8cad42b8203a}.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'Live HTTP Headers'" 1>&2                             # Live HTTP Headers
-curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/966/addon-966-latest.xpi?src=dp-btn-primary" -o "$ffpath/{9c51bd27-6ed8-4000-a2bf-36cb95c0c947}.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'Tamper Data'" 1>&2                                     # Tamper Data
-curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/300254/addon-300254-latest.xpi?src=dp-btn-primary" -o "$ffpath/check-compatibility@dactyl.googlecode.com.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'Disable Add-on Compatibility Checks'" 1>&2    # Disable Add-on Compatibility Checks
-curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/3899/addon-3899-latest.xpi?src=dp-btn-primary" -o "$ffpath/{F5DDF39C-9293-4d5e-9AA8-E04E6DD5E9B4}.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'HackBar'" 1>&2        # HackBar
+timeout 300 curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/5817/addon-5817-latest.xpi?src=dp-btn-primary" -o "$ffpath/SQLiteManager@mrinalkant.blogspot.com.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'SQLite Manager'" 1>&2                                 # SQLite Manager
+timeout 300 curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/1865/addon-1865-latest.xpi?src=dp-btn-primary" -o "$ffpath/{d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d}.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'Adblock Plus'" 1>&2                                  # Adblock Plus
+timeout 300 curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/92079/addon-92079-latest.xpi?src=dp-btn-primary" -o "$ffpath/{bb6bc1bb-f824-4702-90cd-35e2fb24f25d}.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'Cookies Manager+'" 1>&2                            # Cookies Manager+
+timeout 300 curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/1843/addon-1843-latest.xpi?src=dp-btn-primary" -o "$ffpath/firebug@software.joehewitt.com.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'Firebug'" 1>&2                                               # Firebug
+timeout 300 curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/15023/addon-15023-latest.xpi?src=dp-btn-primary" -o "$ffpath/foxyproxy-basic@eric.h.jung.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'FoxyProxy Basic'" 1>&2                                        # FoxyProxy Basic
+timeout 300 curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/429678/addon-429678-latest.xpi?src=dp-btn-primary" -o "$ffpath/useragentoverrider@qixinglu.com.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'User Agent Overrider'" 1>&2                             # User Agent Overrider
+timeout 300 curl --progress -k -L -f "https://www.eff.org/files/https-everywhere-latest.xpi" -o "$ffpath/https-everywhere@eff.org.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'HTTPS Everywhere'" 1>&2                                                                                        # HTTPS Everywhere
+timeout 300 curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/3829/addon-3829-latest.xpi?src=dp-btn-primary" -o "$ffpath/{8f8fe09b-0bd3-4470-bc1b-8cad42b8203a}.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'Live HTTP Headers'" 1>&2                             # Live HTTP Headers
+timeout 300 curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/966/addon-966-latest.xpi?src=dp-btn-primary" -o "$ffpath/{9c51bd27-6ed8-4000-a2bf-36cb95c0c947}.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'Tamper Data'" 1>&2                                     # Tamper Data
+timeout 300 curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/300254/addon-300254-latest.xpi?src=dp-btn-primary" -o "$ffpath/check-compatibility@dactyl.googlecode.com.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'Disable Add-on Compatibility Checks'" 1>&2    # Disable Add-on Compatibility Checks
+timeout 300 curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/3899/addon-3899-latest.xpi?src=dp-btn-primary" -o "$ffpath/{F5DDF39C-9293-4d5e-9AA8-E04E6DD5E9B4}.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'HackBar'" 1>&2        # HackBar
 #--- Installing extensions
 for FILE in $(find "${ffpath}" -maxdepth 1 -type f -name '*.xpi'); do
   d="$(basename "${FILE}" .xpi)"
@@ -1769,7 +1769,7 @@ ln -sf /opt/metasploit-framework-git/msfconsole /usr/local/bin/msfconsole-git; l
 
 ##### Install MPC
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}MPC${RESET} ~ Msfvenom Payload Creator"
-curl --progress -k -L -f "https://raw.githubusercontent.com/g0tmi1k/mpc/master/mpc.sh" > /usr/bin/mpc || echo -e ' '${RED}'[!]'${RESET}" Issue downloading mpc" 1>&2
+timeout 300 curl --progress -k -L -f "https://raw.githubusercontent.com/g0tmi1k/mpc/master/mpc.sh" > /usr/bin/mpc || echo -e ' '${RED}'[!]'${RESET}" Issue downloading mpc" 1>&2
 chmod +x /usr/bin/mpc
 
 
@@ -1862,7 +1862,7 @@ EOF
 
 ##### Install PyCharm (Community Edition)
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}PyCharm (Community Edition)${RESET} ~ Python IDE"
-curl --progress -k -L -f "https://download.jetbrains.com/python/pycharm-community-4.5.4.tar.gz" > /tmp/pycharms-community.tar.gz || echo -e ' '${RED}'[!]'${RESET}" Issue downloading pycharms-community.tar.gz" 1>&2       #***!!! hardcoded version!
+timeout 300 curl --progress -k -L -f "https://download.jetbrains.com/python/pycharm-community-4.5.4.tar.gz" > /tmp/pycharms-community.tar.gz || echo -e ' '${RED}'[!]'${RESET}" Issue downloading pycharms-community.tar.gz" 1>&2       #***!!! hardcoded version!
 tar -xf /tmp/pycharms-community.tar.gz -C /tmp/
 mv /tmp/pycharm-community-*/ /usr/share/pycharms
 ln -sf /usr/share/pycharms/bin/pycharm.sh /usr/bin/pycharms
@@ -1927,7 +1927,7 @@ if [ "${openVAS}" != "false" ]; then
   (openvasmd --get-users | grep -q ^admin$) && echo -n 'admin user: ' && openvasmd --delete-user=admin
   (openvasmd --get-users | grep -q "^${username}$") || (echo -n "${username} user: "; openvasmd --create-user="${username}"; openvasmd --user="${username}" --new-password="${password}" >/dev/null)   # You will want to alter it to something (much) more secure!
   echo -e " ${YELLOW}[i]${RESET} OpenVAS username: ${username}"
-  echo -e " ${YELLOW}[i]${RESET} OpenVAS password: ${password}   *** ${BOLD}CHANGE THIS ASAP${RESET}.   Run: # openvasmd --user=root --new-password='<NEW_PASSWORD>'"
+  echo -e " ${YELLOW}[i]${RESET} OpenVAS password: ${password}   ***${BOLD}CHANGE THIS ASAP${RESET}***.   Run: # openvasmd --user=root --new-password='<NEW_PASSWORD>'"
   #--- Check
   openvas-start
   sleep 3s
@@ -2366,7 +2366,7 @@ echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}Aircrack-ng${RESET} ~ Wi-Fi c
 apt-get -y -qq install aircrack-ng curl || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 #--- Setup hardware database
 mkdir -p /etc/aircrack-ng/
-(timeout 180 airodump-ng-oui-update 2>/dev/null) || timeout 180 curl --progress -k -L -f "http://standards.ieee.org/develop/regauth/oui/oui.txt" > /etc/aircrack-ng/oui.txt          #***!!! hardcoded path! # || echo -e ' '${RED}'[!]'${RESET}" Issue downloading oui.txt" 1>&2
+(timeout 300 airodump-ng-oui-update 2>/dev/null) || timeout 300 curl --progress -k -L -f "http://standards.ieee.org/develop/regauth/oui/oui.txt" > /etc/aircrack-ng/oui.txt          #***!!! hardcoded path! # || echo -e ' '${RED}'[!]'${RESET}" Issue downloading oui.txt" 1>&2
 [[ -e /etc/aircrack-ng/oui.txt ]] && (\grep "(hex)" /etc/aircrack-ng/oui.txt | sed 's/^[ \t]*//g;s/[ \t]*$//g' > /etc/aircrack-ng/airodump-ng-oui.txt)
 [[ ! -f /etc/aircrack-ng/airodump-ng-oui.txt ]] && echo -e ' '${RED}'[!]'${RESET}" Issue downloading oui.txt" 1>&2
 #--- Setup alias
@@ -2395,7 +2395,7 @@ apt-get -y -qq install wifite || echo -e ' '${RED}'[!] Issue with apt-get'${RESE
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}vulscan script for Nmap${RESET} ~ vulnerability scanner add-on"
 apt-get -y -qq install nmap curl || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 mkdir -p /usr/share/nmap/scripts/vulscan/
-curl --progress -k -L -f "http://www.computec.ch/projekte/vulscan/download/nmap_nse_vulscan-2.0.tar.gz" > /tmp/nmap_nse_vulscan.tar.gz || echo -e ' '${RED}'[!]'${RESET}" Issue downloading file" 1>&2      #***!!! hardcoded version! Need to manually check for updates
+timeout 300 curl --progress -k -L -f "http://www.computec.ch/projekte/vulscan/download/nmap_nse_vulscan-2.0.tar.gz" > /tmp/nmap_nse_vulscan.tar.gz || echo -e ' '${RED}'[!]'${RESET}" Issue downloading file" 1>&2      #***!!! hardcoded version! Need to manually check for updates
 gunzip /tmp/nmap_nse_vulscan.tar.gz
 tar -xf /tmp/nmap_nse_vulscan.tar -C /usr/share/nmap/scripts/
 #--- Fix permissions (by default its 0777)
@@ -2430,7 +2430,7 @@ chmod +x "${file}"
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}udp-proto-scanner${RESET} ~ common UDP port scanner"
 apt-get -y -qq install curl || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 #mkdir -p /usr/share/udp-proto-scanner/
-curl --progress -k -L -f "https://labs.portcullis.co.uk/download/udp-proto-scanner-1.1.tar.gz" -o /tmp/udp-proto-scanner.tar.gz || echo -e ' '${RED}'[!]'${RESET}" Issue downloading udp-proto-scanner.tar.gz" 1>&2
+timeout 300 curl --progress -k -L -f "https://labs.portcullis.co.uk/download/udp-proto-scanner-1.1.tar.gz" -o /tmp/udp-proto-scanner.tar.gz || echo -e ' '${RED}'[!]'${RESET}" Issue downloading udp-proto-scanner.tar.gz" 1>&2
 gunzip /tmp/udp-proto-scanner.tar.gz
 tar -xf /tmp/udp-proto-scanner.tar -C /usr/share/
 mv -f /usr/share/udp-proto-scanner{-1.1,}
@@ -2555,7 +2555,7 @@ ln -sf /usr/share/cmdsql-git /usr/share/webshells/aspx/cmdsql
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}JSP file browser${RESET} ~ (JSP) web shell"
 apt-get -y -qq install curl || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 mkdir -p /usr/share/jsp-filebrowser/
-curl --progress -k -L -f "http://www.vonloesch.de/files/browser.zip" > /tmp/jsp.zip || echo -e ' '${RED}'[!]'${RESET}" Issue downloading jsp.zip" 1>&2    #***!!! hardcoded path!
+timeout 300 curl --progress -k -L -f "http://www.vonloesch.de/files/browser.zip" > /tmp/jsp.zip || echo -e ' '${RED}'[!]'${RESET}" Issue downloading jsp.zip" 1>&2    #***!!! hardcoded path!
 unzip -q -o -d /usr/share/jsp-filebrowser/ /tmp/jsp.zip
 #--- Link to others
 apt-get -y -qq install webshells || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
@@ -2766,7 +2766,7 @@ if [[ "$(uname -m)" == 'x86_64' ]]; then
   apt-get -y -qq install wine32 || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 fi
 #--- Mono
-curl --progress -k -L -f "http://winezeug.googlecode.com/svn/trunk/install-addons.sh" | sed 's/^set -x$//' | bash -   # || echo -e ' '${RED}'[!]'${RESET}" Issue downloading install-addons.sh" 1>&2
+timeout 300 curl --progress -k -L -f "http://winezeug.googlecode.com/svn/trunk/install-addons.sh" | sed 's/^set -x$//' | bash -   # || echo -e ' '${RED}'[!]'${RESET}" Issue downloading install-addons.sh" 1>&2
 apt-get -y -qq install mono-vbnc || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}   #mono-complete || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 #--- Run WINE for the first time
 [ -e /usr/share/windows-binaries/whoami.exe ] && wine /usr/share/windows-binaries/whoami.exe &>/dev/null
@@ -2782,7 +2782,7 @@ echo -e 'application/x-ms-dos-executable=wine.desktop' >> "${file}"
 ##### Install MinGW (Windows) ~ cross compiling suite
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}MinGW (Windows)${RESET} ~ cross compiling suite"
 #curl --progress -k -L -f "http://sourceforge.net/projects/mingw/files/Installer/mingw-get-setup.exe/download" > /tmp/mingw-get-setup.exe || echo -e ' '${RED}'[!]'${RESET}" Issue downloading mingw-get-setup.exe" 1>&2                                                                #***!!! hardcoded path!
-curl --progress -k -L -f "http://sourceforge.net/projects/mingw/files/Installer/mingw-get/mingw-get-0.6.2-beta-20131004-1/mingw-get-0.6.2-mingw32-beta-20131004-1-bin.zip/download" > /tmp/mingw-get.zip || echo -e ' '${RED}'[!]'${RESET}" Issue downloading mingw-get.zip" 1>&2       #***!!! hardcoded path!
+timeout 300 curl --progress -k -L -f "http://sourceforge.net/projects/mingw/files/Installer/mingw-get/mingw-get-0.6.2-beta-20131004-1/mingw-get-0.6.2-mingw32-beta-20131004-1-bin.zip/download" > /tmp/mingw-get.zip || echo -e ' '${RED}'[!]'${RESET}" Issue downloading mingw-get.zip" 1>&2       #***!!! hardcoded path!
 mkdir -p ~/.wine/drive_c/MinGW/bin/
 unzip -q -o -d ~/.wine/drive_c/MinGW/ /tmp/mingw-get.zip
 pushd ~/.wine/drive_c/MinGW/ >/dev/null
@@ -2797,7 +2797,7 @@ grep '^"PATH"=.*C:\\\\MinGW\\\\bin' /root/.wine/system.reg || sed -i '/^"PATH"=/
 ##### Downloading AccessChk.exe
 echo -e "\n ${GREEN}[+]${RESET} Downloading ${GREEN}AccessChk.exe${RESET} ~ Windows environment tester"
 apt-get -y -qq install curl || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
-curl --progress -k -L -f "https://download.sysinternals.com/files/AccessChk.zip" > /usr/share/windows-binaries/AccessChk.zip || echo -e ' '${RED}'[!]'${RESET}" Issue downloading AccessChk.zip" 1>&2          #***!!! hardcoded path!
+timeout 300 curl --progress -k -L -f "https://download.sysinternals.com/files/AccessChk.zip" > /usr/share/windows-binaries/AccessChk.zip || echo -e ' '${RED}'[!]'${RESET}" Issue downloading AccessChk.zip" 1>&2          #***!!! hardcoded path!
 unzip -q -o -d /usr/share/windows-binaries/ /usr/share/windows-binaries/AccessChk.zip
 rm -f /usr/share/windows-binaries/{AccessChk.zip,Eula.txt}
 
@@ -2835,9 +2835,9 @@ fi
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}OP packers${RESET} ~ bypassing anti-virus"
 apt-get -y -qq install upx-ucl curl || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}   #wget -q "http://upx.sourceforge.net/download/upx309w.zip" -P /usr/share/packers/ && unzip -q -o -d /usr/share/packers/ /usr/share/packers/upx309w.zip; rm -f /usr/share/packers/upx309w.zip
 mkdir -p /usr/share/packers/
-curl --progress -k -L -f "http://www.eskimo.com/~scottlu/win/cexe.exe" > /usr/share/packers/cexe.exe || echo -e ' '${RED}'[!]'${RESET}" Issue downloading cexe.exe" 1>&2                                                                                                             #***!!! hardcoded path!    #***!!! hardcoded version! Need to manually check for updates
-curl --progress -k -L -f "http://www.farbrausch.de/~fg/kkrunchy/kkrunchy_023a2.zip" > /usr/share/packers/kkrunchy.zip && unzip -q -o -d /usr/share/packers/ /usr/share/packers/kkrunchy.zip|| echo -e ' '${RED}'[!]'${RESET}" Issue downloading kkrunchy.zip" 1>&2                   #***!!! hardcoded version! Need to manually check for updates
-curl --progress -k -L -f "https://pescrambler.googlecode.com/files/PEScrambler_v0_1.zip" > /usr/share/packers/PEScrambler.zip && unzip -q -o -d /usr/share/packers/ /usr/share/packers/PEScrambler.zip|| echo -e ' '${RED}'[!]'${RESET}" Issue downloading PEScrambler.zip" 1>&2     #***!!! hardcoded version! Need to manually check for updates
+timeout 300 curl --progress -k -L -f "http://www.eskimo.com/~scottlu/win/cexe.exe" > /usr/share/packers/cexe.exe || echo -e ' '${RED}'[!]'${RESET}" Issue downloading cexe.exe" 1>&2                                                                                                             #***!!! hardcoded path!    #***!!! hardcoded version! Need to manually check for updates
+timeout 300 curl --progress -k -L -f "http://www.farbrausch.de/~fg/kkrunchy/kkrunchy_023a2.zip" > /usr/share/packers/kkrunchy.zip && unzip -q -o -d /usr/share/packers/ /usr/share/packers/kkrunchy.zip|| echo -e ' '${RED}'[!]'${RESET}" Issue downloading kkrunchy.zip" 1>&2                   #***!!! hardcoded version! Need to manually check for updates
+timeout 300 curl --progress -k -L -f "https://pescrambler.googlecode.com/files/PEScrambler_v0_1.zip" > /usr/share/packers/PEScrambler.zip && unzip -q -o -d /usr/share/packers/ /usr/share/packers/PEScrambler.zip|| echo -e ' '${RED}'[!]'${RESET}" Issue downloading PEScrambler.zip" 1>&2     #***!!! hardcoded version! Need to manually check for updates
 #*** Need to make a bash script like hyperion...
 #--- Remove old temp files
 rm -f /usr/share/packers/kkrunchy*.zip
@@ -3086,7 +3086,7 @@ echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}checksec${RESET} ~ check *nix
 apt-get -y -qq install curl || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 mkdir -p /usr/share/checksec/
 file=/usr/share/checksec/checksec.sh
-curl --progress -k -L -f "http://www.trapkit.de/tools/checksec.sh" > "${file}" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading checksec.zip" 1>&2     #***!!! hardcoded patch
+timeout 300 curl --progress -k -L -f "http://www.trapkit.de/tools/checksec.sh" > "${file}" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading checksec.zip" 1>&2     #***!!! hardcoded patch
 chmod +x "${file}"
 
 
@@ -3297,7 +3297,7 @@ password="toor"
 sed -i 's/user:.*".*"/user:   "'${username}'"/' "${file}"
 sed -i 's/passwd:.*".*"/passwd:  "'${password}'"/'  "${file}"
 echo -e " ${YELLOW}[i]${RESET} BeEF username: ${username}"
-echo -e " ${YELLOW}[i]${RESET} BeEF password: ${password}   *** ${BOLD}CHANGE THIS ASAP${RESET}.   Edit: /usr/share/beef-xss/config.yaml"
+echo -e " ${YELLOW}[i]${RESET} BeEF password: ${password}   ***${BOLD}CHANGE THIS ASAP${RESET}***.   Edit: /usr/share/beef-xss/config.yaml"
 #--- Example hook
 #<script src="http://192.168.155.175:3000/hook.js" type="text/javascript"></script>
 
@@ -3361,7 +3361,7 @@ apt-get install -y -qq nbtscan || echo -e ' '${RED}'[!] Issue with apt-get'${RES
 #nbtscan -r 192.168.0.1/24 -v
 #--- unixwiz - 1.0.x
 mkdir -p /usr/local/src/nbtscan-unixwiz/
-curl --progress -k -L -f "http://unixwiz.net/tools/nbtscan-source-1.0.35.tgz" > /usr/local/src/nbtscan-unixwiz/nbtscan.tgz || echo -e ' '${RED}'[!]'${RESET}" Issue downloading nbtscan.tgz" 1>&2    #***!!! hardcoded version! Need to manually check for updates
+timeout 300 curl --progress -k -L -f "http://unixwiz.net/tools/nbtscan-source-1.0.35.tgz" > /usr/local/src/nbtscan-unixwiz/nbtscan.tgz || echo -e ' '${RED}'[!]'${RESET}" Issue downloading nbtscan.tgz" 1>&2    #***!!! hardcoded version! Need to manually check for updates
 tar -zxf /usr/local/src/nbtscan-unixwiz/nbtscan.tgz -C /usr/local/src/nbtscan-unixwiz/
 pushd /usr/local/src/nbtscan-unixwiz/ >/dev/null
 make -s clean; make -s 2>/dev/null    # bad, but it gives errors which might be confusing (still builds)
@@ -3502,7 +3502,7 @@ apt-get -y -qq install php5 php5-cli php5-curl
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}MySQL${RESET} ~ database"
 apt-get -y -qq install mysql-server
 echo -e " ${YELLOW}[i]${RESET} MySQL username: root"
-echo -e " ${YELLOW}[i]${RESET} MySQL password: <blank>"
+echo -e " ${YELLOW}[i]${RESET} MySQL password: <blank>   ***${BOLD}CHANGE THIS ASAP${RESET}***"
 if [[ ! -e ~/.my.cnf ]]; then
   cat <<EOF > ~/.my.cnf
 [client]
@@ -3534,7 +3534,7 @@ echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}DBeaver${RESET} ~ GUI DB mana
 apt-get -y -qq install curl || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 arch="i386"
 [[ "$(uname -m)" == "x86_64" ]] && arch="amd64"
-curl --progress -k -L -f "http://dbeaver.jkiss.org/files/dbeaver-ce_latest_${arch}.deb" > /tmp/dbeaver.deb || echo -e ' '${RED}'[!]'${RESET}" Issue downloading dbeaver.deb" 1>&2   #***!!! hardcoded version! Need to manually check for updates
+timeout 300 curl --progress -k -L -f "http://dbeaver.jkiss.org/files/dbeaver-ce_latest_${arch}.deb" > /tmp/dbeaver.deb || echo -e ' '${RED}'[!]'${RESET}" Issue downloading dbeaver.deb" 1>&2   #***!!! hardcoded version! Need to manually check for updates
 dpkg -i /tmp/dbeaver.deb
 #--- Add to path
 ln -sf /usr/share/dbeaver/dbeaver /usr/bin/dbeaver
