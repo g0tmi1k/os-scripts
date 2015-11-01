@@ -1,6 +1,6 @@
 #!/bin/bash
 #-Metadata----------------------------------------------------#
-#  Filename: kali.sh                     (Update: 2015-10-02) #
+#  Filename: kali.sh                     (Update: 2015-11-01) #
 #-Info--------------------------------------------------------#
 #  Personal post-install script for Kali Linux 2.0.           #
 #-Author(s)---------------------------------------------------#
@@ -35,7 +35,7 @@
 
 if [ 1 -eq 0 ]; then    # This is never true, thus it acts as block comments ;)
 ### One liner - Grab the latest version and execute! ###########################
-wget -qO /tmp/kali.sh https://raw.github.com/g0tmi1k/os-scripts/master/kali.sh && bash /tmp/kali.sh --osx --dns --burp --openvas --keyboard gb --timezone "Europe/London"
+wget -qO /tmp/kali.sh https://raw.github.com/g0tmi1k/os-scripts/master/kali.sh && bash /tmp/kali.sh -dns -burp -openvas -keyboard gb -timezone "Europe/London"
 ################################################################################
 ## Shorten URL: >->->   wget -qO- http://bit.do/postkali | bash   <-<-<
 ##  Alt Method: curl -s -L -k https://raw.github.com/g0tmi1k/kali-postinstall/master/kali_postinstall.sh > kali.sh | nohup bash
@@ -140,18 +140,18 @@ export DISPLAY=:0.0   #[[ -z $SSH_CONNECTION ]] || export DISPLAY=:0.0
 export TERM=xterm
 
 
-## Give VM users a little heads up to get ready
+#####  Give VM users a little heads up to get ready
 (dmidecode | grep -iq virtual) && echo -e " ${YELLOW}[i]${RESET} VM Detected. Please be sure to have the ${YELLOW}correct tools ISO mounted${RESET}." && sleep 5s
 
 
 if [[ $(which gnome-shell) ]]; then
-##### Disabe notification package Updater
+##### Disable notification package updater
 echo -e "\n ${GREEN}[+]${RESET} Disabling notification ${GREEN}package updater${RESET} service ~ in case it runs during this script"
 export DISPLAY=:0.0   #[[ -z $SSH_CONNECTION ]] || export DISPLAY=:0.0
   dconf write /org/gnome/settings-daemon/plugins/updates/active false
   dconf write /org/gnome/desktop/notifications/application/gpk-update-viewer/active false
-  timeout 5 killall -w /usr/lib/apt/methods/http >/dev/null 2>&1
-  #[[ -e /var/lib/dpkg/lock || -e /var/lib/apt/lists/lock ]] && echo -e ' '${RED}'[!]'${RESET}" There ${RED}another service${RESET} (other than this script) using ${BOLD}Advanced Packaging Tool${RESET} currently" && exit 1
+  timeout 5 killall -w /usr/lib/apt/methods/http >/dev/null 2>&1 || echo -e ' '${RED}'[!]'${RESET}" Failed to kill ${RED}/usr/lib/apt/methods/http${RESET}"
+  [[ -e /var/lib/dpkg/lock || -e /var/lib/apt/lists/lock ]] && echo -e ' '${RED}'[!]'${RESET}" There ${RED}another service${RESET} (other than this script) using ${BOLD}Advanced Packaging Tool${RESET} currently" && exit 1
 fi
 
 
@@ -182,18 +182,24 @@ if [[ "$?" -ne 0 ]]; then
     exit 1
   fi
 fi
+#--- GitHub under DDoS?
 timeout 300 curl --progress -k -L -f "https://status.github.com/api/status.json" | grep -q "good" || (echo -e ' '${RED}'[!]'${RESET}" ${RED}GitHub is currently having issues${RESET}. ${BOLD}Lots may fail${RESET}. See: https://status.github.com/" 1>&2 && sleep 10s)
 
 
-##### Enable default network repositories ~ http://docs.kali.org/general-use/kali-linux-sources-list-repositories & Fix 'KEYEXPIRED 1425567400'
+##### Enable default network repositories ~ http://docs.kali.org/general-use/kali-linux-sources-list-repositories
 echo -e "\n ${GREEN}[+]${RESET} Enabling ${GREEN}network repositories${RESET} ~ ...if they were not selected during installation"
 #--- Add network repositories
 file=/etc/apt/sources.list; [ -e "${file}" ] && cp -n $file{,.bkup}
 ([[ -e "${file}" && "$(tail -c 1 $file)" != "" ]]) && echo >> "${file}"
+#--- Main
 grep -q 'deb .* sana main non-free contrib' "${file}" 2>/dev/null || echo "deb http://http.kali.org/kali sana main non-free contrib" >> "${file}"
-grep -q 'deb .* sana/updates main contrib non-free' "${file}" 2>/dev/null || echo "deb http://security.kali.org/kali-security sana/updates main contrib non-free" >> "${file}"
 grep -q 'deb-src .* sana main non-free contrib' "${file}" 2>/dev/null || echo "deb-src http://http.kali.org/kali sana main non-free contrib" >> "${file}"
+#--- Security
+grep -q 'deb .* sana/updates main contrib non-free' "${file}" 2>/dev/null || echo "deb http://security.kali.org/kali-security sana/updates main contrib non-free" >> "${file}"
 grep -q 'deb-src .* sana/updates main contrib non-free' "${file}" 2>/dev/null || echo "deb-src http://security.kali.org/kali-security sana/updates main contrib non-free" >> "${file}"
+#--- Rolling
+grep -q 'deb .* kali-rolling main contrib non-free' "${file}" 2>/dev/null || echo "deb http://http.kali.org/kali kali-rolling main contrib non-free" >> "${file}"
+grep -q 'deb-src .* kali-rolling/updates main contrib non-free"' "${file}" 2>/dev/null || echo "deb http://security.kali.org/kali-security kali-rolling/updates main contrib non-free" >> "${file}"
 #grep -q 'sana-proposed-updates main contrib non-free' "${file}" 2>/dev/null || echo -e "deb http://repo.kali.org/kali sana-proposed-updates main contrib non-free\ndeb-src http://repo.kali.org/kali sana-proposed-updates main contrib non-free" >> "${file}"
 #--- Disable CD repositories
 sed -i '/kali/ s/^\( \|\t\|\)deb cdrom/#deb cdrom/g' "${file}"
@@ -235,7 +241,7 @@ elif (dmidecode | grep -iq vmware); then
   ([[ "${_mount}" == 0 && -z "${file}" ]]) && echo -e ' '${RED}'[!]'${RESET}' Incorrect CD/ISO mounted' 1>&2
   if [[ "${_mount}" == 0 && -n "${file}" ]]; then             # If there is a CD in (and its right!), try to install native Guest Additions
     echo -e ' '${YELLOW}'[i]'${RESET}' Patching & using "native VMware tools"'
-    apt-get -y -qq install make gcc "linux-headers-$(uname -r)" git || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
+    apt-get -y -qq install make gcc "linux-headers-$(uname -r)" git sudo || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
     git clone -q https://github.com/rasa/vmware-tools-patches.git /tmp/vmware-tools-patches || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
     cp -f "${file}" /tmp/vmware-tools-patches/downloads/
     pushd /tmp/vmware-tools-patches/ >/dev/null
@@ -275,7 +281,7 @@ elif (dmidecode | grep -iq virtualbox); then
 fi
 
 
-##### Check to see if there is a second ethernet card (if so, set an static IP address)
+##### Check to see if there is a second Ethernet card (if so, set an static IP address)
 ip addr show eth1 &>/dev/null
 if [[ "$?" == 0 ]]; then
   ##### Set a static IP address (192.168.155.175/24) on eth1
@@ -335,7 +341,7 @@ if [[ -n "${timezone}" ]]; then
   ln -sf "/usr/share/zoneinfo/$(cat /etc/timezone)" /etc/localtime
   dpkg-reconfigure -f noninteractive tzdata
 fi
-#--- Setting locale    # Cant't do due to user input
+#--- Setting locale    # Can't do due to user input
 #sed -i 's/^# en_/en_/' /etc/locale.gen   #en_GB en_US
 #locale-gen
 ##echo -e 'LC_ALL=en_US.UTF-8\nLANG=en_US.UTF-8\nLANGUAGE=en_US:en' > /etc/default/locale
@@ -413,7 +419,7 @@ sed -i 's/^GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT=""/' "${file
 update-grub
 
 
-###### Disabe login manager (console login - non GUI) ***
+###### Disable login manager (console login - non GUI) ***
 #echo -e "\n ${GREEN}[+]${RESET} ${GREEN}Disabling GUI${RESET} login screen"
 #--- Disable GUI login screen
 #systemctl set-default multi-user.target   # ...or: file=/etc/X11/default-display-manager; [ -e "${file}" ] && cp -n $file{,.bkup} ; echo /bin/true > "${file}"   # ...or: mv -f /etc/rc2.d/S19gdm3 /etc/rc2.d/K17gdm   # ...or: apt-get -y -qq install chkconfig; chkconfig gdm3 off
@@ -928,7 +934,8 @@ mkdir -p /usr/share/wallpapers/
 timeout 300 curl --progress -k -L -f "http://www.kali.org/images/wallpapers-01/kali-wp-june-2014_1920x1080_A.png" > /usr/share/wallpapers/kali_blue_3d_a.png || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_blue_3d_a.png" 1>&2     #***!!! hardcoded paths!
 timeout 300 curl --progress -k -L -f "http://www.kali.org/images/wallpapers-01/kali-wp-june-2014_1920x1080_B.png" > /usr/share/wallpapers/kali_blue_3d_b.png || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_blue_3d_b.png" 1>&2
 timeout 300 curl --progress -k -L -f "http://www.kali.org/images/wallpapers-01/kali-wp-june-2014_1920x1080_G.png" > /usr/share/wallpapers/kali_black_honeycomb.png || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_black_honeycomb.png" 1>&2
-#timeout 120 curl --progress -k -L -f "http://imageshack.us/a/img17/4646/vzex.png" > /usr/share/wallpapers/kali_blue_splat.png || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_blue_splat.png" 1>&2
+timeout 300 curl --progress -k -L -f "http://imageshack.us/a/img17/4646/vzex.png" > /usr/share/wallpapers/kali_blue_splat.png || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_blue_splat.png" 1>&2
+timeout 300 curl --progress -k -L -f "http://wallpaperstock.net/kali-linux_wallpapers_39530_1920x1080.jpg" > /usr/share/wallpapers/kali-linux_wallpapers_39530.png || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali-linux_wallpapers_39530.png" 1>&2
 timeout 300 curl --progress -k -L -f "http://em3rgency.com/wp-content/uploads/2012/12/Kali-Linux-faded-no-Dragon-small-text.png" > /usr/share/wallpapers/kali_black_clean.png || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_black_clean.png" 1>&2
 timeout 300 curl --progress -k -L -f "http://www.hdwallpapers.im/download/kali_linux-wallpaper.jpg" > /usr/share/wallpapers/kali_black_stripes.jpg || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_black_stripes.jpg" 1>&2
 timeout 300 curl --progress -k -L -f "http://fc01.deviantart.net/fs71/f/2011/118/e/3/bt___edb_wallpaper_by_xxdigipxx-d3f4nxv.png" > /usr/share/wallpapers/kali_bt_edb.jpg || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_bt_edb.jpg" 1>&2
@@ -1125,7 +1132,7 @@ grep -q '^## ftp' "${file}" 2>/dev/null || echo -e '## ftp\nalias ftproot="cd /v
 grep -q '^## tftp' "${file}" 2>/dev/null || echo -e '## tftp\nalias tftproot="cd /var/tftp/"\n' >> "${file}"                                        # systemctl atftpd start
 grep -q '^## smb' "${file}" 2>/dev/null || echo -e '## smb\nalias sambaroot="cd /var/samba/"\n#alias smbroot="cd /var/samba/"\n' >> "${file}"       # systemctl samba start
 (dmidecode | grep -iq vmware) && (grep -q '^## vmware' "${file}" 2>/dev/null || echo -e '## vmware\nalias vmroot="cd /mnt/hgfs/"\n' >> "${file}")
-grep -q '^## edb' "${file}" 2>/dev/null || echo -e '## edb\nalias edb="cd /usr/share/exploitdb/platform/"\nalias edbroot="cd /usr/share/exploitdb/platform/"\n' >> "${file}"
+grep -q '^## edb' "${file}" 2>/dev/null || echo -e '## edb\nalias edb="cd /usr/share/exploitdb/platforms/"\nalias edbroot="cd /usr/share/exploitdb/platforms/"\n' >> "${file}"
 grep -q '^## wordlist' "${file}" 2>/dev/null || echo -e '## wordlist\nalias wordlist="cd /usr/share/wordlists/"\nalias wordls="cd /usr/share/wordlists/"\n' >> "${file}"
 #--- Apply new aliases
 if [[ "${SHELL}" == "/bin/zsh" ]]; then source ~/.zshrc else source "${file}"; fi
@@ -1392,7 +1399,7 @@ apt-get install -y -qq unzip curl iceweasel || echo -e ' '${RED}'[!] Issue with 
 #--- Configure iceweasel
 export DISPLAY=:0.0   #[[ -z $SSH_CONNECTION ]] || export DISPLAY=:0.0
 timeout 15 iceweasel >/dev/null 2>&1  #iceweasel & sleep 15s; killall -q -w iceweasel >/dev/null   # Start and kill. Files needed for first time run
-timeout 5 killall -9 -q -w iceweasel >/dev/null
+timeout 5 killall -9 -q -w iceweasel >/dev/null || echo -e ' '${RED}'[!]'${RESET}" Failed to kill ${RED}iceweasel${RESET}"
 file=$(find /root/.mozilla/firefox/*.default*/ -maxdepth 1 -type f -name 'prefs.js' -print -quit) && [ -e "${file}" ] && cp -n $file{,.bkup}   #/etc/iceweasel/pref/*.js
 ([[ -e "${file}" && "$(tail -c 1 $file)" != "" ]]) && echo >> "${file}"
 #sed -i 's/^.network.proxy.socks_remote_dns.*/user_pref("network.proxy.socks_remote_dns", true);' "${file}" 2>/dev/null || echo 'user_pref("network.proxy.socks_remote_dns", true);' >> "${file}"
@@ -1412,7 +1419,7 @@ awk '!a[$0]++' /tmp/bookmarks_new.html | \egrep -v ">(Latest Headlines|Getting S
 sed -i 's#^</DL><p>#        </DL><p>\n    </DL><p>\n</DL><p>#' "${file}"                                                          # Fix import issues from pentest-bookmarks...
 sed -i 's#^    <DL><p>#    <DL><p>\n    <DT><A HREF="http://127.0.0.1/">localhost</A>#' "${file}"                                 # Add localhost to bookmark toolbar (before hackery folder)
 sed -i 's#^</DL><p>#    <DT><A HREF="https://127.0.0.1:8834/">Nessus</A>\n</DL><p>#' "${file}"                                    # Add Nessus UI bookmark toolbar
-[ "${openVAS}" != "false" ] && sed -i 's#^</DL><p>#    <DT><A HREF="https://127.0.0.1:9392/">OpenVAS</A>\n</DL><p>#' "${file}"      # Add OpenVAS UI to bookmark toolbar
+[ "${openVAS}" != "false" ] && sed -i 's#^</DL><p>#    <DT><A HREF="https://127.0.0.1:9392/">OpenVAS</A>\n</DL><p>#' "${file}"     # Add OpenVAS UI to bookmark toolbar
 #sed -i 's#^</DL><p>#    <DT><A HREF="https://127.0.0.1:3780/">Nexpose</A>\n</DL><p>#' "${file}"                                  # Add Nexpose UI to bookmark toolbar
 sed -i 's#^</DL><p>#    <DT><A HREF="http://127.0.0.1:3000/ui/panel">BeEF</A>\n</DL><p>#' "${file}"                               # Add BeEF UI to bookmark toolbar
 sed -i 's#^</DL><p>#    <DT><A HREF="http://127.0.0.1/rips/">RIPS</A>\n</DL><p>#' "${file}"                                       # Add RIPs to bookmark toolbar
@@ -1444,8 +1451,8 @@ export DISPLAY=:0.0   #[[ -z $SSH_CONNECTION ]] || export DISPLAY=:0.0
 ffpath="$(find /root/.mozilla/firefox/*.default*/ -maxdepth 0 -mindepth 0 -type d -name '*.default*' -print -quit)/extensions"
 [ "${ffpath}" == "/extensions" ] && echo -e ' '${RED}'[!]'${RESET}" Couldn't find Firefox/Iceweasel folder" 1>&2
 mkdir -p "${ffpath}/"
-#curl --progress -k -L -f "https://github.com/mozmark/ringleader/blob/master/fx_pnh.xpi?raw=true"  || echo -e ' '${RED}'[!]'${RESET}" Issue downloading fx_pnh.xpi" 1>&2                                                                                                                        # plug-n-hack
-#curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/284030/addon-284030-latest.xpi?src=dp-btn-primary" -o "$ffpath/{6bdc61ae-7b80-44a3-9476-e1d121ec2238}.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'HTTPS Finder'" 1>&2                             # HTTPS Finder
+#curl --progress -k -L -f "https://github.com/mozmark/ringleader/blob/master/fx_pnh.xpi?raw=true"  || echo -e ' '${RED}'[!]'${RESET}" Issue downloading fx_pnh.xpi" 1>&2                                                                                                                                     # plug-n-hack
+#curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/284030/addon-284030-latest.xpi?src=dp-btn-primary" -o "$ffpath/{6bdc61ae-7b80-44a3-9476-e1d121ec2238}.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'HTTPS Finder'" 1>&2                                         # HTTPS Finder
 timeout 300 curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/5817/addon-5817-latest.xpi?src=dp-btn-primary" -o "$ffpath/SQLiteManager@mrinalkant.blogspot.com.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'SQLite Manager'" 1>&2                                 # SQLite Manager
 timeout 300 curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/1865/addon-1865-latest.xpi?src=dp-btn-primary" -o "$ffpath/{d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d}.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'Adblock Plus'" 1>&2                                  # Adblock Plus
 timeout 300 curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/92079/addon-92079-latest.xpi?src=dp-btn-primary" -o "$ffpath/{bb6bc1bb-f824-4702-90cd-35e2fb24f25d}.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'Cookies Manager+'" 1>&2                            # Cookies Manager+
@@ -1456,7 +1463,8 @@ timeout 300 curl --progress -k -L -f "https://www.eff.org/files/https-everywhere
 timeout 300 curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/3829/addon-3829-latest.xpi?src=dp-btn-primary" -o "$ffpath/{8f8fe09b-0bd3-4470-bc1b-8cad42b8203a}.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'Live HTTP Headers'" 1>&2                             # Live HTTP Headers
 timeout 300 curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/966/addon-966-latest.xpi?src=dp-btn-primary" -o "$ffpath/{9c51bd27-6ed8-4000-a2bf-36cb95c0c947}.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'Tamper Data'" 1>&2                                     # Tamper Data
 timeout 300 curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/300254/addon-300254-latest.xpi?src=dp-btn-primary" -o "$ffpath/check-compatibility@dactyl.googlecode.com.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'Disable Add-on Compatibility Checks'" 1>&2    # Disable Add-on Compatibility Checks
-timeout 300 curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/3899/addon-3899-latest.xpi?src=dp-btn-primary" -o "$ffpath/{F5DDF39C-9293-4d5e-9AA8-E04E6DD5E9B4}.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'HackBar'" 1>&2        # HackBar
+timeout 300 curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/3899/addon-3899-latest.xpi?src=dp-btn-primary" -o "$ffpath/{F5DDF39C-9293-4d5e-9AA8-E04E6DD5E9B4}.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'HackBar'" 1>&2                                       # HackBar
+timeout 300 curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/310908/addon-310908-latest.xpi?src=dp-btn-primary" -o "$ffpath/{2b10c1c8-a11f-4bad-fe9c-1c11e82cac42}.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'uBlock'" 1>&2                                    # uBlock
 #--- Installing extensions
 for FILE in $(find "${ffpath}" -maxdepth 1 -type f -name '*.xpi'); do
   d="$(basename "${FILE}" .xpi)"
@@ -1662,7 +1670,11 @@ export GOCOW=1   # Always a cow logo ;)   Others: THISISHALLOWEEN (Halloween), A
 file=/root/.bashrc; [ -e "${file}" ] && cp -n $file{,.bkup}
 ([[ -e "${file}" && "$(tail -c 1 $file)" != "" ]]) && echo >> "${file}"
 grep -q '^GOCOW' "${file}" 2>/dev/null || echo 'GOCOW=1' >> "${file}"
+#--- Port Issues
+file=$(find /etc/postgresql/*/main/ -maxdepth 1 -type f -name postgresql.conf -print -quit); [ -e "${file}" ] && cp -n $file{,.bkup}
+sed -i 's/port = .* #/port = 5432 /' "$file"
 #--- Start services
+systemctl stop postgresql
 systemctl start postgresql   #systemctl restart postgresql
 msfdb init
 sleep 5s
@@ -1702,6 +1714,7 @@ setg VERBOSE true
 EOF
 #--- First time run
 #echo -e 'sleep 10\ndb_status\n#db_rebuild_cache\n#sleep 310\nexit' > /tmp/msf.rc && msfconsole -r /tmp/msf.rc
+echo -e "\n ${GREEN}[+]${RESET} ${GREEN}First time run with Metasploit.${RESET} ~ this ${BOLD}will take a ~350 seconds${RESET}."
 msfconsole -q -x 'version;db_status;sleep 310;exit'   #db_rebuild_cache;
 #--- Check
 #systemctl postgresql status
@@ -1977,7 +1990,7 @@ EOF
     curl --progress -k -L -f "http://burp/cert" -o /tmp/burp.crt 2>/dev/null      # || echo -e ' '${RED}'[!]'${RESET}" Issue downloading burp.crt" 1>&2
     [ -f /tmp/burp.crt ] && break
   done
-  timeout 5 kill ${PID} 2>/dev/null
+  timeout 5 kill ${PID} 2>/dev/null || echo -e ' '${RED}'[!]'${RESET}" Failed to kill ${RED}burpsuite${RESET}"
   unset http_proxy
   #--- Installing CA
   if [ -f /tmp/burp.crt ]; then
@@ -2432,8 +2445,8 @@ apt-get -y -qq install curl || echo -e ' '${RED}'[!] Issue with apt-get'${RESET}
 #mkdir -p /usr/share/udp-proto-scanner/
 timeout 300 curl --progress -k -L -f "https://labs.portcullis.co.uk/download/udp-proto-scanner-1.1.tar.gz" -o /tmp/udp-proto-scanner.tar.gz || echo -e ' '${RED}'[!]'${RESET}" Issue downloading udp-proto-scanner.tar.gz" 1>&2
 gunzip /tmp/udp-proto-scanner.tar.gz
-tar -xf /tmp/udp-proto-scanner.tar -C /usr/share/
-mv -f /usr/share/udp-proto-scanner{-1.1,}
+tar -xf /tmp/udp-proto-scanner.tar -C /opt/
+mv -f /opt/udp-proto-scanner{-1.1,}
 file=/usr/local/bin/udp-proto-scanner
 cat <<EOF > "${file}"
 #!/bin/bash
@@ -2796,8 +2809,9 @@ grep '^"PATH"=.*C:\\\\MinGW\\\\bin' /root/.wine/system.reg || sed -i '/^"PATH"=/
 
 ##### Downloading AccessChk.exe
 echo -e "\n ${GREEN}[+]${RESET} Downloading ${GREEN}AccessChk.exe${RESET} ~ Windows environment tester"
-apt-get -y -qq install curl || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
-timeout 300 curl --progress -k -L -f "https://download.sysinternals.com/files/AccessChk.zip" > /usr/share/windows-binaries/AccessChk.zip || echo -e ' '${RED}'[!]'${RESET}" Issue downloading AccessChk.zip" 1>&2          #***!!! hardcoded path!
+apt-get -y -qq install curl windows-binaries || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
+timeout 300 curl --progress -k -L -f "https://web.archive.org/web/20080530012252/http://live.sysinternals.com/accesschk.exe" > /usr/share/windows-binaries/accesschk_v5.02.exe || echo -e ' '${RED}'[!]'${RESET}" Issue downloading accesschk_v5.02.exe" 1>&2   #***!!! hardcoded path!
+timeout 300 curl --progress -k -L -f "https://download.sysinternals.com/files/AccessChk.zip" > /usr/share/windows-binaries/AccessChk.zip || echo -e ' '${RED}'[!]'${RESET}" Issue downloading AccessChk.zip" 1>&2                                               #***!!! hardcoded path!
 unzip -q -o -d /usr/share/windows-binaries/ /usr/share/windows-binaries/AccessChk.zip
 rm -f /usr/share/windows-binaries/{AccessChk.zip,Eula.txt}
 
@@ -2846,6 +2860,7 @@ rm -f /usr/share/packers/PEScrambler*.zip
 
 ##### Install hyperion
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}hyperion${RESET} ~ bypassing anti-virus"
+apt-get -y -qq install unzip windows-binaries || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 unzip -q -o -d /usr/share/windows-binaries/ /usr/share/windows-binaries/Hyperion-1.0.zip                                                                                                    #***!!! hardcoded path!
 #rm -f /usr/share/windows-binaries/Hyperion-1.0.zip
 i686-w64-mingw32-g++ -static-libgcc -static-libstdc++ /usr/share/windows-binaries/Hyperion-1.0/Src/Crypter/*.cpp -o /usr/share/windows-binaries/Hyperion-1.0/Src/Crypter/bin/crypter.exe    #***!!! hardcoded path!   #wine /root/.wine/drive_c/MinGW/bin/g++.exe ./Src/Crypter/*.cpp -o crypter.exe #i586-mingw32msvc-g++ ./Src/Crypter/*.cpp -o crypter-w00t1.exe
@@ -3590,7 +3605,8 @@ apt-get install -y -qq cowsay || echo -e ' '${RED}'[!] Issue with apt-get'${RESE
 echo "Moo" | /usr/games/cowsay > /etc/motd
 #--- Change SSH settings
 file=/etc/ssh/sshd_config; [ -e "${file}" ] && cp -n $file{,.bkup}
-sed -i 's/^PermitRootLogin .*/PermitRootLogin yes/g' "${file}"    # Accept password login (overwrite Debian 8's more secuire default option...)
+sed -i 's/^PermitRootLogin .*/PermitRootLogin yes/g' "${file}"      # Accept password login (overwrite Debian 8's more secuire default option...)
+sed -i 's/^#AuthorizedKeysFile /AuthorizedKeysFile /g' "${file}"    # Allow for key based login
 #sed -i 's/^Port .*/Port 2222/g' "${file}"
 #--- Enable ssh at startup
 #systemctl enable ssh
@@ -3603,6 +3619,9 @@ grep -q '^## ssh' "${file}" 2>/dev/null || echo -e '## ssh\nalias ssh-start="sys
 ###### Setup G/UFW
 #echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}G/UFW${RESET} ~ firewall rule generator"
 #apt-get -y -qq install ufw gufw || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
+
+
+##### Custom insert point
 
 
 ##### Clean the system
