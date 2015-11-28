@@ -56,6 +56,7 @@ hardenDNS=false             # Set static & lock DNS name server                 
 freezeDEB=false             # Disable updating certain packages (e.g. Metasploit)                                 [ --hold ]
 burpFree=false              # Disable configuring Burp Proxy Free (for Burp Pro users...)                         [ --burp ]
 openVAS=false               # Install & configure OpenVAS (not everyone wants it...)                              [ --openvas ]
+downloadVM=false            # Download Vanilla Win7 VM                                                            [ --downloadvm ]
 
 ##### (Optional) Enable debug mode?
 #set -x
@@ -97,7 +98,7 @@ while [[ "${#}" -gt 0 && ."${1}" == .-* ]]; do
       burpFree=true;;
 
     -downloadvm|--downloadvm )
-      downloadvm=true;;
+      downloadVM=true;;
 
     -keyboard|--keyboard )
        keyboardLayout="${1}"; shift;;
@@ -446,7 +447,7 @@ do
 done
 
 ##### Start the download of tools repo
-if [ "$downloadvm" != "false" ]; then
+if [ "$downloadVM" != "false" ]; then
 echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo (without Win7 VM)"
 mkdir -p $localDir 2>/dev/null
 sftp $sshuser@$sshsrv:$remoteDir/tools/* $localDir/
@@ -694,6 +695,7 @@ chmod +x "$file"
 
 ##### Installing chrome
 echo -e "\n$GREEN[+]$RESET Installing Chrome"
+apt-get -y -qq libappindicator1
 wget -q "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb" -P /tmp/
 dpkg -i /tmp/google-chrome-stable_current_amd64.deb
 echo "--user-data-dir" >> /usr/bin/google-chrome 
