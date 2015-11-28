@@ -399,6 +399,316 @@ echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}kali-linux-full${RESET} meta-
 #--- Kali's default tools ~ https://www.kali.org/news/kali-linux-metapackages/
 apt-get -y -qq install kali-linux-full || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 
+###########################################################################################
+##########   Start of Netti-Header Section
+
+##### Path to where to put the tools on Kali
+localDir=/root/tools
+
+##### Setup a Password for MySQL, the OS and oterh places
+# Creating the password
+apt-get install -y -qq pwgen
+mypassword_len=`shuf -i 20-30 -n 1`
+mypassword=`pwgen -scn $mypassword_len 1`
+
+##### Clearing out the local tools repo
+echo -e "\\n\\e[01;32m[+]\\e[00m Just clearing out the tools repo...."
+rm -rf $localDir
+
+##### Chose where to download from
+PS3='Where you would like to download from: '
+options=("UK" "USA" "HOME")
+select opt in "${options[@]}"
+do
+    case $opt in
+        "UK")
+            echo "You chose UK"
+            sshsrv=secure.nettitude.com
+            remoteDir=/ptbuild
+            sshuser=ptbuild
+            break
+            ;;
+        "USA")
+            echo "You chose USA - this is not implemented yet. Please use UK."
+            ;;
+        "HOME")
+            echo "You chose HOME - Please note this is for test only."
+            sshsrv=192.168.11.2
+            remoteDir=/media/mg/41f3a409-06a8-48f9-bb23-54a9649cc0c3/Kali-Build-Repo
+            sshuser=mg
+            break
+            ;;
+        *) echo invalid option;;
+    esac
+done
+
+# Display a fortune cookie on interactive logins only
+#if [ -n "$PS1" ]; then
+        # Some people don't like fortune. If you uncomment the following lines,
+        # you will have a fortune each time you log in ;-)
+#        if [ -x /usr/bin/fortune ] ; then
+#                echo
+#                /usr/bin/fortune
+#                echo
+#        fi
+#fi
+
+
+##### Start the download of tools repo
+if [ "$downloadVM" != "false" ]; then
+echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo (without Win7 VM)"
+mkdir -p $localDir 2>/dev/null
+sftp $sshuser@$sshsrv:$remoteDir/tools/* $localDir/
+else
+echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo and Win7 VM - this will take some time!"
+mkdir -p $localDir 2>/dev/null
+sftp -r $sshuser@$sshsrv:$remoteDir/* $localDir/
+mv $localDir/tools/* $localDir/
+rm -rf $localDir/tools
+
+##### Extract VM
+echo -e "\\n\\e[01;32m[+]\\e[00m Extracting VM"
+mkdir $localDir/Virtual_Machines
+apt-get -y -qq install pv
+pv $localDir/Win7-X220.tar.gz | tar xzp -C $localDir/Virtual_Machines/
+
+##### Installing VirtualBox
+echo -e "\\n\\e[01;32m[+]\\e[00m Installing VirtualBox"
+apt-get -y -qq install virtualbox
+vboxmanage hostonlyif create
+vboxmanage hostonlyif ipconfig vboxnet0 --ip 192.168.56.1 --netmask 255.255.255.0
+ifconfig vboxnet0 up
+vboxmanage registervm /root/tools/Virtual_Machines/Win7-X220/Win7-X220.vbox
+fi
+
+##### Installing Nessus
+echo -e "\\n\\e[01;32m[+]\\e[00m Installing Nessus"
+sudo dpkg -i $localDir/Nessus*.deb
+
+##### Installing Discover
+echo -e "\\n\\e[01;32m[+]\\e[00m Installing Discover"
+git clone https://github.com/leebaird/discover.git /opt/discover 2>/dev/null
+pushd /opt/discover
+git pull
+popd >/dev/null
+file=/usr/local/bin/discover
+cat <<EOF > "$file"
+#!/bin/bash
+
+cd /opt/discover/ && ./discover.sh "\$@"
+EOF
+chmod +x "$file"
+
+##### Update Java for Cobaltstrike
+echo -e "\\n\\e[01;32m[+]\\e[00m Updating Java to 1.7"
+update-java-alternatives --jre -s java-1.7.0-openjdk-amd64
+
+##### Installing Cobaltstrike Pro
+echo -e "\\n\\e[01;32m[+]\\e[00m Installing Cobaltstrike Pro"
+tar -xvzf /$localDir/cobaltstrike.tgz -C /opt 2>/dev/null
+file=/usr/local/bin/cobaltstrike
+cat <<EOF > "$file"
+#!/bin/bash
+
+cd /opt/cobaltstrike/ && ./cobaltstrike "\$@"
+EOF
+chmod +x "$file"
+echo -e "\\n\\e[01;32m[+]\\e[00m Updating Teamserver"
+file=/usr/local/bin/teamserver
+cat <<EOF > "$file"
+#!/bin/bash
+
+cd /opt/cobaltstrike/ && ./teamserver "\$@"
+EOF
+chmod +x "$file"
+
+##### Installing Frogger VLAN Hopping
+echo -e "\\n\\e[01;32m[+]\\e[00m Installing Frogger VLAN Hopping"
+git clone https://github.com/nccgroup/vlan-hopping---frogger /tmp/Frogger
+cp /tmp/Frogger/frogger.sh /usr/bin/frogger
+chmod +x /usr/bin/frogger
+
+##### Installing Paygen script
+echo -e "\\n\\e[01;32m[+]\\e[00m Installing Payload Generator Script"
+mkdir /opt/paygen
+wget -q http://www.hackwhackandsmack.com/paygen.py -P /opt/paygen
+cat <<EOF > /usr/local/bin/paygen
+#!/bin/bash
+cd /opt/paygen/
+python ./paygen.py
+EOF
+chmod +x /usr/local/bin/paygen
+
+##### Installing Macro Safe Script
+echo -e "\\n\\e[01;32m[+]\\e[00m Installing Macro Safe Script"
+mkdir /opt/macro_safe
+wget -q https://raw.githubusercontent.com/benpturner/h00k/master/python/macro_safe.py -P /opt/macro_safe
+chmod +x /opt/macro_safe/macro_safe.py
+
+##### Installing Pentest.rb Plugin
+echo -e "\\n\\e[01;32m[+]\\e[00m Installing Pentest.rb"
+git clone https://github.com/darkoperator/Metasploit-Plugins.git ~/.msf4/plugins
+
+##### Installing UFW
+echo -e "\\n\\e[01;32m[+]\\e[00m Installing UFW and GUFW"
+apt-get -y -qq install ufw gufw
+ufw enable
+ufw allow 4444:4464/tcp # For default reverse shells
+ufw allow 8080:8090/tcp # For browser exploits
+ufw allow 3389/tcp # For RDP
+ufw allow 445/tcp # For SMB
+ufw allow http # For Apache
+ufw allow ssh # For SSH
+ufw logging on
+
+##### Installing Team SSH Keys
+echo -e "\\n\\e[01;32m[+]\\e[00m Installing Team SSH Keys"
+cat "$localDir"/ssh_pub >> /root/.ssh/authorized_keys
+
+##### Installing xscreensaver        *** Doesnt work when running as root
+#echo -e "\\n\\e[01;32m[+]\\e[00m Installing xScreensaver"
+#apt-get -y -qq install xscreensaver xscreensaver-data-extra xscreensaver-gl-extra
+#xhost +localhost
+
+##### Installing xRDP
+echo -e "\\n\\e[01;32m[+]\\e[00m Installing xRDP"
+apt-get -y -qq install xrdp
+service xrdp start
+update-rc.d -f xrdp enable
+
+##### Installing Teamviewer to /opt
+echo -e "\\n\\e[01;32m[+]\\e[00m Installing Teamviewer"
+wget -q "http://download.teamviewer.com/download/teamviewer_qs.tar.gz" -P /opt && tar -xf /opt/teamviewer_qs.tar.gz -C /opt && rm /opt/teamviewer_*;
+cat <<EOF > /usr/local/bin/teamviewer
+#!/bin/bash
+cd /opt/teamviewerqs
+./teamviewer &
+EOF
+chmod +x /usr/local/bin/teamviewer
+
+##### Installing Responder
+echo -e "\n$GREEN[+]$RESET Installing Responder"
+apt-get -y -qq install git
+git clone git://github.com/SpiderLabs/Responder.git /opt/responder/ 2>/dev/null
+pushd /opt/responder/
+git pull
+popd >/dev/null
+file=/usr/local/bin/responder
+cat <<EOF > "$file"
+#!/bin/bash
+
+cd /opt/responder/ && python responder.py "\$@"
+EOF
+chmod +x "$file"
+
+#### Downloading Responder for Windows
+echo -e "\n$GREEN[+]$RESET Downloading Responder for Windows"
+git clone https://github.com/lgandx/Responder-Windows.git $localDir/Responder-Windows
+
+#### Download autorandr
+echo -e "\n$GREEN[+]$RESET Installing xrandr"
+wget -q "https://github.com/nalipaz/autorandr/releases/download/1.0/autorandr_1.0_all.deb" -P /tmp/
+#wget -q "https://github.com/nalipaz/poll-xrandr/releases/download/1.5/poll-xrandr_1.5_all.deb" -P /tmp/     # Set Function key instead as couldnt get this to start as a service
+cd /tmp
+dpkg -i autorandr_1.0_all.deb
+#dpkg -i poll-xrandr_1.5_all.deb
+mkdir /root/.autorandr
+cd /root/.autorandr/ && touch postswitch && chmod +x postswitch
+ln -sf /usr/local/bin/conky_refresh.sh /root/.autorandr/postswitch
+
+#---- Enabling auto change
+cat <<EOF > /etc/udev/rules.d/70-monitor.rules
+SUBSYSTEM=="drm", ACTION=="change", RUN+="/usr/bin/autorandr"
+EOF
+udevadm control --reload-rules
+
+##### Downloading Powersploit & Powertools
+echo -e "\n$GREEN[+]$RESET Downloading Powersploit & Powertools"
+git clone git://github.com/mattifestation/PowerSploit.git $localDir/Powershell/PowerSploit 
+git clone git://github.com/Veil-Framework/PowerTools.git $localDir/Powershell/PowerTools
+
+##### Installing Shellter 
+echo -e "\n$GREEN[+]$RESET Installing Latest Shellter"
+wget -U 'Mozilla/5.0 (X11; Linux x86_64; rv:30.0) Gecko/20100202 Firefox/30.0' -q "https://www.shellterproject.com/Downloads/Shellter/Latest/shellter.zip" -P /tmp/
+apt-get -y -qq install unzip
+unzip -q -o -d /opt/ /tmp/shellter.zip
+file=/usr/bin/shellter
+cat <<EOF > "$file"
+#!/bin/bash
+
+cd /opt/shellter/ && /opt/shellter/shellter.exe "\$@"
+EOF
+chmod +x "$file"
+
+##### Installing SMBEXEC
+echo -e "\n$GREEN[+]$RESET Installing SMBEXEC on Debian"
+git clone https://github.com/pentestgeek/smbexec.git /tmp/smbexec
+cp $localDir/smbexec_debianinstall.sh /tmp/smbexec
+apt-get -y -qq install libxslt-dev libxml2-dev
+cd /tmp/smbexec/
+chmod +x smbexec_debianinstall.sh
+./smbexec_debianinstall.sh
+rm -f /usr/bin/smbexec
+file=/usr/bin/smbexec
+cat <<EOF > "$file"
+#!/bin/bash
+
+cd /opt/smbexec/ && ./smbexec.rb "\$@"
+EOF
+chmod +x "$file"
+cd /opt/smbexec
+bundle install
+echo -e "\n$GREEN[+]$RESET Installing compiled smbexec_binaries"
+tar -xvzf /$localDir/smbexec_binaries.tgz -C /opt/smbexec/progs/
+
+#### Reconfigure Proxychains
+grep -rl 9050 /etc/proxychains.conf | xargs sed -i 's/9050/1080/g'
+
+
+##### Installing gitr
+echo -e "\n$GREEN[+]$RESET Installing Gitr"
+apt-get -y -qq install npm
+npm install -g gitr
+
+#### Downloading Bluebox-ng
+echo -e "\n$GREEN[+]$RESET Downloading Bluebox-ng"
+npm i -g bluebox-ng
+
+##### Installing guake
+echo -e "\n$GREEN[+]$RESET Installing Guake"
+apt-get -y -qq install guake
+
+##### Installing sublime
+echo -e "\n$GREEN[+]$RESET Installing Sublime"
+tar -xvzf /$localDir/Sublimex64.tar.bz2 -C /opt 2>/dev/null
+file=/usr/local/bin/sublime
+cat <<EOF > "$file"
+#!/bin/bash
+
+cd /opt/sublime/ && ./sublime "\$@"
+EOF
+chmod +x "$file"
+
+##### Installing chrome
+echo -e "\n$GREEN[+]$RESET Installing Chrome"
+wget -q "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb" -P /tmp/
+dpkg -i /tmp/google-chrome-stable_current_amd64.deb
+echo "--user-data-dir" >> /usr/bin google-chrome 
+
+##### Sanity break point for testing and debugging
+#read -p "Are you sure you want to continue? <y/N> " prompt
+#if [[ $prompt == "n" || $prompt == "N" || $prompt == "NO" || $prompt == "No" ]]
+#then
+#   echo -e "OK see you later then....goodbye."
+#   exit 0
+#else
+#  echo -e "OK then we shall continue...."
+#fi
+
+##########   End of Netti-Header Section
+#########################################################################################
+
+
 
 ##### Fix audio issues
 echo -e "\n ${GREEN}[+]${RESET} Fixing ${GREEN}audio${RESET} issues"
@@ -3517,13 +3827,13 @@ apt-get -y -qq install php5 php5-cli php5-curl
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}MySQL${RESET} ~ database"
 apt-get -y -qq install mysql-server
 echo -e " ${YELLOW}[i]${RESET} MySQL username: root"
-echo -e " ${YELLOW}[i]${RESET} MySQL password: <blank>   ***${BOLD}CHANGE THIS ASAP${RESET}***"
+echo -e " ${YELLOW}[i]${RESET} MySQL password: $mypassword"
 if [[ ! -e ~/.my.cnf ]]; then
   cat <<EOF > ~/.my.cnf
 [client]
 user=root
 host=localhost
-password=
+password=$mypassword
 EOF
 fi
 
@@ -3622,6 +3932,82 @@ grep -q '^## ssh' "${file}" 2>/dev/null || echo -e '## ssh\nalias ssh-start="sys
 
 
 ##### Custom insert point
+###########################################################################################
+##########   Start of Netti-Footer Section
+
+#### Resetting MySQL Root Password
+#--- Kill any mysql processes currently running
+echo -e "\n$GREEN[+]$RESET Shutting down any mysql processes..."
+service mysql stop
+killall -vw mysqld
+#--- Start mysql without grant tables
+mysqld_safe --skip-grant-tables >res 2>&1 &
+echo -e "\n$GREEN[+]$RESET Resetting password to: $mypassword"
+#--- Sleep for 5 while the new mysql process loads (if get a connection error you might need to increase this.)
+sleep 5
+#--- Update root user with new password
+mysql mysql -e "UPDATE user SET Password=PASSWORD('$mypassword') WHERE User='root';FLUSH PRIVILEGES;"
+echo -e "\n$GREEN[+]$RESET Cleaning up..."
+#--- Kill the insecure mysql process
+killall -v mysqld
+#--- Starting mysql again
+sleep 5
+service mysql restart
+
+##### Add Shutter to startup (each login)
+echo -e "\n$GREEN[+]$RESET Add shutter to startup"
+touch /root/.config/autostart/shutter.desktop
+file=/root/.config/autostart/shutter.desktop; [ -e "$file" ] && cp -n $file{,.bkup}
+cat <<EOF > "$file"
+[Desktop Entry]
+Encoding=UTF-8
+Version=0.9.4
+Type=Application
+Exec=shutter --min_at_startup
+Hidden=false
+NoDisplay=false
+X-GNOME-Autostart-enabled=true
+Name[en_US]=shutter
+Name=shutter
+Comment[en_US]=
+Comment=
+EOF
+
+##### Installing BurpPro to /opt
+echo -e "\\n\\e[01;32m[+]\\e[00m Installing BurpPro"
+mkdir /opt/burpsuite-pro 2>/dev/null
+tar -xf $localDir/Burp.tar.gz -C /opt/burpsuite-pro
+## Replace Free Version
+mv /usr/bin/burpsuite /usr/bin/burpsuite-free
+file=/usr/bin/burpsuite
+cat <<EOF > "$file"
+#!/bin/bash
+cd /opt/burpsuite-pro/
+burp-latest="$(ls -v burpsuite* | tail -n 1)""
+java -jar "$burp-latest" "\$@"
+EOF
+chmod +x /usr/bin/burpsuite
+## Install preferences
+mkdir -p /root/.java/.userPrefs/burp 2>/dev/null
+cp -f /opt/burpsuite-pro/prefs.xml /root/.java/.userPrefs/burp/prefs.xml
+
+##### Fixing Matt's USB to mount point SANDISK
+echo -e "\\n\\e[01;32m[+]\\e[00m Fixing Matts USB to mount point SANDISK"
+mkdir /media/SANDISK
+cat <<EOF > "/etc/udev/rules.d/10-usb-drive.rules"
+SUBSYSTEMS=="usb",ACTION=="add",KERNEL=="sd?1", ATTRS{serial}=="4C531001430410121534", RUN+="/bin/mount /dev/%k /media/SANDISK",OPTIONS="last_rule"
+ACTION=="remove",KERNEL=="sd[b-z][1-9]",RUN+="/bin/umount /dev/%k",OPTIONS="last_rule"
+EOF
+file=/usr/bin/loadusb
+cat <<EOF > "$file"
+#!/bin/bash
+/media/SANDISK/SETUP/loadusb "\$@"
+EOF
+chmod +x /usr/bin/loadusb
+#systemctl enable ssh
+
+##########   End of Netti-Footer Section
+###########################################################################################
 
 
 ##### Clean the system
@@ -3664,7 +4050,9 @@ echo -e " ${YELLOW}[i]${RESET}   + Manually install: Nessus, Nexpose, and/or Met
 echo -e " ${YELLOW}[i]${RESET}   + Agree/Accept to: Maltego, OWASP ZAP, w3af, etc"
 echo -e " ${YELLOW}[i]${RESET}   + Setup git:   git config --global user.name <name>;git config --global user.email <email>"
 #echo -e " ${YELLOW}[i]${RESET}   + ${YELLOW}Change time zone${RESET} & ${YELLOW}keyboard layout${RESET} (...if not ${BOLD}${timezone}${RESET} & ${BOLD}${keyboardLayout}${RESET})"
-echo -e " ${YELLOW}[i]${RESET}   + ${YELLOW}Change default passwords${RESET}: PostgreSQL/MSF, MySQL, OpenVAS, BeEF XSS, etc"
+echo -e " ${YELLOW}[i]${RESET}   + ${YELLOW}Change default passwords${RESET}: PostgreSQL/MSF, OpenVAS, BeEF XSS, etc"
+echo -e " ${YELLOW}[i]${RESET}   + MyPassword root password: $mypassword"
+echo -e " ${YELLOW}[i]${RESET}   + Remember to store this password safely!"
 echo -e " ${YELLOW}[i]${RESET}   + ${YELLOW}Reboot${RESET}"
 (dmidecode | grep -iq virtual) && echo -e " ${YELLOW}[i]${RESET}   + Take a snapshot   (Virtual machine detected!)"
 
