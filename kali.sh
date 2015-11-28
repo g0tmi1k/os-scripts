@@ -437,7 +437,7 @@ do
         "HOME")
             echo "You chose HOME - Please note this is for test only."
             sshsrv=192.168.11.2
-            remoteDir=/media/mg/41f3a409-06a8-48f9-bb23-54a9649cc0c3/Kali-Build-Repo
+            remoteDir=/media/root/41f3a409-06a8-48f9-bb23-54a9649cc0c3/Kali-Build-Repo
             sshuser=root
             break
             ;;
