@@ -663,7 +663,19 @@ npm install -g gitr
 
 #### Downloading Bluebox-ng
 echo -e "\n$GREEN[+]$RESET Downloading Bluebox-ng"
+aptitude install -y apt-transport-https
+sourcesFile='/etc/apt/sources.list.d/nodesource.list'
+echo -e "Adding Nodesource APT repos ..."
+curl -s https://deb.nodesource.com/gpgkey/nodesource.gpg.key | apt-key add -
+echo -e "# Debian Wheezy Backports" >> $sourcesFile
+echo 'deb https://deb.nodesource.com/node wheezy main' > $sourcesFile
+echo 'deb-src https://deb.nodesource.com/node wheezy main' >> $sourcesFile
+echo -e "Installing Node.js binaries ..."
+aptitude update
+aptitude install -y nodejs
+echo -e "Installing Bluebox-ng, wait a moment please ..."
 npm i -g bluebox-ng
+echo -e "Done, just type 'bluebox-ng' :)"
 
 ##### Installing guake
 echo -e "\n$GREEN[+]$RESET Installing Guake"
@@ -684,7 +696,7 @@ chmod +x "$file"
 echo -e "\n$GREEN[+]$RESET Installing Chrome"
 wget -q "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb" -P /tmp/
 dpkg -i /tmp/google-chrome-stable_current_amd64.deb
-echo "--user-data-dir" >> /usr/bin google-chrome 
+echo "--user-data-dir" >> /usr/bin/google-chrome 
 
 ##### Sanity break point for testing and debugging
 read -p "Are you sure you want to continue? <y/N> " prompt
