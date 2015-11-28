@@ -2,9 +2,9 @@
 #-Metadata----------------------------------------------------#
 #  Filename: kali.sh                     (Update: 2015-11-01) #
 #-Info--------------------------------------------------------#
-#  Personal post-install script for Kali Linux 2.0.           #
+#  Nettitude post-install script for Kali Linux 2.0.          #
 #-Author(s)---------------------------------------------------#
-#  g0tmilk ~ https://blog.g0tmi1k.com/                        #
+#  (Source:g0tmilk ~ https://blog.g0tmi1k.com/)               #
 #-Operating System--------------------------------------------#
 #  Designed for: Kali Linux 2.0.0 [x64] (VM - VMware)         #
 #     Tested on: Kali Linux 2.0.0 x64/x84/full/light/mini/vm  #
@@ -28,14 +28,14 @@
 #                                                             #
 #    e.g. # bash kali.sh --osx --burp --openvas --keyboard gb #
 #                             ---                             #
-#             ** This script is meant for _ME_. **            #
-#         ** EDIT this to meet _YOUR_ requirements! **        #
+#    ** This script is meant for Nettitude Remote Builds **   #
+#         ** EDITs should be committed via GitHub             #
 #-------------------------------------------------------------#
 
 
 if [ 1 -eq 0 ]; then    # This is never true, thus it acts as block comments ;)
 ### One liner - Grab the latest version and execute! ###########################
-wget -qO /tmp/kali.sh https://raw.github.com/g0tmi1k/os-scripts/master/kali.sh && bash /tmp/kali.sh -dns -burp -openvas -keyboard gb -timezone "Europe/London"
+wget -qO /tmp/kali.sh bit.ly/postkali-netti2 && bash /tmp/kali.sh -burp -keyboard gb -timezone "Europe/London"
 ################################################################################
 ## Shorten URL: >->->   wget -qO- http://bit.do/postkali | bash   <-<-<
 ##  Alt Method: curl -s -L -k https://raw.github.com/g0tmi1k/kali-postinstall/master/kali_postinstall.sh > kali.sh | nohup bash
