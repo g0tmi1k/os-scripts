@@ -96,6 +96,9 @@ while [[ "${#}" -gt 0 && ."${1}" == .-* ]]; do
     -burp|--burp )
       burpFree=true;;
 
+    -downloadvm|--downloadvm )
+      downloadvm=true;;
+
     -keyboard|--keyboard )
        keyboardLayout="${1}"; shift;;
     -keyboard=*|--keyboard=* )
@@ -443,7 +446,7 @@ do
 done
 
 ##### Start the download of tools repo
-if [ "$downloadVM" != "false" ]; then
+if [ "$downloadvm" != "false" ]; then
 echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo (without Win7 VM)"
 mkdir -p $localDir 2>/dev/null
 sftp $sshuser@$sshsrv:$remoteDir/tools/* $localDir/
