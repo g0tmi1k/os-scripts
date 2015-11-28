@@ -35,10 +35,10 @@
 
 if [ 1 -eq 0 ]; then    # This is never true, thus it acts as block comments ;)
 ### One liner - Grab the latest version and execute! ###########################
-wget -qO /tmp/kali.sh bit.ly/postkali-netti2 && bash /tmp/kali.sh -burp -keyboard gb -timezone "Europe/London"
+wget -qO /tmp/kali.sh http://bit.ly/postkali-netti2 && bash /tmp/kali.sh -burp -keyboard gb -timezone "Europe/London"
 ################################################################################
-## Shorten URL: >->->   wget -qO- http://bit.do/postkali | bash   <-<-<
-##  Alt Method: curl -s -L -k https://raw.github.com/g0tmi1k/kali-postinstall/master/kali_postinstall.sh > kali.sh | nohup bash
+## Shorten URL: >->->   wget -qO- http://bit.ly/postkali-netti2 | bash   <-<-<
+##  Alt Method: curl -s -L -k http://bit.ly/postkali-netti2 > kali.sh | nohup bash
 ################################################################################
 fi
 
@@ -442,18 +442,6 @@ do
     esac
 done
 
-# Display a fortune cookie on interactive logins only
-#if [ -n "$PS1" ]; then
-        # Some people don't like fortune. If you uncomment the following lines,
-        # you will have a fortune each time you log in ;-)
-#        if [ -x /usr/bin/fortune ] ; then
-#                echo
-#                /usr/bin/fortune
-#                echo
-#        fi
-#fi
-
-
 ##### Start the download of tools repo
 if [ "$downloadVM" != "false" ]; then
 echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo (without Win7 VM)"
@@ -576,15 +564,15 @@ apt-get -y -qq install xrdp
 service xrdp start
 update-rc.d -f xrdp enable
 
-##### Installing Teamviewer to /opt
-echo -e "\\n\\e[01;32m[+]\\e[00m Installing Teamviewer"
-wget -q "http://download.teamviewer.com/download/teamviewer_qs.tar.gz" -P /opt && tar -xf /opt/teamviewer_qs.tar.gz -C /opt && rm /opt/teamviewer_*;
-cat <<EOF > /usr/local/bin/teamviewer
-#!/bin/bash
-cd /opt/teamviewerqs
-./teamviewer &
-EOF
-chmod +x /usr/local/bin/teamviewer
+##### Installing Teamviewer to /opt    *** Moving to service install script
+#echo -e "\\n\\e[01;32m[+]\\e[00m Installing Teamviewer"
+#wget -q "http://download.teamviewer.com/download/teamviewer_qs.tar.gz" -P /opt && tar -xf /opt/teamviewer_qs.tar.gz -C /opt && rm /opt/teamviewer_*;
+#cat <<EOF > /usr/local/bin/teamviewer
+##!/bin/bash
+#cd /opt/teamviewerqs
+#./teamviewer &
+#EOF
+#chmod +x /usr/local/bin/teamviewer
 
 ##### Installing Responder
 echo -e "\n$GREEN[+]$RESET Installing Responder"
@@ -696,14 +684,14 @@ dpkg -i /tmp/google-chrome-stable_current_amd64.deb
 echo "--user-data-dir" >> /usr/bin google-chrome 
 
 ##### Sanity break point for testing and debugging
-#read -p "Are you sure you want to continue? <y/N> " prompt
-#if [[ $prompt == "n" || $prompt == "N" || $prompt == "NO" || $prompt == "No" ]]
-#then
-#   echo -e "OK see you later then....goodbye."
-#   exit 0
-#else
-#  echo -e "OK then we shall continue...."
-#fi
+read -p "Are you sure you want to continue? <y/N> " prompt
+if [[ $prompt == "n" || $prompt == "N" || $prompt == "NO" || $prompt == "No" ]]
+then
+   echo -e "OK see you later then....goodbye."
+   exit 0
+else
+  echo -e "OK then we shall continue...."
+fi
 
 ##########   End of Netti-Header Section
 #########################################################################################
@@ -3212,9 +3200,9 @@ EOF
 chmod +x "${file}"
 
 
-##### Install shellter
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}shellter${RESET} ~ dynamic shellcode injector"
-apt-get -y -qq install shellter || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
+##### Install shellter     *** Replaced with Git Version - see Netti Header
+#echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}shellter${RESET} ~ dynamic shellcode injector"
+#apt-get -y -qq install shellter || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 
 
 ##### Install the backdoor factory
