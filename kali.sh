@@ -22,6 +22,7 @@
 #    --hold     = Disable updating certain packages (eg. msf) #
 #    --openvas  = Installs & configures OpenVAS vuln scanner  #
 #    --osx      = Configures Apple keyboard layout            #
+#    --downloadvm = Will download a Vanilla Win7 VM from SCP  #
 #                                                             #
 #    --keyboard <value> = Change the keyboard layout language #
 #    --timezone <value> = Change the timezone location        #
@@ -695,7 +696,7 @@ chmod +x "$file"
 
 ##### Installing chrome
 echo -e "\n$GREEN[+]$RESET Installing Chrome"
-apt-get -y -qq libappindicator1
+apt-get -y -qq install libappindicator1
 wget -q "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb" -P /tmp/
 dpkg -i /tmp/google-chrome-stable_current_amd64.deb
 echo "--user-data-dir" >> /usr/bin/google-chrome 
@@ -1779,7 +1780,7 @@ timeout 300 curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloa
 timeout 300 curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/966/addon-966-latest.xpi?src=dp-btn-primary" -o "$ffpath/{9c51bd27-6ed8-4000-a2bf-36cb95c0c947}.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'Tamper Data'" 1>&2                                     # Tamper Data
 timeout 300 curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/300254/addon-300254-latest.xpi?src=dp-btn-primary" -o "$ffpath/check-compatibility@dactyl.googlecode.com.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'Disable Add-on Compatibility Checks'" 1>&2    # Disable Add-on Compatibility Checks
 timeout 300 curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/3899/addon-3899-latest.xpi?src=dp-btn-primary" -o "$ffpath/{F5DDF39C-9293-4d5e-9AA8-E04E6DD5E9B4}.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'HackBar'" 1>&2                                       # HackBar
-timeout 300 curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/310908/addon-310908-latest.xpi?src=dp-btn-primary" -o "$ffpath/{2b10c1c8-a11f-4bad-fe9c-1c11e82cac42}.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'uBlock'" 1>&2                                    # uBlock
+#timeout 300 curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/310908/addon-310908-latest.xpi?src=dp-btn-primary" -o "$ffpath/{2b10c1c8-a11f-4bad-fe9c-1c11e82cac42}.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'uBlock'" 1>&2                                    # uBlock *** Removed as no longer there
 #--- Installing extensions
 for FILE in $(find "${ffpath}" -maxdepth 1 -type f -name '*.xpi'); do
   d="$(basename "${FILE}" .xpi)"
@@ -3802,8 +3803,8 @@ touch /etc/printcap
 #smbclient -L \\127.0.0.1 -N
 #mount -t cifs -o guest //192.168.1.2/share /mnt/smb     mkdir -p /mnt/smb
 #--- Disable samba at startup
-systemctl stop samba
-systemctl disable samba
+systemctl stop smbd
+systemctl disable smbd
 echo -e " ${YELLOW}[i]${RESET} Samba username: guest"
 echo -e " ${YELLOW}[i]${RESET} Samba password: <blank>"
 #--- Setup alias
