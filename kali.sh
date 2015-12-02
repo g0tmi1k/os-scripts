@@ -400,9 +400,7 @@ if [ "${rolling}" != "false" ]; then
   #--- Enable Rolling
   ([[ -e "${file}" && "$(tail -c 1 ${file})" != "" ]]) && echo >> "${file}"
   grep -q 'deb .* kali-rolling main contrib non-free' "${file}" 2>/dev/null || echo -e "\n\n# Kali Rolling\ndeb http://http.kali.org/kali kali-rolling main contrib non-free" >> "${file}"
-  grep -q 'deb .* kali-rolling/updates main contrib non-free"' "${file}" 2>/dev/null || echo "deb http://security.kali.org/kali-security kali-rolling/updates main contrib non-free" >> "${file}"
   grep -q 'deb-src .* kali-rolling main contrib non-free' "${file}" 2>/dev/null || echo -e "deb-src http://http.kali.org/kali kali-rolling main contrib non-free" >> "${file}"
-  grep -q 'deb-src .* kali-rolling/updates main contrib non-free"' "${file}" 2>/dev/null || echo "deb-src http://security.kali.org/kali-security kali-rolling/updates main contrib non-free" >> "${file}"
   #grep -q 'sana-proposed-updates main contrib non-free' "${file}" 2>/dev/null || echo -e "deb http://repo.kali.org/kali sana-proposed-updates main contrib non-free\ndeb-src http://repo.kali.org/kali sana-proposed-updates main contrib non-free" >> "${file}"
   #--- Disable main repo
   sed -i 's_deb http://http.kali.org/kali sana main_#deb http://http.kali.org/kali sana main_' ${file}
@@ -1618,6 +1616,7 @@ file=~/.conkyrc; [ -e "${file}" ] && cp -n $file{,.bkup}
 [ -e "${file}" ] || cat <<EOF > "${file}"
 ## Useful: http://forums.opensuse.org/english/get-technical-help-here/how-faq-forums/unreviewed-how-faq/464737-easy-configuring-conky-conkyconf.html
 background yes
+#background no     # Kali rolling?
 
 font Monospace:size=8:weight=bold
 use_xft yes
@@ -1629,6 +1628,7 @@ own_window_type normal
 own_window_transparent yes
 own_window_class conky-semi
 own_window_argb_visual yes   # GNOME & XFCE yes, KDE no
+#own_window_argb_visual no    # Kali rolling?
 own_window_colour brown
 own_window_hints undecorated,below,sticky,skip_taskbar,skip_pager
 
