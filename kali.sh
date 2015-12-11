@@ -36,7 +36,7 @@
 
 if [ 1 -eq 0 ]; then    # This is never true, thus it acts as block comments ;)
 ### One liner - Grab the latest version and execute! ###########################
-wget -qO kali.sh https://raw.github.com/g0tmi1k/os-scripts/master/kali.sh && bash kali.sh -dns -burp -openvas -rolling -keyboard gb -timezone "Europe/London"
+wget -qO kali.sh https://raw.github.com/g0tmi1k/os-scripts/master/kali.sh && bash kali.sh -dns -burp -openvas -rolling -keyboard gb -timezone "Europe/Amsterdam"
 ################################################################################
 ## Shorten URL: >->->   wget -qO- http://bit.do/postkali | bash   <-<-<
 ##  Alt Method: curl -s -L -k https://raw.github.com/g0tmi1k/kali-postinstall/master/kali_postinstall.sh > kali.sh | nohup bash
@@ -50,7 +50,7 @@ fi
 ##### Location information
 keyboardApple=false         # Using a Apple/Macintosh keyboard (non VM)?                [ --osx ]
 keyboardLayout=""           # Set keyboard layout                                       [ --keyboard gb]
-timezone=""                 # Set timezone location                                     [ --timezone Europe/London ]
+timezone="Europe/Amsterdam" # Set timezone location                                     [ --timezone Europe/London ]
 
 ##### Optional steps
 burpFree=false              # Disable configuring Burp Suite (for Burp Pro users...)    [ --burp ]
@@ -1269,39 +1269,39 @@ grep -q '^TerminalEmulator=custom-TerminalEmulator' "${file}" 2>/dev/null || ech
 
 
 ##### Install ZSH & Oh-My-ZSH - root user.   Note:  'Open terminal here', will not work with ZSH.   Make sure to have tmux already installed
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}ZSH${RESET} & ${GREEN}Oh-My-ZSH${RESET} ~ unix shell"
-#group="sudo"
-apt-get -y -qq install zsh git curl || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
-#--- Setup oh-my-zsh
-#rm -rf ~/.oh-my-zsh/
-timeout 300 curl --progress -k -L -f "https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh" | zsh    #curl -s -L "https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh"  || echo -e ' '${RED}'[!]'${RESET}" Issue downloading file" 1>&2
-#--- Configure zsh
-file=~/.zshrc; [ -e "${file}" ] && cp -n $file{,.bkup}   #/etc/zsh/zshrc
-([[ -e "${file}" && "$(tail -c 1 ${file})" != "" ]]) && echo >> "${file}"
-grep -q 'interactivecomments' "${file}" 2>/dev/null || echo 'setopt interactivecomments' >> "${file}"
-grep -q 'ignoreeof' "${file}" 2>/dev/null || echo 'setopt ignoreeof' >> "${file}"
-grep -q 'correctall' "${file}" 2>/dev/null || echo 'setopt correctall' >> "${file}"
-grep -q 'globdots' "${file}" 2>/dev/null || echo 'setopt globdots' >> "${file}"
-grep -q '.bash_aliases' "${file}" 2>/dev/null || echo 'source $HOME/.bash_aliases' >> "${file}"
-grep -q '/usr/bin/tmux' "${file}" 2>/dev/null || echo '#if ([[ -z "$TMUX" && -n "$SSH_CONNECTION" ]]); then /usr/bin/tmux attach || /usr/bin/tmux new; fi' >> "${file}"   # If not already in tmux and via SSH
-#--- Configure zsh (themes) ~ https://github.com/robbyrussell/oh-my-zsh/wiki/Themes
-sed -i 's/ZSH_THEME=.*/ZSH_THEME="mh"/' "${file}"   # Other themes: mh, jreese,   alanpeabody,   candy,   terminalparty, kardan,   nicoulaj, sunaku
-#--- Configure oh-my-zsh
-sed -i 's/.*DISABLE_AUTO_UPDATE="true"/DISABLE_AUTO_UPDATE="true"/' "${file}"
-sed -i 's/plugins=(.*)/plugins=(git tmux last-working-dir)/' "${file}"
-#--- Set zsh as default shell (current user)
-chsh -s "$(which zsh)"
-#--- Use it ~ Not much point to it being a post-install script
-#/usr/bin/env zsh      # Use it
-#source "${file}"          # Make sure to reload our config
-#--- Copy it to other user(s)
-#if [ -e "/home/${username}/" ]; then   # Will do this later on again, if there isn't already a user
-#  cp -f /{root,home/${username}}/.zshrc
-#  cp -rf /{root,home/${username}}/.oh-my-zsh/
-#  chown -R ${username}\:${group} /home/${username}/.zshrc /home/${username}/.oh-my-zsh/
-#  chsh "${username}" -s "$(which zsh)"
-#  sed -i 's#^export ZSH=/.*/.oh-my-zsh#export ZSH=/home/'${username}'/.oh-my-zsh#' /home/${username}/.zshrc
-#fi
+# echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}ZSH${RESET} & ${GREEN}Oh-My-ZSH${RESET} ~ unix shell"
+# #group="sudo"
+# apt-get -y -qq install zsh git curl || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
+# #--- Setup oh-my-zsh
+# #rm -rf ~/.oh-my-zsh/
+# timeout 300 curl --progress -k -L -f "https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh" | zsh    #curl -s -L "https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh"  || echo -e ' '${RED}'[!]'${RESET}" Issue downloading file" 1>&2
+# #--- Configure zsh
+# file=~/.zshrc; [ -e "${file}" ] && cp -n $file{,.bkup}   #/etc/zsh/zshrc
+# ([[ -e "${file}" && "$(tail -c 1 ${file})" != "" ]]) && echo >> "${file}"
+# grep -q 'interactivecomments' "${file}" 2>/dev/null || echo 'setopt interactivecomments' >> "${file}"
+# grep -q 'ignoreeof' "${file}" 2>/dev/null || echo 'setopt ignoreeof' >> "${file}"
+# grep -q 'correctall' "${file}" 2>/dev/null || echo 'setopt correctall' >> "${file}"
+# grep -q 'globdots' "${file}" 2>/dev/null || echo 'setopt globdots' >> "${file}"
+# grep -q '.bash_aliases' "${file}" 2>/dev/null || echo 'source $HOME/.bash_aliases' >> "${file}"
+# grep -q '/usr/bin/tmux' "${file}" 2>/dev/null || echo '#if ([[ -z "$TMUX" && -n "$SSH_CONNECTION" ]]); then /usr/bin/tmux attach || /usr/bin/tmux new; fi' >> "${file}"   # If not already in tmux and via SSH
+# #--- Configure zsh (themes) ~ https://github.com/robbyrussell/oh-my-zsh/wiki/Themes
+# sed -i 's/ZSH_THEME=.*/ZSH_THEME="mh"/' "${file}"   # Other themes: mh, jreese,   alanpeabody,   candy,   terminalparty, kardan,   nicoulaj, sunaku
+# #--- Configure oh-my-zsh
+# sed -i 's/.*DISABLE_AUTO_UPDATE="true"/DISABLE_AUTO_UPDATE="true"/' "${file}"
+# sed -i 's/plugins=(.*)/plugins=(git tmux last-working-dir)/' "${file}"
+# #--- Set zsh as default shell (current user)
+# chsh -s "$(which zsh)"
+# #--- Use it ~ Not much point to it being a post-install script
+# #/usr/bin/env zsh      # Use it
+# #source "${file}"          # Make sure to reload our config
+# #--- Copy it to other user(s)
+# #if [ -e "/home/${username}/" ]; then   # Will do this later on again, if there isn't already a user
+# #  cp -f /{root,home/${username}}/.zshrc
+# #  cp -rf /{root,home/${username}}/.oh-my-zsh/
+# #  chown -R ${username}\:${group} /home/${username}/.zshrc /home/${username}/.oh-my-zsh/
+# #  chsh "${username}" -s "$(which zsh)"
+# #  sed -i 's#^export ZSH=/.*/.oh-my-zsh#export ZSH=/home/'${username}'/.oh-my-zsh#' /home/${username}/.zshrc
+# #fi
 
 
 ##### Install tmux - all users
@@ -1431,45 +1431,45 @@ select 0
 EOF
 
 
-##### Install vim - all users
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}vim${RESET} ~ CLI text editor"
-apt-get -y -qq install vim || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
-#--- Configure vim
-file=/etc/vim/vimrc; [ -e "${file}" ] && cp -n $file{,.bkup}   #~/.vimrc
-([[ -e "${file}" && "$(tail -c 1 ${file})" != "" ]]) && echo >> "${file}"
-sed -i 's/.*syntax on/syntax on/' "${file}"
-sed -i 's/.*set background=dark/set background=dark/' "${file}"
-sed -i 's/.*set showcmd/set showcmd/' "${file}"
-sed -i 's/.*set showmatch/set showmatch/' "${file}"
-sed -i 's/.*set ignorecase/set ignorecase/' "${file}"
-sed -i 's/.*set smartcase/set smartcase/' "${file}"
-sed -i 's/.*set incsearch/set incsearch/' "${file}"
-sed -i 's/.*set autowrite/set autowrite/' "${file}"
-sed -i 's/.*set hidden/set hidden/' "${file}"
-sed -i 's/.*set mouse=.*/"set mouse=a/' "${file}"
-grep -q '^set number' "${file}" 2>/dev/null || echo 'set number' >> "${file}"                                                                        # Add line numbers
-grep -q '^set autoindent' "${file}" 2>/dev/null || echo 'set autoindent' >> "${file}"                                                                # Set auto indent
-grep -q '^set expandtab' "${file}" 2>/dev/null || echo -e 'set expandtab\nset smarttab' >> "${file}"                                                 # Set use spaces instead of tabs
-grep -q '^set softtabstop' "${file}" 2>/dev/null || echo -e 'set softtabstop=4\nset shiftwidth=4' >> "${file}"                                       # Set 4 spaces as a 'tab'
-grep -q '^set foldmethod=marker' "${file}" 2>/dev/null || echo 'set foldmethod=marker' >> "${file}"                                                  # Folding
-grep -q '^nnoremap <space> za' "${file}" 2>/dev/null || echo 'nnoremap <space> za' >> "${file}"                                                      # Space toggle folds
-grep -q '^set hlsearch' "${file}" 2>/dev/null || echo 'set hlsearch' >> "${file}"                                                                    # Highlight search results
-grep -q '^set laststatus' "${file}" 2>/dev/null || echo -e 'set laststatus=2\nset statusline=%F%m%r%h%w\ (%{&ff}){%Y}\ [%l,%v][%p%%]' >> "${file}"   # Status bar
-grep -q '^filetype on' "${file}" 2>/dev/null || echo -e 'filetype on\nfiletype plugin on\nsyntax enable\nset grepprg=grep\ -nH\ $*' >> "${file}"     # Syntax highlighting
-grep -q '^set wildmenu' "${file}" 2>/dev/null || echo -e 'set wildmenu\nset wildmode=list:longest,full' >> "${file}"                                 # Tab completion
-grep -q '^set invnumber' "${file}" 2>/dev/null || echo -e ':nmap <F8> :set invnumber<CR>' >> "${file}"                                               # Toggle line numbers
-grep -q '^set pastetoggle=<F9>' "${file}" 2>/dev/null || echo -e 'set pastetoggle=<F9>' >> "${file}"                                                 # Hotkey - turning off auto indent when pasting
-grep -q '^:command Q q' "${file}" 2>/dev/null || echo -e ':command Q q' >> "${file}"                                                                 # Fix stupid typo I always make
-#--- Set as default editor
-export EDITOR="vim"   #update-alternatives --config editor
-file=/etc/bash.bashrc; [ -e "${file}" ] && cp -n $file{,.bkup}
-([[ -e "${file}" && "$(tail -c 1 ${file})" != "" ]]) && echo >> "${file}"
-grep -q '^EDITOR' "${file}" 2>/dev/null || echo 'EDITOR="vim"' >> "${file}"
-git config --global core.editor "vim"
-#--- Set as default mergetool
-git config --global merge.tool vimdiff
-git config --global merge.conflictstyle diff3
-git config --global mergetool.prompt false
+# ##### Install vim - all users
+# echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}vim${RESET} ~ CLI text editor"
+# apt-get -y -qq install vim || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
+# #--- Configure vim
+# file=/etc/vim/vimrc; [ -e "${file}" ] && cp -n $file{,.bkup}   #~/.vimrc
+# ([[ -e "${file}" && "$(tail -c 1 ${file})" != "" ]]) && echo >> "${file}"
+# sed -i 's/.*syntax on/syntax on/' "${file}"
+# sed -i 's/.*set background=dark/set background=dark/' "${file}"
+# sed -i 's/.*set showcmd/set showcmd/' "${file}"
+# sed -i 's/.*set showmatch/set showmatch/' "${file}"
+# sed -i 's/.*set ignorecase/set ignorecase/' "${file}"
+# sed -i 's/.*set smartcase/set smartcase/' "${file}"
+# sed -i 's/.*set incsearch/set incsearch/' "${file}"
+# sed -i 's/.*set autowrite/set autowrite/' "${file}"
+# sed -i 's/.*set hidden/set hidden/' "${file}"
+# sed -i 's/.*set mouse=.*/"set mouse=a/' "${file}"
+# grep -q '^set number' "${file}" 2>/dev/null || echo 'set number' >> "${file}"                                                                        # Add line numbers
+# grep -q '^set autoindent' "${file}" 2>/dev/null || echo 'set autoindent' >> "${file}"                                                                # Set auto indent
+# grep -q '^set expandtab' "${file}" 2>/dev/null || echo -e 'set expandtab\nset smarttab' >> "${file}"                                                 # Set use spaces instead of tabs
+# grep -q '^set softtabstop' "${file}" 2>/dev/null || echo -e 'set softtabstop=4\nset shiftwidth=4' >> "${file}"                                       # Set 4 spaces as a 'tab'
+# grep -q '^set foldmethod=marker' "${file}" 2>/dev/null || echo 'set foldmethod=marker' >> "${file}"                                                  # Folding
+# grep -q '^nnoremap <space> za' "${file}" 2>/dev/null || echo 'nnoremap <space> za' >> "${file}"                                                      # Space toggle folds
+# grep -q '^set hlsearch' "${file}" 2>/dev/null || echo 'set hlsearch' >> "${file}"                                                                    # Highlight search results
+# grep -q '^set laststatus' "${file}" 2>/dev/null || echo -e 'set laststatus=2\nset statusline=%F%m%r%h%w\ (%{&ff}){%Y}\ [%l,%v][%p%%]' >> "${file}"   # Status bar
+# grep -q '^filetype on' "${file}" 2>/dev/null || echo -e 'filetype on\nfiletype plugin on\nsyntax enable\nset grepprg=grep\ -nH\ $*' >> "${file}"     # Syntax highlighting
+# grep -q '^set wildmenu' "${file}" 2>/dev/null || echo -e 'set wildmenu\nset wildmode=list:longest,full' >> "${file}"                                 # Tab completion
+# grep -q '^set invnumber' "${file}" 2>/dev/null || echo -e ':nmap <F8> :set invnumber<CR>' >> "${file}"                                               # Toggle line numbers
+# grep -q '^set pastetoggle=<F9>' "${file}" 2>/dev/null || echo -e 'set pastetoggle=<F9>' >> "${file}"                                                 # Hotkey - turning off auto indent when pasting
+# grep -q '^:command Q q' "${file}" 2>/dev/null || echo -e ':command Q q' >> "${file}"                                                                 # Fix stupid typo I always make
+# #--- Set as default editor
+# export EDITOR="vim"   #update-alternatives --config editor
+# file=/etc/bash.bashrc; [ -e "${file}" ] && cp -n $file{,.bkup}
+# ([[ -e "${file}" && "$(tail -c 1 ${file})" != "" ]]) && echo >> "${file}"
+# grep -q '^EDITOR' "${file}" 2>/dev/null || echo 'EDITOR="vim"' >> "${file}"
+# git config --global core.editor "vim"
+# #--- Set as default mergetool
+# git config --global merge.tool vimdiff
+# git config --global merge.conflictstyle diff3
+# git config --global mergetool.prompt false
 
 
 ##### Setup iceweasel
@@ -3765,7 +3765,42 @@ grep -q '^## ssh' "${file}" 2>/dev/null || echo -e '## ssh\nalias ssh-start="sys
 
 
 ##### Custom insert point
+echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}emacs${RESET} ~ The ONLY editor"
+apt-get -y -qq install emacs auctex yasnippet|| echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 
+echo -e "\n ${GREEN}[+]${RESET} Setup Extra keysbindings ${GREEN}${RESET}"
+mkdir -p ~/.config/autostart
+
+mkdir -p ~/.config/autostart/
+file=~/.config/autostart/caps.desktop; [ -e "${file}" ] && cp -n $file{,.bkup}
+cat <<EOF > "${file}" || echo -e ' '${RED}'[!] Issue with writing file: ${file}'${RESET} 1>&2
+[Desktop Entry]
+Encoding=UTF-8
+Version=0.9.4
+Type=Application
+Name=Caps rebind
+Comment=Rebind Caps to Ctrl
+Exec=/usr/bin/setxkbmap -option 'ctrl:nocaps'
+OnlyShowIn=XFCE;
+StartupNotify=false
+Terminal=false
+Hidden=false
+EOF
+
+file=~/.config/autostart/compose.desktop; [ -e "${file}" ] && cp -n $file{,.bkup}
+cat <<EOF > "${file}" || echo -e ' '${RED}'[!] Issue with writing file: ${file}'${RESET} 1>&2
+[Desktop Entry]
+Encoding=UTF-8
+Version=0.9.4
+Type=Application
+Name=set compose key
+Comment=
+Exec=setxkbmap -option compose:lwin
+OnlyShowIn=XFCE;
+StartupNotify=false
+Terminal=false
+Hidden=false
+EOF
 
 ##### Clean the system
 echo -e "\n ${GREEN}[+]${RESET} ${GREEN}Cleaning${RESET} the system"
