@@ -637,6 +637,7 @@ cat <<EOF > ~/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortcuts.
 <channel name="xfce4-keyboard-shortcuts" version="1.0">
   <property name="commands" type="empty">
     <property name="custom" type="empty">
+      <property name="&lt;Control&gt;1" type="string" value="firefox --no-remote -P"/>
       <property name="XF86Display" type="string" value="xfce4-display-settings --minimal"/>
       <property name="&lt;Alt&gt;F2" type="string" value="xfrun4"/>
       <property name="&lt;Primary&gt;&lt;Alt&gt;t" type="string" value="/usr/bin/exo-open --launch TerminalEmulator"/>
@@ -667,9 +668,6 @@ cat <<EOF > ~/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortcuts.
       <property name="&lt;Alt&gt;F12" type="string" value="above_key"/>
       <property name="&lt;Alt&gt;F4" type="string" value="close_window_key"/>
       <property name="&lt;Alt&gt;F6" type="string" value="stick_window_key"/>
-      <property name="&lt;Alt&gt;F7" type="string" value="move_window_key"/>
-      <property name="&lt;Alt&gt;F8" type="string" value="resize_window_key"/>
-      <property name="&lt;Alt&gt;F9" type="string" value="hide_window_key"/>
       <property name="&lt;Alt&gt;Insert" type="string" value="add_workspace_key"/>
       <property name="&lt;Alt&gt;space" type="string" value="popup_menu_key"/>
       <property name="&lt;Alt&gt;Tab" type="string" value="cycle_windows_key"/>
@@ -682,17 +680,9 @@ cat <<EOF > ~/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortcuts.
       <property name="&lt;Control&gt;&lt;Shift&gt;&lt;Alt&gt;Right" type="string" value="move_window_right_key"/>
       <property name="&lt;Control&gt;&lt;Shift&gt;&lt;Alt&gt;Up" type="string" value="move_window_up_key"/>
       <property name="&lt;Control&gt;F1" type="string" value="workspace_1_key"/>
-      <property name="&lt;Control&gt;F10" type="string" value="workspace_10_key"/>
-      <property name="&lt;Control&gt;F11" type="string" value="workspace_11_key"/>
-      <property name="&lt;Control&gt;F12" type="string" value="workspace_12_key"/>
       <property name="&lt;Control&gt;F2" type="string" value="workspace_2_key"/>
       <property name="&lt;Control&gt;F3" type="string" value="workspace_3_key"/>
       <property name="&lt;Control&gt;F4" type="string" value="workspace_4_key"/>
-      <property name="&lt;Control&gt;F5" type="string" value="workspace_5_key"/>
-      <property name="&lt;Control&gt;F6" type="string" value="workspace_6_key"/>
-      <property name="&lt;Control&gt;F7" type="string" value="workspace_7_key"/>
-      <property name="&lt;Control&gt;F8" type="string" value="workspace_8_key"/>
-      <property name="&lt;Control&gt;F9" type="string" value="workspace_9_key"/>
       <property name="&lt;Shift&gt;&lt;Alt&gt;Page_Down" type="string" value="lower_window_key"/>
       <property name="&lt;Shift&gt;&lt;Alt&gt;Page_Up" type="string" value="raise_window_key"/>
       <property name="&lt;Super&gt;Tab" type="string" value="switch_window_key"/>
@@ -984,9 +974,10 @@ cat <<EOF > "${file}" || echo -e ' '${RED}'[!] Issue with writing file'${RESET} 
 /usr/bin/conky &
 EOF
 chmod -f 0500 "${file}"
-#--- Add keyboard shortcut (CTRL+r) to run the conky refresh script
-file=~/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortcuts.xml   #; [ -e "${file}" ] && cp -n $file{,.bkup}
-grep -q '<property name="&lt;Primary&gt;r" type="string" value="/usr/local/bin/conky-refresh"/>' "${file}" || sed -i 's#<property name="\&lt;Alt\&gt;F2" type="string" value="xfrun4"/>#<property name="\&lt;Alt\&gt;F2" type="string" value="xfrun4"/>\n      <property name="\&lt;Primary\&gt;r" type="string" value="/usr/local/bin/conky-refresh"/>#' "${file}"
+## Commented out to prefet colission with Burp (send to repeater)
+# #--- Add keyboard shortcut (CTRL+r) to run the conky refresh script
+# file=~/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortcuts.xml   #; [ -e "${file}" ] && cp -n $file{,.bkup}
+# grep -q '<property name="&lt;Primary&gt;r" type="string" value="/usr/local/bin/conky-refresh"/>' "${file}" || sed -i 's#<property name="\&lt;Alt\&gt;F2" type="string" value="xfrun4"/>#<property name="\&lt;Alt\&gt;F2" type="string" value="xfrun4"/>\n      <property name="\&lt;Primary\&gt;r" type="string" value="/usr/local/bin/conky-refresh"/>#' "${file}"
 #--- Remove any old sessions
 rm -f ~/.cache/sessions/*
 #--- Reload XFCE
