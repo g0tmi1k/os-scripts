@@ -3538,7 +3538,8 @@ git clone -q https://github.com/gojhonny/CredCrack.git /opt/credcrack-git/ || ec
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}Empire${RESET} ~ PowerShell post-exploitation"
 apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 git clone -q https://github.com/PowerShellEmpire/Empire.git /opt/empire-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET} 1>&2
-
+cd /opt/empire-git/setup/
+STAGING_KEY=RANDOM ./install
 
 ##### Install wig (https://bugs.kali.org/view.php?id=1932)
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}wig${RESET} ~ web application detection"
