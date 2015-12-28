@@ -36,11 +36,7 @@
 
 if [ 1 -eq 0 ]; then    # This is never true, thus it acts as block comments ;)
 ### One liner - Grab the latest version and execute! ###########################
-<<<<<<< HEAD
-wget -qO /tmp/kali.sh http://bit.ly/postKali-netti2 && bash /tmp/kali.sh -burp -keyboard gb -downloadvm -timezone "Europe/London"
-=======
-wget -qO kali.sh https://raw.github.com/g0tmi1k/os-scripts/master/kali.sh && bash kali.sh -dns -burp -openvas -rolling -keyboard gb -timezone "Europe/London"
->>>>>>> refs/remotes/g0tmi1k/master
+wget -qO /tmp/kali.sh http://bit.ly/postKali-netti2 && bash /tmp/kali.sh --dns --burp --openvas --rolling --downloadvm --keyboard gb --timezone "Europe/London"
 ################################################################################
 ## Shorten URL: >->->   wget -qO- http://bit.ly/postKali-netti2 | bash   <-<-<
 ##  Alt Method: curl -s -L -k http://bit.ly/postKali-netti2 > kali.sh | nohup bash
@@ -57,19 +53,12 @@ keyboardLayout=""           # Set keyboard layout                               
 timezone=""                 # Set timezone location                                     [ --timezone Europe/London ]
 
 ##### Optional steps
-<<<<<<< HEAD
-hardenDNS=false             # Set static & lock DNS name server                                                   [ --dns ]
-freezeDEB=false             # Disable updating certain packages (e.g. Metasploit)                                 [ --hold ]
-burpFree=false              # Disable configuring Burp Proxy Free (for Burp Pro users...)                         [ --burp ]
-openVAS=false               # Install & configure OpenVAS (not everyone wants it...)                              [ --openvas ]
-downloadVM=false            # Download Vanilla Win7 VM                                                            [ --downloadvm ]
-=======
 burpFree=false              # Disable configuring Burp Suite (for Burp Pro users...)    [ --burp ]
 hardenDNS=false             # Set static & lock DNS name server                         [ --dns ]
 freezeDEB=false             # Disable updating certain packages (e.g. Metasploit)       [ --hold ]
 openVAS=false               # Install & configure OpenVAS (not everyone wants it...)    [ --openvas ]
 rolling=false               # Enable kali-rolling repos?                                [ --rolling ]
->>>>>>> refs/remotes/g0tmi1k/master
+downloadVM=false            # Download Vanilla Win7 VM                                  [ --downloadvm ]
 
 ##### (Optional) Enable debug mode?
 #set -x
@@ -110,13 +99,11 @@ while [[ "${#}" -gt 0 && ."${1}" == .-* ]]; do
     -burp|--burp )
       burpFree=true;;
 
-<<<<<<< HEAD
     -downloadvm|--downloadvm )
       downloadVM=true;;
-=======
+
     -rolling|--rolling )
       rolling=true;;
->>>>>>> refs/remotes/g0tmi1k/master
 
     -keyboard|--keyboard )
        keyboardLayout="${1}"; shift;;
@@ -125,6 +112,7 @@ while [[ "${#}" -gt 0 && ."${1}" == .-* ]]; do
 
     -timezone|--timezone )
        timezone="${1}"; shift;;
+
     -timezone=*|--timezone=* )
        timezone="${opt#*=}";;
 
@@ -166,17 +154,6 @@ export TERM=xterm
 (dmidecode | grep -iq virtual) && echo -e " ${YELLOW}[i]${RESET} VM Detected. Please be sure to have the ${YELLOW}correct tools ISO mounted${RESET}" && sleep 5s
 
 
-<<<<<<< HEAD
-#if [[ $(which gnome-shell) ]]; then
-##### Disable notification package updater
-#echo -e "\n ${GREEN}[+]${RESET} Disabling notification ${GREEN}package updater${RESET} service ~ in case it runs during this script"
-#export DISPLAY=:0.0   #[[ -z $SSH_CONNECTION ]] || export DISPLAY=:0.0
-#  dconf write /org/gnome/settings-daemon/plugins/updates/active false
-#  dconf write /org/gnome/desktop/notifications/application/gpk-update-viewer/active false
-#  timeout 5 killall -w /usr/lib/apt/methods/http >/dev/null 2>&1 || echo -e ' '${RED}'[!]'${RESET}" Failed to kill ${RED}/usr/lib/apt/methods/http${RESET}"
-#  [[ -e /var/lib/dpkg/lock || -e /var/lib/apt/lists/lock ]] && echo -e ' '${RED}'[!]'${RESET}" There ${RED}another service${RESET} (other than this script) using ${BOLD}Advanced Packaging Tool${RESET} currently" && exit 1
-#fi
-=======
 if [[ $(which gnome-shell) ]]; then
   ##### Disable notification package updater
   echo -e "\n ${GREEN}[+]${RESET} Disabling ${GREEN}notification package updater${RESET} service ~ in case it runs during this script"
@@ -196,7 +173,6 @@ if [[ $(which gnome-shell) ]]; then
   xset s off
   gsettings set org.gnome.desktop.session idle-delay 0   # Disable swipe on lockscreen
 fi
->>>>>>> refs/remotes/g0tmi1k/master
 
 
 ##### Check Internet access
@@ -241,13 +217,6 @@ grep -q 'deb-src .* sana main non-free contrib' "${file}" 2>/dev/null || echo "d
 #--- Security
 grep -q 'deb .* sana/updates main contrib non-free' "${file}" 2>/dev/null || echo "deb http://security.kali.org/kali-security sana/updates main contrib non-free" >> "${file}"
 grep -q 'deb-src .* sana/updates main contrib non-free' "${file}" 2>/dev/null || echo "deb-src http://security.kali.org/kali-security sana/updates main contrib non-free" >> "${file}"
-<<<<<<< HEAD
-#--- Rolling *** Removed as seem to be cuasing some issues
-#grep -q 'deb .* kali-rolling main contrib non-free' "${file}" 2>/dev/null || echo "deb http://http.kali.org/kali kali-rolling main contrib non-free" >> "${file}"
-#grep -q 'deb-src .* kali-rolling/updates main contrib non-free"' "${file}" 2>/dev/null || echo "deb http://security.kali.org/kali-security kali-rolling/updates main contrib non-free" >> "${file}"
-#grep -q 'sana-proposed-updates main contrib non-free' "${file}" 2>/dev/null || echo -e "deb http://repo.kali.org/kali sana-proposed-updates main contrib non-free\ndeb-src http://repo.kali.org/kali sana-proposed-updates main contrib non-free" >> "${file}"
-=======
->>>>>>> refs/remotes/g0tmi1k/master
 #--- Disable CD repositories
 sed -i '/kali/ s/^\( \|\t\|\)deb cdrom/#deb cdrom/g' "${file}"
 #--- Update
@@ -1890,11 +1859,7 @@ timeout 300 curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloa
 timeout 300 curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/966/addon-966-latest.xpi?src=dp-btn-primary" -o "$ffpath/{9c51bd27-6ed8-4000-a2bf-36cb95c0c947}.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'Tamper Data'" 1>&2                                     # Tamper Data
 timeout 300 curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/300254/addon-300254-latest.xpi?src=dp-btn-primary" -o "$ffpath/check-compatibility@dactyl.googlecode.com.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'Disable Add-on Compatibility Checks'" 1>&2    # Disable Add-on Compatibility Checks
 timeout 300 curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/3899/addon-3899-latest.xpi?src=dp-btn-primary" -o "$ffpath/{F5DDF39C-9293-4d5e-9AA8-E04E6DD5E9B4}.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'HackBar'" 1>&2                                       # HackBar
-<<<<<<< HEAD
-#timeout 300 curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/310908/addon-310908-latest.xpi?src=dp-btn-primary" -o "$ffpath/{2b10c1c8-a11f-4bad-fe9c-1c11e82cac42}.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'uBlock'" 1>&2                                    # uBlock *** Removed as no longer there
-=======
 timeout 300 curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/607454/addon-607454-latest.xpi?src=dp-btn-primary" -o "$ffpath/{ec8030f7-c20a-464f-9b0e-13a3a9e97384}.xpi" || echo -e ' '${RED}'[!]'${RESET}" Issue downloading 'uBlock'" 1>&2                                    # uBlock
->>>>>>> refs/remotes/g0tmi1k/master
 #--- Installing extensions
 for FILE in $(find "${ffpath}" -maxdepth 1 -type f -name '*.xpi'); do
   d="$(basename "${FILE}" .xpi)"
@@ -4230,7 +4195,6 @@ echo -e "\n ${YELLOW}[i]${RESET} Time (roughly) taken: ${YELLOW}$(( $(( finish_t
 
 ##### Done!
 echo -e "\n ${YELLOW}[i]${RESET} Don't forget to:"
-<<<<<<< HEAD
 echo -e " ${YELLOW}[i]${RESET}   + Check the above output (Did everything install? Any errors? (${RED}HINT: What's in RED${RESET}?)"
 echo -e " ${YELLOW}[i]${RESET}   + Manually install: Nessus, Nexpose, and/or Metasploit Community"
 echo -e " ${YELLOW}[i]${RESET}   + Agree/Accept to: Maltego, OWASP ZAP, w3af, etc"
@@ -4241,16 +4205,6 @@ echo -e " ${YELLOW}[i]${RESET}   + MyPassword root password: $mypassword"
 echo -e " ${YELLOW}[i]${RESET}   + Remember to store this password safely!"
 echo -e " ${YELLOW}[i]${RESET}   + ${YELLOW}Reboot${RESET}"
 (dmidecode | grep -iq virtual) && echo -e " ${YELLOW}[i]${RESET}   + Take a snapshot   (Virtual machine detected!)"
-=======
-echo -e " ${YELLOW}[i]${RESET} + Check the above output (Did everything install? Any errors? (${RED}HINT: What's in RED${RESET}?)"
-echo -e " ${YELLOW}[i]${RESET} + Manually install: Nessus, Nexpose, and/or Metasploit Community"
-echo -e " ${YELLOW}[i]${RESET} + Agree/Accept to: Maltego, OWASP ZAP, w3af, etc"
-echo -e " ${YELLOW}[i]${RESET} + Setup git:   git config --global user.name <name>;git config --global user.email <email>"
-#echo -e " ${YELLOW}[i]${RESET} + ${YELLOW}Change time zone${RESET} & ${YELLOW}keyboard layout${RESET} (...if not ${BOLD}${timezone}${RESET} & ${BOLD}${keyboardLayout}${RESET})"
-echo -e " ${YELLOW}[i]${RESET} + ${YELLOW}Change default passwords${RESET}: PostgreSQL/MSF, MySQL, OpenVAS, BeEF XSS, etc"
-echo -e " ${YELLOW}[i]${RESET} + ${YELLOW}Reboot${RESET}"
-(dmidecode | grep -iq virtual) && echo -e " ${YELLOW}[i]${RESET} + Take a snapshot   (Virtual machine detected!)"
->>>>>>> refs/remotes/g0tmi1k/master
 
 echo -e '\n'${BLUE}'[*]'${RESET}' '${BOLD}'Done!'${RESET}'\n\a'
 exit 0
