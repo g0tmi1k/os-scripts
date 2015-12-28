@@ -17,22 +17,13 @@
 #  You will need 25GB+ of HDD space.                          #
 #                             ---                             #
 #  Command line arguments:                                    #
-<<<<<<< HEAD
-#    --burp     = Automates configuring Burp Proxy (Free)     #
-#    --dns      = Use Google's DNS and locks permissions      #
-#    --hold     = Disable updating certain packages (eg. msf) #
-#    --openvas  = Installs & configures OpenVAS vuln scanner  #
-#    --osx      = Configures Apple keyboard layout            #
-#    --downloadvm = Will download a Vanilla Win7 VM from SCP  #
-=======
 #    -burp     = Automates configuring Burp Suite             #
 #    -dns      = Use Google's DNS and locks permissions       #
 #    -hold     = Disable updating certain packages (e.g. msf) #
 #    -openvas  = Installs & configures OpenVAS vuln scanner   #
 #    -osx      = Configures Apple keyboard layout             #
 #    -rolling  = Use kali-rolling repository                  #
->>>>>>> refs/remotes/g0tmi1k/master
-#                                                             #
+#    -downloadvm = Will download a Vanilla Win7 VM from SCP   #
 #    -keyboard <value> = Change the keyboard layout language  #
 #    -timezone <value> = Change the timezone location         #
 #                                                             #
