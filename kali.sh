@@ -459,60 +459,47 @@ mypassword=`pwgen -scn $mypassword_len 1`
 echo -e "\\n\\e[01;32m[+]\\e[00m Just clearing out the tools repo...."
 rm -rf $localDir
 mkdir -p $localDir 2>/dev/null
-apt-get -y -qq install dialog
-EIGHT=15
-WIDTH=40
-CHOICE_HEIGHT=4
-BACKTITLE="KALI BUILD SCRIPT"
-TITLE="Download Location"
-MENU="Choose one of the following options:"
-
-OPTIONS=(1 "Option 1"
-         2 "Option 2"
-         3 "Option 3"
-         4 "Option 4"
-         5 "Option 5"
-         6 "Option 6")
-
-CHOICE=$(dialog --clear \
-                --backtitle "$BACKTITLE" \
-                --title "$TITLE" \
-                --menu "$MENU" \
-                $HEIGHT $WIDTH $CHOICE_HEIGHT \
-                "${OPTIONS[@]}" \
-                2>&1 >/dev/tty)
-case $CHOICE in
-        1)
+PS3='Please enter your choice: '
+options=("1" "2" "3" "4" "5" "6" "Quit")
+select opt in "${options[@]}"
+do
+    case $opt in
+        "1")
             echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo (without Win7 VM)"
                 sftp ptbuild@secure.nettitude.com:/ptbuild/tools/* $localDir/
             
             ;;
-        2)  echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo and Win7 VM - this will take some time!"
+        "2")  echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo and Win7 VM - this will take some time!"
                 sftp ptbuild@secure.nettitude.com:/ptbuild/tools/* $localDir/
                 sftp ptbuild@secure.nettitude.com:/ptbuild/Win7-X220.tar.gz $localDir/
             
             ;;
-        3)
+        "3")
             echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo (without Win7 VM)"
                 sftp sftp root@192.168.1.250:/media/root/41f3a409-06a8-48f9-bb23-54a9649cc0c3/Kali-Build-Repo/tools/* $localDir/
             
             ;;
-        4)  echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo and Win7 VM - this will take some time!"
+        "4")  echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo and Win7 VM - this will take some time!"
                 sftp root@192.168.1.250:/media/root/41f3a409-06a8-48f9-bb23-54a9649cc0c3/Kali-Build-Repo/tools/* $localDir/
                 sftp root@192.168.1.250:/media/root/41f3a409-06a8-48f9-bb23-54a9649cc0c3/Kali-Build-Repo/Win7-X220.tar.gz $localDir/
             
             ;;
-        5)
+        "5")
             echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo (without Win7 VM)"
                 cp /media/root/f70237e6-29c5-435c-85cb-734ecddfe262/Kali-Build-Repo/tools/* $localDir
             
             ;;
-        6)  echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo and Win7 VM - this will take some time!"
+        "6")  echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo and Win7 VM - this will take some time!"
                 cp /media/root/f70237e6-29c5-435c-85cb-734ecddfe262/Kali-Build-Repo/tools/* $localDir
                 cp /media/root/f70237e6-29c5-435c-85cb-734ecddfe262/Kali-Build-Repo/Win7-X220.tar.gz $localDir
             
             ;;
-esac
+        "Quit")
+            break
+            ;;
+        *) echo invalid option;;
+    esac
+done
 
 ##### Extract VM
 echo -e "\\n\\e[01;32m[+]\\e[00m Extracting VM"
