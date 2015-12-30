@@ -3755,7 +3755,8 @@ echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}Empire${RESET} ~ PowerShell p
 apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 git clone -q https://github.com/PowerShellEmpire/Empire.git /opt/empire-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET} 1>&2
 cd /opt/empire-git/setup/
-STAGING_KEY=RANDOM ./install
+STAGING_KEY=RANDOM 
+yes | ./install
 
 ##### Install wig (https://bugs.kali.org/view.php?id=1932)
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}wig${RESET} ~ web application detection"
@@ -4052,7 +4053,7 @@ apt-get -y -qq install mysql-server
 echo -e " ${YELLOW}[i]${RESET} MySQL username: root"
 echo -e " ${YELLOW}[i]${RESET} MySQL password: $mypassword"
 if [[ ! -e ~/.my.cnf ]]; then
-  cat <<EOF > ~/.my.cnf
+cat <<EOF > ~/.my.cnf
 [client]
 user=root
 host=localhost
@@ -4142,7 +4143,7 @@ sed -i 's/^PermitRootLogin .*/PermitRootLogin yes/g' "${file}"      # Accept pas
 sed -i 's/^#AuthorizedKeysFile /AuthorizedKeysFile /g' "${file}"    # Allow for key based login
 #sed -i 's/^Port .*/Port 2222/g' "${file}"
 #--- Enable ssh at startup
-#systemctl enable ssh
+systemctl enable ssh
 #--- Setup alias (handy for 'zsh: correct 'ssh' to '.ssh' [nyae]? n')
 file=~/.bash_aliases; [ -e "${file}" ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
 ([[ -e "${file}" && "$(tail -c 1 ${file})" != "" ]]) && echo >> "${file}"
@@ -4158,24 +4159,24 @@ grep -q '^## ssh' "${file}" 2>/dev/null || echo -e '## ssh\nalias ssh-start="sys
 ###########################################################################################
 ##########   Start of Netti-Footer Section
 
-#### Resetting MySQL Root Password
+#### Resetting MySQL Root Password - Done at MySQL install stage.
 #--- Kill any mysql processes currently running
-echo -e "\n$GREEN[+]$RESET Shutting down any mysql processes..."
-systemctl stop mysql
-killall -vw mysqld
+#echo -e "\n$GREEN[+]$RESET Shutting down any mysql processes..."
+#systemctl stop mysql
+#killall -vw mysqld
 #--- Start mysql without grant tables
-mysqld_safe --skip-grant-tables >res 2>&1 &
-echo -e "\n$GREEN[+]$RESET Resetting password to: $mypassword"
+#mysqld_safe --skip-grant-tables >res 2>&1 &
+#echo -e "\n$GREEN[+]$RESET Resetting password to: $mypassword"
 #--- Sleep for 5 while the new mysql process loads (if get a connection error you might need to increase this.)
-sleep 5
+#sleep 5
 #--- Update root user with new password
-mysql mysql -e "UPDATE user SET Password=PASSWORD('$mypassword') WHERE User='root';FLUSH PRIVILEGES;"
-echo -e "\n$GREEN[+]$RESET Cleaning up..."
+#mysql mysql -e "UPDATE user SET Password=PASSWORD('$mypassword') WHERE User='root';FLUSH PRIVILEGES;"
+#echo -e "\n$GREEN[+]$RESET Cleaning up..."
 #--- Kill the insecure mysql process
-killall -v mysqld
+#killall -v mysqld
 #--- Starting mysql again
-sleep 5
-systemctl start mysql
+#sleep 5
+#systemctl start mysql
 
 ##### Add Shutter to startup (each login)
 echo -e "\n$GREEN[+]$RESET Add shutter to startup"
@@ -4206,8 +4207,8 @@ file=/usr/bin/burpsuite
 cat <<EOF > "$file"
 #!/bin/bash
 cd /opt/burpsuite-pro/
-burp-latest="$(ls -v burpsuite* | tail -n 1)"
-java -jar "$burp-latest" "\$@"
+burp-latest=`$(ls -v burpsuite* | tail -n 1)`
+java -jar `$burp-latest` "\$@"
 EOF
 chmod +x /usr/bin/burpsuite
 ## Install preferences
@@ -4227,8 +4228,55 @@ cat <<EOF > "$file"
 /media/SANDISK/SETUP/loadusb "\$@"
 EOF
 chmod +x /usr/bin/loadusb
-#systemctl enable ssh
 
+##### Adding some resource files for Metasploit
+echo -e "\\n\\e[01;32m[+]\\e[00m Adding multi-proxy.rc file"
+file=~/.msf4/multi-proxy.rc
+cat <<EOF > "$file"
+use multi/handler
+set payload windows/meterpreter/reverse_https_proxy
+set LHOST <GLOBAL_IP>
+set LPORT 443
+set PayloadProxyUser <DOMAIN>\\<USER>
+set PayloadProxyPass <PASSWORD>
+set PayloadProxyHost <PROXY_IP>
+set PayloadProxyPort <PROXY_PORT>
+set exitonsession false
+exploit -j
+EOF
+echo -e "\\n\\e[01;32m[+]\\e[00m Adding multi-https.rc file"
+file=~/.msf4/multi-proxy.rc
+cat <<EOF > "$file"
+use multi/handler
+set payload windows/meterpreter/reverse_https
+set LHOST <GLOBAL_IP>
+set LPORT 443
+set exitonsession false
+exploit -j
+EOF
+
+##### Add better logging of command line and tools
+echo -e "\n$GREEN[+]$RESET Adding better logging of command line and tools"
+#--- Added to zshrc
+file=~/.zshrc
+([[ -e "$file" ]] && [[ "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
+cat <<EOF >> "$file"
+# Script console
+date=$(date +%Y-%m-%d)
+
+if [ -z "$UNDER_SCRIPT" ]; then
+ if [ ! -d /root/log ]; then
+    mkdir /root/log
+ fi
+ export UNDER_SCRIPT=1
+ script -f -q /root/log/$date-$$.log
+ exit
+fi
+EOF
+#--- Added to screenrc
+echo -e "termcapinfo rxvt-unicode ti@:te@\ntermcapinfo rxvt ti@:te@\ntermcapinfo rxvt 'hs:ts=\E]2;:fs=07:ds=\E]2;screen07'" >> ~/.screenrc
+#--- Added to msfconsole.rc
+echo -e "set PROMPT %blu%T %redS:%S %yelJ:%J %grnIP:%L msf" >> ~/.msf4/msfconsole.rc
 ##########   End of Netti-Footer Section
 ###########################################################################################
 
