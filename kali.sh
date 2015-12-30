@@ -459,7 +459,7 @@ mypassword=`pwgen -scn $mypassword_len 1`
 echo -e "\\n\\e[01;32m[+]\\e[00m Just clearing out the tools repo...."
 rm -rf $localDir
 mkdir -p $localDir 2>/dev/null
-apt-get -y -qq dialog
+apt-get -y -qq install dialog
 EIGHT=15
 WIDTH=40
 CHOICE_HEIGHT=4
