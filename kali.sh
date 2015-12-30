@@ -487,17 +487,11 @@ until [ "$selection" = "0" ]; do
     read selection
     echo ""
     case $selection in
-        1 ) echo "You chose UK"
-            ; 
-            press_enter ;;
-        2 ) echo "You chose HOME - Please note this is for test only."
-            ; 
-            press_enter ;;
-        3 ) echo "You chose SANDISK - Please note this is for test only."
-            ;
-            press_enter ;;
+        1 ) df ; press_enter ;;
+        2 ) free ; press_enter ;;
+        3 ) ls ; press_enter ;;
         0 ) exit ;;
-        * ) echo "Please enter 1, 2, 3, or 0"; press_enter
+        * ) echo "Please enter 1, 2, or 0"; press_enter
     esac
 done
 
