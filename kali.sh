@@ -23,7 +23,6 @@
 #    -openvas  = Installs & configures OpenVAS vuln scanner   #
 #    -osx      = Configures Apple keyboard layout             #
 #    -rolling  = Use kali-rolling repository                  #
-#    -downloadvm = Will download a Vanilla Win7 VM from SCP   #
 #    -keyboard <value> = Change the keyboard layout language  #
 #    -timezone <value> = Change the timezone location         #
 #                                                             #
@@ -36,7 +35,7 @@
 
 if [ 1 -eq 0 ]; then    # This is never true, thus it acts as block comments ;)
 ### One liner - Grab the latest version and execute! ###########################
-wget -qO /tmp/kali.sh http://bit.ly/postKali-netti2 && bash /tmp/kali.sh --dns --burp --openvas --rolling --downloadvm --keyboard gb --timezone "Europe/London"
+wget -qO /tmp/kali.sh http://bit.ly/postKali-netti2 && bash /tmp/kali.sh --dns --burp --openvas --rolling --keyboard gb --timezone "Europe/London"
 ################################################################################
 ## Shorten URL: >->->   wget -qO- http://bit.ly/postKali-netti2 | bash   <-<-<
 ##  Alt Method: curl -s -L -k http://bit.ly/postKali-netti2 > kali.sh | nohup bash
@@ -58,7 +57,6 @@ hardenDNS=false             # Set static & lock DNS name server                 
 freezeDEB=false             # Disable updating certain packages (e.g. Metasploit)       [ --hold ]
 openVAS=false               # Install & configure OpenVAS (not everyone wants it...)    [ --openvas ]
 rolling=false               # Enable kali-rolling repos?                                [ --rolling ]
-downloadVM=false            # Download Vanilla Win7 VM                                  [ --downloadvm ]
 
 ##### (Optional) Enable debug mode?
 #set -x
@@ -98,9 +96,6 @@ while [[ "${#}" -gt 0 && ."${1}" == .-* ]]; do
 
     -burp|--burp )
       burpFree=true;;
-
-    -downloadvm|--downloadvm )
-      downloadVM=true;;
 
     -rolling|--rolling )
       rolling=true;;
@@ -487,49 +482,33 @@ CHOICE=$(dialog --clear \
 clear
 case $CHOICE in
         1)
-            echo "You chose UK"
-            sshsrv=secure.nettitude.com
-            remoteDir=/ptbuild
-            sshuser=ptbuild
-            ##### Start the download of UK tools repo
-              if [ "${downloadVM}" != "false" ]
-              then
-                echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo (without Win7 VM)"
-                sftp $sshuser@$sshsrv:$remoteDir/tools/* $localDir/
-              else
-                echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo and Win7 VM - this will take some time!"
-                sftp $sshuser@$sshsrv:$remoteDir/tools/* $localDir/
-                sftp $sshuser@$sshsrv:$remoteDir/Win7-X220.tar.gz $localDir/
+            echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo (without Win7 VM)"
+                sftp ptbuild@secure.nettitude.com:/ptbuild/tools/* $localDir/
             break
             ;;
-        2)
-            echo "You chose HOME - Please note this is for test only."
-            sshsrv=192.168.1.250
-            remoteDir=/media/root/41f3a409-06a8-48f9-bb23-54a9649cc0c3/Kali-Build-Repo
-            sshuser=root
-            ##### Start the download of Home tools repo
-              if [ "${downloadVM}" != "false" ]
-              then
-                echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo (without Win7 VM)"
-                sftp $sshuser@$sshsrv:$remoteDir/tools/* $localDir/
-              else
-                echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo and Win7 VM - this will take some time!"
-                sftp $sshuser@$sshsrv:$remoteDir/tools/* $localDir/
-                sftp $sshuser@$sshsrv:$remoteDir/Win7-X220.tar.gz $localDir/
+        2)  echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo and Win7 VM - this will take some time!"
+                sftp ptbuild@secure.nettitude.com:/ptbuild/tools/* $localDir/
+                sftp ptbuild@secure.nettitude.com:/ptbuild/Win7-X220.tar.gz $localDir/
             break
             ;;
         3)
-            echo "You chose SANDISK - Please note this is for test only."
-            remoteDir=/media/root/f70237e6-29c5-435c-85cb-734ecddfe262/Kali-Build-Repo
-            ##### Start the download of Home tools repo
-              if [ "${downloadVM}" != "false" ]
-              then
-                echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo (without Win7 VM)"
-                cp $remoteDir/tools/* $localDir
-              else
-                echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo and Win7 VM - this will take some time!"
-                cp $remoteDir/tools/* $localDir
-                cp $remoteDir/Win7-X220.tar.gz $localDir
+            echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo (without Win7 VM)"
+                sftp sftp root@192.168.1.250:/media/root/41f3a409-06a8-48f9-bb23-54a9649cc0c3/Kali-Build-Repo/tools/* $localDir/
+            break
+            ;;
+        4)  echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo and Win7 VM - this will take some time!"
+                sftp root@192.168.1.250:/media/root/41f3a409-06a8-48f9-bb23-54a9649cc0c3/Kali-Build-Repo/tools/* $localDir/
+                sftp root@192.168.1.250:/media/root/41f3a409-06a8-48f9-bb23-54a9649cc0c3/Kali-Build-Repo/Win7-X220.tar.gz $localDir/
+            break
+            ;;
+        5)
+            echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo (without Win7 VM)"
+                cp /media/root/f70237e6-29c5-435c-85cb-734ecddfe262/Kali-Build-Repo/tools/* $localDir
+            break
+            ;;
+        6)  echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo and Win7 VM - this will take some time!"
+                cp /media/root/f70237e6-29c5-435c-85cb-734ecddfe262/Kali-Build-Repo/tools/* $localDir
+                cp /media/root/f70237e6-29c5-435c-85cb-734ecddfe262/Kali-Build-Repo/Win7-X220.tar.gz $localDir
             break
             ;;
 esac
@@ -547,7 +526,6 @@ vboxmanage hostonlyif create
 vboxmanage hostonlyif ipconfig vboxnet0 --ip 192.168.56.1 --netmask 255.255.255.0
 ifconfig vboxnet0 up
 vboxmanage registervm /root/tools/Virtual_Machines/Win7-X220/Win7-X220.vbox
-fi
 
 ##### Installing Nessus
 echo -e "\\n\\e[01;32m[+]\\e[00m Installing NessusPro - You will need to ACTIVATE THIS!"
