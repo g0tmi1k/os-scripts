@@ -463,10 +463,11 @@ mypassword=`pwgen -scn $mypassword_len 1`
 ##### Clearing out the local tools repo
 echo -e "\\n\\e[01;32m[+]\\e[00m Just clearing out the tools repo...."
 rm -rf $localDir
+mkdir -p $localDir 2>/dev/null
 
 ##### Chose where to download from
 PS3='Where you would like to download from: '
-options=("UK" "USA" "HOME")
+options=("UK" "USA" "HOME" "SANDISK")
 select opt in "${options[@]}"
 do
     case $opt in
@@ -475,6 +476,14 @@ do
             sshsrv=secure.nettitude.com
             remoteDir=/ptbuild
             sshuser=ptbuild
+            ##### Start the download of UK tools repo
+              if [ "${downloadVM}" != "false" ]; then
+                echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo (without Win7 VM)"
+                sftp $sshuser@$sshsrv:$remoteDir/tools/* $localDir/
+              else
+                echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo and Win7 VM - this will take some time!"
+                sftp $sshuser@$sshsrv:$remoteDir/tools/* $localDir/
+                sftp $sshuser@$sshsrv:$remoteDir/Win7-X220.tar.gz $localDir/
             break
             ;;
         "USA")
@@ -485,23 +494,32 @@ do
             sshsrv=192.168.1.250
             remoteDir=/media/root/41f3a409-06a8-48f9-bb23-54a9649cc0c3/Kali-Build-Repo
             sshuser=root
+            ##### Start the download of Home tools repo
+              if [ "${downloadVM}" != "false" ]; then
+                echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo (without Win7 VM)"
+                sftp $sshuser@$sshsrv:$remoteDir/tools/* $localDir/
+              else
+                echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo and Win7 VM - this will take some time!"
+                sftp $sshuser@$sshsrv:$remoteDir/tools/* $localDir/
+                sftp $sshuser@$sshsrv:$remoteDir/Win7-X220.tar.gz $localDir/
+            break
+            ;;
+        "SANDISK")
+            echo "You chose SANDISK - Please note this is for test only."
+            remoteDir=/media/root/f70237e6-29c5-435c-85cb-734ecddfe262/Kali-Build-Repo
+            ##### Start the download of Home tools repo
+              if [ "${downloadVM}" != "false" ]; then
+                echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo (without Win7 VM)"
+                cp $remoteDir/tools/* $localDir
+              else
+                echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo and Win7 VM - this will take some time!"
+                cp $remoteDir/tools/* $localDir
+                cp $remoteDir/Win7-X220.tar.gz $localDir
             break
             ;;
         *) echo invalid option;;
     esac
 done
-
-##### Start the download of tools repo
-if [ "${downloadVM}" != "false" ]; then
-echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo (without Win7 VM)"
-mkdir -p $localDir 2>/dev/null
-sftp $sshuser@$sshsrv:$remoteDir/tools/* $localDir/
-else
-echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo and Win7 VM - this will take some time!"
-mkdir -p $localDir 2>/dev/null
-sftp -r $sshuser@$sshsrv:$remoteDir/* $localDir/
-mv $localDir/tools/* $localDir/
-rm -rf $localDir/tools
 
 ##### Extract VM
 echo -e "\\n\\e[01;32m[+]\\e[00m Extracting VM"
