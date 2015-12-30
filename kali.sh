@@ -492,7 +492,7 @@ do
 done
 
 ##### Start the download of tools repo
-if [ "$downloadVM" != "false" ]; then
+if [ "${downloadVM}" != "false" ]; then
 echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo (without Win7 VM)"
 mkdir -p $localDir 2>/dev/null
 sftp $sshuser@$sshsrv:$remoteDir/tools/* $localDir/
@@ -511,7 +511,7 @@ pv $localDir/Win7-X220.tar.gz | tar xzp -C $localDir/Virtual_Machines/
 
 ##### Installing VirtualBox
 echo -e "\\n\\e[01;32m[+]\\e[00m Installing VirtualBox"
-apt-get -y -qq install virtualbox
+apt-get -y -qq install virtualbox virtualbox-dkms
 vboxmanage hostonlyif create
 vboxmanage hostonlyif ipconfig vboxnet0 --ip 192.168.56.1 --netmask 255.255.255.0
 ifconfig vboxnet0 up
@@ -519,7 +519,7 @@ vboxmanage registervm /root/tools/Virtual_Machines/Win7-X220/Win7-X220.vbox
 fi
 
 ##### Installing Nessus
-echo -e "\\n\\e[01;32m[+]\\e[00m Installing Nessus"
+echo -e "\\n\\e[01;32m[+]\\e[00m Installing NessusPro - You will need to ACTIVATE THIS!"
 sudo dpkg -i $localDir/Nessus*.deb
 
 ##### Installing Discover
@@ -550,7 +550,7 @@ cat <<EOF > "$file"
 cd /opt/cobaltstrike/ && ./cobaltstrike "\$@"
 EOF
 chmod +x "$file"
-echo -e "\\n\\e[01;32m[+]\\e[00m Updating Teamserver"
+echo -e "\\n\\e[01;32m[+]\\e[00m Updating pointer for Teamserver"
 file=/usr/local/bin/teamserver
 cat <<EOF > "$file"
 #!/bin/bash
@@ -584,6 +584,7 @@ chmod +x /opt/macro_safe/macro_safe.py
 
 ##### Installing Pentest.rb Plugin
 echo -e "\\n\\e[01;32m[+]\\e[00m Installing Pentest.rb"
+mkdir -p ~/.msf4/plugins/
 git clone https://github.com/darkoperator/Metasploit-Plugins.git ~/.msf4/plugins
 
 ##### Installing UFW
@@ -946,6 +947,7 @@ mv -f /usr/bin/startx{,-gnome}
 ln -sf /usr/bin/startx{fce4,}
 mkdir -p ~/.config/xfce4/{desktop,menu,panel,xfconf,xfwm4}/
 mkdir -p ~/.config/xfce4/panel/launcher-{2,4,5,6,8,9}/
+mkdir -p ~/.config/xfce4/panel/launcher-3{0,1,2}/
 mkdir -p ~/.config/xfce4/xfconf/xfce-perchannel-xml/
 cat <<EOF > ~/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortcuts.xml || echo -e ' '${RED}'[!] Issue with writing file'${RESET} 1>&2
 <?xml version="1.0" encoding="UTF-8"?>
@@ -1113,11 +1115,48 @@ Categories=X-XFCE;Utility;
 Comment=Find and launch applications installed on your system
 X-XFCE-Source=file:///usr/share/applications/xfce4-appfinder.desktop
 EOF
+if [ -f /usr/lib/virtualbox/VirtualBox ]; then
+cat <<EOF > ~/.config/xfce4/panel/launcher-30/13684522860.desktop
+[Desktop Entry]
+Name=VirtualBox
+GenericName=PC virtualization solution
+Comment=Start a Windows7 Virtual Machine
+Type=Application
+Exec=virtualbox
+TryExec=VirtualBox
+MimeType=application/x-virtualbox-vbox;application/x-virtualbox-vbox-extpack;app
+lication/x-virtualbox-ovf;application/x-virtualbox-ova;
+Icon=virtualbox-vbox
+Categories=Emulator;Utility;
+X-XFCE-Source=file:///usr/share/applications/virtualbox.desktop
+EOF
+fi
+cat <<EOF > /root/.config/xfce4/panel/launcher-31/13684522861.desktop
+[Desktop Entry]
+Type=Application
+Name=Cobaltstrike
+Comment=Cobaltstrike
+Icon=/opt/cobaltstrike/icon.jpg
+Exec=cobaltstrike
+Path=/opt/cobaltstrike
+Terminal=false
+StartupNotify=true
+EOF
+cat <<EOF > /root/.config/xfce4/panel/launcher-32/13684522862.desktop
+[Desktop Entry]
+Type=Application
+Name=Firewall
+Comment=Firewall
+Icon=gufw
+Exec=gufw
+Terminal=false
+StartupNotify=false
+EOF
 _TMP=""
 [ "${burpFree}" != "false" ] && _TMP="-t int -s 5"
 xfconf-query -n -a -c xfce4-panel -p /panels -t int -s 0
 xfconf-query --create --channel xfce4-panel --property /panels/panel-0/plugin-ids \
-  -t int -s 1  -t int -s 2  -t int -s 3  -t int -s 4  ${_TMP}  -t int -s 6  -t int -s 8  -t int -s 9 \
+  -t int -s 1  -t int -s 2  -t int -s 3  -t int -s 4  ${_TMP}  -t int -s 6  -t int -s 8  -t int -s 9  -t int -s 30  -t int -s 31  -t int -s 32 \
   -t int -s 10  -t int -s 11  -t int -s 13  -t int -s 15  -t int -s 16  -t int -s 17  -t int -s 19  -t int -s 20
 xfconf-query -n -c xfce4-panel -p /panels/panel-0/length -t int -s 100
 xfconf-query -n -c xfce4-panel -p /panels/panel-0/size -t int -s 30
@@ -1131,6 +1170,9 @@ xfconf-query -n -c xfce4-panel -p /plugins/plugin-4 -t string -s launcher       
 xfconf-query -n -c xfce4-panel -p /plugins/plugin-6 -t string -s launcher          # iceweasel ID: 13684522587
 xfconf-query -n -c xfce4-panel -p /plugins/plugin-8 -t string -s launcher          # geany     ID: 13684522859  (geany gets installed later)
 xfconf-query -n -c xfce4-panel -p /plugins/plugin-9 -t string -s launcher          # search    ID: 136845425410
+xfconf-query -n -c xfce4-panel -p /plugins/plugin-30 -t string -s launcher          # virtualbox    ID: 13684522860
+xfconf-query -n -c xfce4-panel -p /plugins/plugin-31 -t string -s launcher          # cobaltstrike    ID: 13684522861
+xfconf-query -n -c xfce4-panel -p /plugins/plugin-32 -t string -s launcher          # UFW Gui    ID: 13684522862
 xfconf-query -n -c xfce4-panel -p /plugins/plugin-10 -t string -s tasklist
 xfconf-query -n -c xfce4-panel -p /plugins/plugin-11 -t string -s separator
 xfconf-query -n -c xfce4-panel -p /plugins/plugin-13 -t string -s mixer            # audio
@@ -1156,6 +1198,12 @@ xfconf-query -n -c xfce4-panel -p /plugins/plugin-6/items -t string -s "13684522
 xfconf-query -n -c xfce4-panel -p /plugins/plugin-8/items -t string -s "13684522859.desktop" -a
 # search
 xfconf-query -n -c xfce4-panel -p /plugins/plugin-9/items -t string -s "136845425410.desktop" -a
+# virtualbox
+xfconf-query -n -c xfce4-panel -p /plugins/plugin-30/items -t string -s "13684522860.desktop" -a
+# cobaltstrike
+xfconf-query -n -c xfce4-panel -p /plugins/plugin-31/items -t string -s "13684522861.desktop" -a
+# UFW Gui
+xfconf-query -n -c xfce4-panel -p /plugins/plugin-32/items -t string -s "13684522862.desktop" -a
 # tasklist (& separator - required for padding)
 xfconf-query -n -c xfce4-panel -p /plugins/plugin-10/show-labels -t bool -s true
 xfconf-query -n -c xfce4-panel -p /plugins/plugin-10/show-handle -t bool -s false
@@ -1812,7 +1860,7 @@ timeout 300 curl --progress -k -L -f "http://pentest-bookmarks.googlecode.com/fi
 #--- Configure bookmarks
 awk '!a[$0]++' /tmp/bookmarks_new.html | \egrep -v ">(Latest Headlines|Getting Started|Recently Bookmarked|Recent Tags|Mozilla Firefox|Help and Tutorials|Customize Firefox|Get Involved|About Us|Hacker Media|Bookmarks Toolbar|Most Visited)</" | \egrep -v "^    </DL><p>" | \egrep -v "^<DD>Add" > "${file}"
 sed -i 's#^</DL><p>#        </DL><p>\n    </DL><p>\n</DL><p>#' "${file}"                                                          # Fix import issues from pentest-bookmarks...
-sed -i 's#^    <DL><p>#    <DL><p>\n    <DT><A HREF="http://127.0.0.1/">localhost</A>#' "${file}"                                 # Add localhost to bookmark toolbar (before hackery folder)
+sed -i 's#^<DL><p>#    <DL><p>\n    <DT><A HREF="http://127.0.0.1/">localhost</A>#' "${file}"                                 # Add localhost to bookmark toolbar (before hackery folder)
 sed -i 's#^</DL><p>#    <DT><A HREF="https://127.0.0.1:8834/">Nessus</A>\n</DL><p>#' "${file}"                                    # Add Nessus UI bookmark toolbar
 [ "${openVAS}" != "false" ] && sed -i 's#^</DL><p>#    <DT><A HREF="https://127.0.0.1:9392/">OpenVAS</A>\n</DL><p>#' "${file}"     # Add OpenVAS UI to bookmark toolbar
 #sed -i 's#^</DL><p>#    <DT><A HREF="https://127.0.0.1:3780/">Nexpose</A>\n</DL><p>#' "${file}"                                  # Add Nexpose UI to bookmark toolbar
@@ -2071,6 +2119,31 @@ grep -q '^GOCOW' "${file}" 2>/dev/null || echo 'GOCOW=1' >> "${file}"
 #--- Fix any port issues
 file=$(find /etc/postgresql/*/main/ -maxdepth 1 -type f -name postgresql.conf -print -quit); [ -e "${file}" ] && cp -n $file{,.bkup}
 sed -i 's/port = .* #/port = 5432 /' "${file}"
+#--- Reset Metasploit Password
+# Update the password in /opt/metasploit/apps/pro/ui/config/database.yml
+cat >/opt/metasploit/apps/pro/ui/config/database.yml <<EOL
+# This is the full content of the file
+development:
+  adapter: "postgresql"
+  database: "msf3"
+  username: "msf3"
+  password: "$mypassword"
+  port: 5432
+  host: "localhost"
+  pool: 256
+  timeout: 5
+production:
+  adapter: "postgresql"
+  database: "msf3"
+  username: "msf3"
+  password: "$mypassword"
+  port: 5432
+  host: "localhost"
+  pool: 256
+  timeout: 5
+EOL
+#--- Reset default postgresql password for msf3:
+sudo -u postgres psql -c "ALTER USER msf3 WITH PASSWORD '$mypassword';"
 #--- Start services
 systemctl stop postgresql
 systemctl start postgresql   #systemctl restart postgresql
@@ -2731,8 +2804,8 @@ sed -i 's#^.*"Default editor".*#\t<Setting name="Default editor">2/usr/bin/geany
 
 
 ##### Install remmina
-#echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}remmina${RESET} ~ GUI remote desktop"
-#apt-get -y -qq install remmina remmina-plugin-xdmcp remmina-plugin-rdp remmina-plugin-vnc || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
+echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}remmina${RESET} ~ GUI remote desktop"
+apt-get -y -qq install remmina remmina-plugin-xdmcp remmina-plugin-rdp remmina-plugin-vnc || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 
 
 ##### Install xrdp
@@ -2770,7 +2843,7 @@ apt-get -y -qq install unace unrar rar unzip zip p7zip p7zip-full p7zip-rar || e
 ##### Install VPN support
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}VPN${RESET} support for Network-Manager"
 #*** I know its messy...
-for FILE in network-manager-openvpn network-manager-pptp network-manager-vpnc network-manager-openconnect network-manager-iodine; do
+for FILE in network-manager-openvpn network-manager-pptp network-manager-vpnc network-manager-openconnect network-manager-iodine network-manager-pptp-gnome network-manager-openconnect-gnome network-manager-vpnc-gnome network-manager-openvpn-gnome; do
   apt-get -y -qq install "${FILE}" || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 done
 
@@ -3770,9 +3843,9 @@ file=/usr/share/beef-xss/config.yaml; [ -e "${file}" ] && cp -n $file{,.bkup}
 username="root"
 password="toor"
 sed -i 's/user:.*".*"/user:   "'${username}'"/' "${file}"
-sed -i 's/passwd:.*".*"/passwd:  "'${password}'"/'  "${file}"
+sed -i 's/passwd:.*".*"/passwd:  "'${mypassword}'"/'  "${file}"
 echo -e " ${YELLOW}[i]${RESET} BeEF username: ${username}"
-echo -e " ${YELLOW}[i]${RESET} BeEF password: ${password}   ***${BOLD}CHANGE THIS ASAP${RESET}***.   Edit: /usr/share/beef-xss/config.yaml"
+echo -e " ${YELLOW}[i]${RESET} BeEF password: ${mypassword}"
 #--- Example hook
 #<script src="http://192.168.155.175:3000/hook.js" type="text/javascript"></script>
 
@@ -4088,7 +4161,7 @@ grep -q '^## ssh' "${file}" 2>/dev/null || echo -e '## ssh\nalias ssh-start="sys
 #### Resetting MySQL Root Password
 #--- Kill any mysql processes currently running
 echo -e "\n$GREEN[+]$RESET Shutting down any mysql processes..."
-service mysql stop
+systemctl stop mysql
 killall -vw mysqld
 #--- Start mysql without grant tables
 mysqld_safe --skip-grant-tables >res 2>&1 &
@@ -4102,7 +4175,7 @@ echo -e "\n$GREEN[+]$RESET Cleaning up..."
 killall -v mysqld
 #--- Starting mysql again
 sleep 5
-service mysql restart
+systemctl start mysql
 
 ##### Add Shutter to startup (each login)
 echo -e "\n$GREEN[+]$RESET Add shutter to startup"
@@ -4133,7 +4206,7 @@ file=/usr/bin/burpsuite
 cat <<EOF > "$file"
 #!/bin/bash
 cd /opt/burpsuite-pro/
-burp-latest="$(ls -v burpsuite* | tail -n 1)""
+burp-latest="$(ls -v burpsuite* | tail -n 1)"
 java -jar "$burp-latest" "\$@"
 EOF
 chmod +x /usr/bin/burpsuite
@@ -4196,12 +4269,13 @@ echo -e "\n ${YELLOW}[i]${RESET} Time (roughly) taken: ${YELLOW}$(( $(( finish_t
 ##### Done!
 echo -e "\n ${YELLOW}[i]${RESET} Don't forget to:"
 echo -e " ${YELLOW}[i]${RESET}   + Check the above output (Did everything install? Any errors? (${RED}HINT: What's in RED${RESET}?)"
-echo -e " ${YELLOW}[i]${RESET}   + Manually install: Nessus, Nexpose, and/or Metasploit Community"
+echo -e " ${YELLOW}[i]${RESET}   + Manually install: Veil and Metasploit Community"
+echo -e " ${YELLOW}[i]${RESET}   + Activate: Nessus, Burp Pro"
 echo -e " ${YELLOW}[i]${RESET}   + Agree/Accept to: Maltego, OWASP ZAP, w3af, etc"
 echo -e " ${YELLOW}[i]${RESET}   + Setup git:   git config --global user.name <name>;git config --global user.email <email>"
 #echo -e " ${YELLOW}[i]${RESET}   + ${YELLOW}Change time zone${RESET} & ${YELLOW}keyboard layout${RESET} (...if not ${BOLD}${timezone}${RESET} & ${BOLD}${keyboardLayout}${RESET})"
 echo -e " ${YELLOW}[i]${RESET}   + ${YELLOW}Change default passwords${RESET}: PostgreSQL/MSF, OpenVAS, BeEF XSS, etc"
-echo -e " ${YELLOW}[i]${RESET}   + MyPassword root password: $mypassword"
+echo -e " ${YELLOW}[i]${RESET}   + MyPassword root password: ${RED}$mypassword${RESET}"
 echo -e " ${YELLOW}[i]${RESET}   + Remember to store this password safely!"
 echo -e " ${YELLOW}[i]${RESET}   + ${YELLOW}Reboot${RESET}"
 (dmidecode | grep -iq virtual) && echo -e " ${YELLOW}[i]${RESET}   + Take a snapshot   (Virtual machine detected!)"
