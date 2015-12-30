@@ -488,41 +488,13 @@ until [ "$selection" = "0" ]; do
     echo ""
     case $selection in
         1 ) echo "You chose UK"
-            sshsrv=secure.nettitude.com
-            remoteDir=/ptbuild
-            sshuser=ptbuild
-            ##### Start the download of UK tools repo
-              if [ "${downloadVM}" != "false" ]; then
-                echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo (without Win7 VM)"
-                sftp $sshuser@$sshsrv:$remoteDir/tools/* $localDir/
-              else
-                echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo and Win7 VM - this will take some time!"
-                sftp $sshuser@$sshsrv:$remoteDir/tools/* $localDir/
-                sftp $sshuser@$sshsrv:$remoteDir/Win7-X220.tar.gz $localDir/; 
+            ; 
             press_enter ;;
         2 ) echo "You chose HOME - Please note this is for test only."
-            sshsrv=192.168.1.250
-            remoteDir=/media/root/41f3a409-06a8-48f9-bb23-54a9649cc0c3/Kali-Build-Repo
-            sshuser=root
-            ##### Start the download of Home tools repo
-              if [ "${downloadVM}" != "false" ]; then
-                echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo (without Win7 VM)"
-                sftp $sshuser@$sshsrv:$remoteDir/tools/* $localDir/
-              else
-                echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo and Win7 VM - this will take some time!"
-                sftp $sshuser@$sshsrv:$remoteDir/tools/* $localDir/
-                sftp $sshuser@$sshsrv:$remoteDir/Win7-X220.tar.gz $localDir/; 
+            ; 
             press_enter ;;
         3 ) echo "You chose SANDISK - Please note this is for test only."
-            remoteDir=/media/root/f70237e6-29c5-435c-85cb-734ecddfe262/Kali-Build-Repo
-            ##### Start the download of Home tools repo
-              if [ "${downloadVM}" != "false" ]; then
-                echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo (without Win7 VM)"
-                cp $remoteDir/tools/* $localDir
-              else
-                echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo and Win7 VM - this will take some time!"
-                cp $remoteDir/tools/* $localDir
-                cp $remoteDir/Win7-X220.tar.gz $localDir;
+            ;
             press_enter ;;
         0 ) exit ;;
         * ) echo "Please enter 1, 2, 3, or 0"; press_enter
