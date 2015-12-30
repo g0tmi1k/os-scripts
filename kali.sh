@@ -465,14 +465,29 @@ echo -e "\\n\\e[01;32m[+]\\e[00m Just clearing out the tools repo...."
 rm -rf $localDir
 mkdir -p $localDir 2>/dev/null
 
-##### Chose where to download from
-PS3='Where you would like to download from: '
-options=("UK" "USA" "HOME" "SANDISK")
-select opt in "${options[@]}"
-do
-    case $opt in
-        "UK")
-            echo "You chose UK"
+function press_enter
+{
+    echo ""
+    echo -n "Press Enter to continue"
+    read
+    clear
+}
+
+selection=
+until [ "$selection" = "0" ]; do
+    echo ""
+    echo "Download MENU"
+    echo "1 - secure.nettitude.com"
+    echo "2 - Test - 192.168.1.250"
+    echo "3 - Test - SANDISK"
+    echo ""
+    echo "0 - exit program"
+    echo ""
+    echo -n "Enter selection: "
+    read selection
+    echo ""
+    case $selection in
+        1 ) echo "You chose UK"
             sshsrv=secure.nettitude.com
             remoteDir=/ptbuild
             sshuser=ptbuild
@@ -483,14 +498,9 @@ do
               else
                 echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo and Win7 VM - this will take some time!"
                 sftp $sshuser@$sshsrv:$remoteDir/tools/* $localDir/
-                sftp $sshuser@$sshsrv:$remoteDir/Win7-X220.tar.gz $localDir/
-            break
-            ;;
-        "USA")
-            echo "You chose USA - this is not implemented yet. Please use UK."
-            ;;
-        "HOME")
-            echo "You chose HOME - Please note this is for test only."
+                sftp $sshuser@$sshsrv:$remoteDir/Win7-X220.tar.gz $localDir/; 
+            press_enter ;;
+        2 ) echo "You chose HOME - Please note this is for test only."
             sshsrv=192.168.1.250
             remoteDir=/media/root/41f3a409-06a8-48f9-bb23-54a9649cc0c3/Kali-Build-Repo
             sshuser=root
@@ -501,11 +511,9 @@ do
               else
                 echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo and Win7 VM - this will take some time!"
                 sftp $sshuser@$sshsrv:$remoteDir/tools/* $localDir/
-                sftp $sshuser@$sshsrv:$remoteDir/Win7-X220.tar.gz $localDir/
-            break
-            ;;
-        "SANDISK")
-            echo "You chose SANDISK - Please note this is for test only."
+                sftp $sshuser@$sshsrv:$remoteDir/Win7-X220.tar.gz $localDir/; 
+            press_enter ;;
+        3 ) echo "You chose SANDISK - Please note this is for test only."
             remoteDir=/media/root/f70237e6-29c5-435c-85cb-734ecddfe262/Kali-Build-Repo
             ##### Start the download of Home tools repo
               if [ "${downloadVM}" != "false" ]; then
@@ -514,10 +522,10 @@ do
               else
                 echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo and Win7 VM - this will take some time!"
                 cp $remoteDir/tools/* $localDir
-                cp $remoteDir/Win7-X220.tar.gz $localDir
-            break
-            ;;
-        *) echo invalid option;;
+                cp $remoteDir/Win7-X220.tar.gz $localDir;
+            press_enter ;;
+        0 ) exit ;;
+        * ) echo "Please enter 1, 2, 3, or 0"; press_enter
     esac
 done
 
