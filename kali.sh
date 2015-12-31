@@ -465,29 +465,29 @@ options=("SFTP" "SFTP w/Win7VM" "[TEST] SFTP" "[TEST] SFTP w/Win7VM" "[TEST] SAN
 select opt in "${options[@]}"
 do
     case $opt in
-        1)
+        SFTP)
             echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo (without Win7 VM)"
                 sftp ptbuild@secure.nettitude.com:/ptbuild/tools/* $localDir/
             ;;
-        2)  
+        SFTP w/Win7VM)  
             echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo and Win7 VM - this will take some time!"
                 sftp ptbuild@secure.nettitude.com:/ptbuild/tools/* $localDir/
                 sftp ptbuild@secure.nettitude.com:/ptbuild/Win7-X220.tar.gz $localDir/
             ;;
-        3)
+        [TEST] SFTP)
             echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo (without Win7 VM)"
                 sftp sftp root@192.168.1.250:/media/root/41f3a409-06a8-48f9-bb23-54a9649cc0c3/Kali-Build-Repo/tools/* $localDir/
             ;;
-        4)  
+        [TEST] SFTP w/Win7VM)  
             echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo and Win7 VM - this will take some time!"
                 sftp root@192.168.1.250:/media/root/41f3a409-06a8-48f9-bb23-54a9649cc0c3/Kali-Build-Repo/tools/* $localDir/
                 sftp root@192.168.1.250:/media/root/41f3a409-06a8-48f9-bb23-54a9649cc0c3/Kali-Build-Repo/Win7-X220.tar.gz $localDir/
             ;;
-        5)
+        [TEST] SANDISK)
             echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo (without Win7 VM)"
                 cp /media/root/f70237e6-29c5-435c-85cb-734ecddfe262/Kali-Build-Repo/tools/* $localDir
             ;;
-        6)  
+        [TEST] SANDISK w/Win7VM)  
             echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo and Win7 VM - this will take some time!"
                 cp /media/root/f70237e6-29c5-435c-85cb-734ecddfe262/Kali-Build-Repo/tools/* $localDir
                 cp /media/root/f70237e6-29c5-435c-85cb-734ecddfe262/Kali-Build-Repo/Win7-X220.tar.gz $localDir
