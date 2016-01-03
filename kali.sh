@@ -1063,7 +1063,7 @@ cat <<EOF > ~/.config/xfce4/panel/launcher-5/14470234962.desktop || echo -e ' '$
 [Desktop Entry]
 Name=burpsuite
 Encoding=UTF-8
-Exec=sh -c "java -jar /usr/bin/burpsuite"
+Exec=sh -c "burpsuite"
 Icon=burpsuite
 StartupNotify=false
 Terminal=false
@@ -4209,8 +4209,9 @@ file=/usr/bin/burpsuite
 cat <<EOF > "$file"
 #!/bin/bash
 cd /opt/burpsuite-pro/
-burp-latest=`$(ls -v burpsuite* | tail -n 1)`
-java -jar `$burp-latest` "\$@"
+burpLatest="$(ls -v burpsuite* | tail -n 1)"
+echo -e "Executing "$burpLatest""
+java -jar "$burpLatest" "\$@"
 EOF
 chmod +x /usr/bin/burpsuite
 ## Install preferences
@@ -4264,14 +4265,14 @@ file=~/.zshrc
 ([[ -e "$file" ]] && [[ "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
 cat <<EOF >> "$file"
 # Script console
-date=$(date +%Y-%m-%d)
+date="\$(date +%Y-%m-%d)"
 
-if [ -z "$UNDER_SCRIPT" ]; then
+if [ -z "\$UNDER_SCRIPT" ]; then
  if [ ! -d /root/log ]; then
     mkdir /root/log
  fi
  export UNDER_SCRIPT=1
- script -f -q /root/log/$date-$$.log
+ script -f -q /root/log/"\$date"-$$.log
  exit
 fi
 EOF
