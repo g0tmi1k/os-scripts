@@ -489,13 +489,13 @@ do
             ;;
         "[TEST] SANDISK")
             echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo (without Win7 VM)"
-                cp -v /media/root/f70237e6-29c5-435c-85cb-734ecddfe262/Kali-Build-Repo/tools/* $localDir
+                rsync -ah --progress /media/root/f70237e6-29c5-435c-85cb-734ecddfe262/Kali-Build-Repo/tools/* $localDir
             break
             ;;
         "[TEST] SANDISK w/Win7VM")  
             echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo and Win7 VM - this will take some time!"
-                cp -v /media/root/f70237e6-29c5-435c-85cb-734ecddfe262/Kali-Build-Repo/tools/* $localDir
-                cp -v /media/root/f70237e6-29c5-435c-85cb-734ecddfe262/Kali-Build-Repo/Win7-X220.tar.gz $localDir
+                rsync -ah --progress /media/root/f70237e6-29c5-435c-85cb-734ecddfe262/Kali-Build-Repo/tools/* $localDir
+                rsync -ah --progress /media/root/f70237e6-29c5-435c-85cb-734ecddfe262/Kali-Build-Repo/Win7-X220.tar.gz $localDir
             break
             ;;
         "Quit")
