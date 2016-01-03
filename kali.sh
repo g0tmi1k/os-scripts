@@ -451,7 +451,7 @@ localDir=/root/tools
 
 ##### Setup a Password for MySQL, the OS and oterh places
 # Creating the password
-apt-get install -y -qq pwgen
+apt-get install -y -qq pwgen  || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 mypassword_len=`shuf -i 20-30 -n 1`
 mypassword=`pwgen -scn $mypassword_len 1`
 
@@ -509,12 +509,12 @@ done
 ##### Extract VM
 echo -e "\\n\\e[01;32m[+]\\e[00m Extracting VM"
 mkdir $localDir/Virtual_Machines
-apt-get -y -qq install pv
+apt-get -y -qq install pv  || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 pv $localDir/Win7-X220.tar.gz | tar xzp -C $localDir/Virtual_Machines/
 
 ##### Installing VirtualBox
 echo -e "\\n\\e[01;32m[+]\\e[00m Installing VirtualBox"
-apt-get -y -qq install virtualbox virtualbox-dkms
+apt-get -y -qq install virtualbox virtualbox-dkms  || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 vboxmanage hostonlyif create
 vboxmanage hostonlyif ipconfig vboxnet0 --ip 192.168.56.1 --netmask 255.255.255.0
 ifconfig vboxnet0 up
@@ -530,13 +530,14 @@ git clone https://github.com/leebaird/discover.git /opt/discover 2>/dev/null
 pushd /opt/discover
 git pull
 popd >/dev/null
-file=/usr/local/bin/discover
-cat <<EOF > "$file"
+file=/usr/local/bin/discover; [ -e "${file}" ] && cp -n $file{,.bkup}
+cat <<EOF > "${file}" || echo -e ' '${RED}'[!] Issue with writing file'${RESET} 1>&2
 #!/bin/bash
 
 cd /opt/discover/ && ./discover.sh "\$@"
 EOF
 chmod +x "$file"
+/opt/discover/update.sh
 
 ##### Update Java for Cobaltstrike
 echo -e "\\n\\e[01;32m[+]\\e[00m Updating Java to 1.7"
@@ -545,16 +546,16 @@ update-java-alternatives --jre -s java-1.7.0-openjdk-amd64
 ##### Installing Cobaltstrike Pro
 echo -e "\\n\\e[01;32m[+]\\e[00m Installing Cobaltstrike Pro"
 tar -xvzf /$localDir/cobaltstrike.tgz -C /opt 2>/dev/null
-file=/usr/local/bin/cobaltstrike
-cat <<EOF > "$file"
+file=/usr/local/bin/cobaltstrike; [ -e "${file}" ] && cp -n $file{,.bkup}
+cat <<EOF > "${file}" || echo -e ' '${RED}'[!] Issue with writing file'${RESET} 1>&2
 #!/bin/bash
 
 cd /opt/cobaltstrike/ && ./cobaltstrike "\$@"
 EOF
 chmod +x "$file"
 echo -e "\\n\\e[01;32m[+]\\e[00m Updating pointer for Teamserver"
-file=/usr/local/bin/teamserver
-cat <<EOF > "$file"
+file=/usr/local/bin/teamserver; [ -e "${file}" ] && cp -n $file{,.bkup}
+cat <<EOF > "${file}" || echo -e ' '${RED}'[!] Issue with writing file'${RESET} 1>&2
 #!/bin/bash
 
 cd /opt/cobaltstrike/ && ./teamserver "\$@"
@@ -571,7 +572,8 @@ chmod +x /usr/bin/frogger
 echo -e "\\n\\e[01;32m[+]\\e[00m Installing Payload Generator Script"
 mkdir /opt/paygen
 wget -q http://www.hackwhackandsmack.com/paygen.py -P /opt/paygen
-cat <<EOF > /usr/local/bin/paygen
+file=/usr/local/bin/paygen; [ -e "${file}" ] && cp -n $file{,.bkup}
+cat <<EOF > "${file}" || echo -e ' '${RED}'[!] Issue with writing file'${RESET} 1>&2
 #!/bin/bash
 cd /opt/paygen/
 python ./paygen.py
@@ -591,7 +593,7 @@ git clone https://github.com/darkoperator/Metasploit-Plugins.git ~/.msf4/plugins
 
 ##### Installing UFW
 echo -e "\\n\\e[01;32m[+]\\e[00m Installing UFW and GUFW"
-apt-get -y -qq install ufw gufw
+apt-get -y -qq install ufw gufw  || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 ufw enable
 ufw allow 4444:4464/tcp # For default reverse shells
 ufw allow 8080:8090/tcp # For browser exploits
@@ -607,12 +609,12 @@ cat "$localDir"/ssh_pub >> /root/.ssh/authorized_keys
 
 ##### Installing xscreensaver        *** Doesnt work when running as root
 #echo -e "\\n\\e[01;32m[+]\\e[00m Installing xScreensaver"
-#apt-get -y -qq install xscreensaver xscreensaver-data-extra xscreensaver-gl-extra
+#apt-get -y -qq install xscreensaver xscreensaver-data-extra xscreensaver-gl-extra  || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 #xhost +localhost
 
 ##### Installing xRDP
 echo -e "\\n\\e[01;32m[+]\\e[00m Installing xRDP"
-apt-get -y -qq install xrdp
+apt-get -y -qq install xrdp  || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 service xrdp start
 update-rc.d -f xrdp enable
 
@@ -628,13 +630,13 @@ update-rc.d -f xrdp enable
 
 ##### Installing Responder
 echo -e "\n$GREEN[+]$RESET Installing Responder"
-apt-get -y -qq install git
+apt-get -y -qq install git  || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 git clone git://github.com/SpiderLabs/Responder.git /opt/responder/ 2>/dev/null
 pushd /opt/responder/
 git pull
 popd >/dev/null
-file=/usr/local/bin/responder
-cat <<EOF > "$file"
+file=/usr/local/bin/responder; [ -e "${file}" ] && cp -n $file{,.bkup}
+cat <<EOF > "${file}" || echo -e ' '${RED}'[!] Issue with writing file'${RESET} 1>&2
 #!/bin/bash
 
 cd /opt/responder/ && python responder.py "\$@"
@@ -656,24 +658,18 @@ mkdir /root/.autorandr
 cd /root/.autorandr/ && touch postswitch && chmod +x postswitch
 ln -sf /usr/local/bin/conky_refresh.sh /root/.autorandr/postswitch
 
-#---- Enabling auto change
-cat <<EOF > /etc/udev/rules.d/70-monitor.rules
-SUBSYSTEM=="drm", ACTION=="change", RUN+="/usr/bin/autorandr"
-EOF
-udevadm control --reload-rules
-
 ##### Downloading Powersploit & Powertools
 echo -e "\n$GREEN[+]$RESET Downloading Powersploit & Powertools"
-git clone git://github.com/mattifestation/PowerSploit.git $localDir/Powershell/PowerSploit 
-git clone git://github.com/Veil-Framework/PowerTools.git $localDir/Powershell/PowerTools
+git clone https://github.com/PowerShellMafia/PowerSploit.git $localDir/Powershell/PowerSploit 
+git clone https://github.com/PowerShellEmpire/PowerTools.git $localDir/Powershell/PowerTools
 
 ##### Installing Shellter 
 echo -e "\n$GREEN[+]$RESET Installing Latest Shellter"
 wget -U 'Mozilla/5.0 (X11; Linux x86_64; rv:30.0) Gecko/20100202 Firefox/30.0' -q "https://www.shellterproject.com/Downloads/Shellter/Latest/shellter.zip" -P /tmp/
-apt-get -y -qq install unzip
+apt-get -y -qq install unzip  || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 unzip -q -o -d /opt/ /tmp/shellter.zip
-file=/usr/bin/shellter
-cat <<EOF > "$file"
+file=/usr/bin/shellter; [ -e "${file}" ] && cp -n $file{,.bkup}
+cat <<EOF > "${file}" || echo -e ' '${RED}'[!] Issue with writing file'${RESET} 1>&2
 #!/bin/bash
 
 cd /opt/shellter/ && /opt/shellter/shellter.exe "\$@"
@@ -684,13 +680,13 @@ chmod +x "$file"
 echo -e "\n$GREEN[+]$RESET Installing SMBEXEC on Debian"
 git clone https://github.com/pentestgeek/smbexec.git /tmp/smbexec
 cp $localDir/smbexec_debianinstall.sh /tmp/smbexec
-apt-get -y -qq install libxslt-dev libxml2-dev
+apt-get -y -qq install libxslt-dev libxml2-dev  || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 cd /tmp/smbexec/
 chmod +x smbexec_debianinstall.sh
 ./smbexec_debianinstall.sh
 rm -f /usr/bin/smbexec
-file=/usr/bin/smbexec
-cat <<EOF > "$file"
+file=/usr/bin/smbexec; [ -e "${file}" ] && cp -n $file{,.bkup}
+cat <<EOF > "${file}" || echo -e ' '${RED}'[!] Issue with writing file'${RESET} 1>&2
 #!/bin/bash
 
 cd /opt/smbexec/ && ./smbexec.rb "\$@"
@@ -707,8 +703,12 @@ grep -rl 9050 /etc/proxychains.conf | xargs sed -i 's/9050/1080/g'
 
 ##### Installing gitr
 echo -e "\n$GREEN[+]$RESET Installing Gitr"
-apt-get -y -qq install npm
+apt-get -y -qq install npm || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 npm install -g gitr
+
+##### Installing xfreerdp
+echo -e "\n$GREEN[+]$RESET Installing xfreerdp"
+apt-get -y -qq install freerdp || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 
 #### Downloading Bluebox-ng
 echo -e "\n$GREEN[+]$RESET Downloading Bluebox-ng"
@@ -728,22 +728,23 @@ echo -e "Done, just type 'bluebox-ng' :)"
 
 ##### Installing guake
 echo -e "\n$GREEN[+]$RESET Installing Guake"
-apt-get -y -qq install guake
+apt-get -y -qq install guake || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 
 ##### Installing sublime
 echo -e "\n$GREEN[+]$RESET Installing Sublime"
-tar -xvzf /$localDir/Sublimex64.tar.bz2 -C /opt 2>/dev/null
-file=/usr/local/bin/sublime
-cat <<EOF > "$file"
+bzip2 -d /$localDir/Sublimex64.tar.bz2 2>/dev/null
+tar -xvf /$localDir/Sublimex64.tar -C /opt 2>/dev/null
+file=/usr/local/bin/sublime; [ -e "${file}" ] && cp -n $file{,.bkup}
+cat <<EOF > "${file}" || echo -e ' '${RED}'[!] Issue with writing file'${RESET} 1>&2
 #!/bin/bash
 
-cd /opt/sublime/ && ./sublime "\$@"
+cd /opt/Sublime\ Text\ 2/ && ./sublime_text "\$@"
 EOF
 chmod +x "$file"
 
 ##### Installing chrome
 echo -e "\n$GREEN[+]$RESET Installing Chrome"
-apt-get -y -qq install libappindicator1
+apt-get -y -qq install libappindicator1 || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 wget -q "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb" -P /tmp/
 dpkg -i /tmp/google-chrome-stable_current_amd64.deb
 echo "--user-data-dir" >> /usr/bin/google-chrome 
@@ -1118,7 +1119,7 @@ Comment=Find and launch applications installed on your system
 X-XFCE-Source=file:///usr/share/applications/xfce4-appfinder.desktop
 EOF
 if [ -f /usr/lib/virtualbox/VirtualBox ]; then
-cat <<EOF > ~/.config/xfce4/panel/launcher-30/13684522860.desktop
+cat <<EOF > ~/.config/xfce4/panel/launcher-30/13684522860.desktop || echo -e ' '${RED}'[!] Issue with writing file'${RESET} 1>&2
 [Desktop Entry]
 Name=VirtualBox
 GenericName=PC virtualization solution
@@ -1133,7 +1134,7 @@ Categories=Emulator;Utility;
 X-XFCE-Source=file:///usr/share/applications/virtualbox.desktop
 EOF
 fi
-cat <<EOF > /root/.config/xfce4/panel/launcher-31/13684522861.desktop
+cat <<EOF > /root/.config/xfce4/panel/launcher-31/13684522861.desktop || echo -e ' '${RED}'[!] Issue with writing file'${RESET} 1>&2
 [Desktop Entry]
 Type=Application
 Name=Cobaltstrike
@@ -1144,7 +1145,7 @@ Path=/opt/cobaltstrike
 Terminal=false
 StartupNotify=true
 EOF
-cat <<EOF > /root/.config/xfce4/panel/launcher-32/13684522862.desktop
+cat <<EOF > /root/.config/xfce4/panel/launcher-32/13684522862.desktop || echo -e ' '${RED}'[!] Issue with writing file'${RESET} 1>&2
 [Desktop Entry]
 Type=Application
 Name=Firewall
@@ -2123,12 +2124,13 @@ file=$(find /etc/postgresql/*/main/ -maxdepth 1 -type f -name postgresql.conf -p
 sed -i 's/port = .* #/port = 5432 /' "${file}"
 #--- Reset Metasploit Password
 # Update the password in /opt/metasploit/apps/pro/ui/config/database.yml
-cat >/opt/metasploit/apps/pro/ui/config/database.yml <<EOL
-# This is the full content of the file
+file=/usr/share/metasploit-framework/config/database.yml; [ -e "${file}" ] && cp -n $file{,.bkup}
+cat <<EOL > "${file}" || echo -e ' '${RED}'[!] Issue with writing file'${RESET} 1>&2
+# This is the full contents of the file
 development:
   adapter: "postgresql"
-  database: "msf3"
-  username: "msf3"
+  database: "msf"
+  username: "msf"
   password: "$mypassword"
   port: 5432
   host: "localhost"
@@ -2136,8 +2138,8 @@ development:
   timeout: 5
 production:
   adapter: "postgresql"
-  database: "msf3"
-  username: "msf3"
+  database: "msf"
+  username: "msf"
   password: "$mypassword"
   port: 5432
   host: "localhost"
@@ -4183,8 +4185,8 @@ grep -q '^## ssh' "${file}" 2>/dev/null || echo -e '## ssh\nalias ssh-start="sys
 ##### Add Shutter to startup (each login)
 echo -e "\n$GREEN[+]$RESET Add shutter to startup"
 touch /root/.config/autostart/shutter.desktop
-file=/root/.config/autostart/shutter.desktop; [ -e "$file" ] && cp -n $file{,.bkup}
-cat <<EOF > "$file"
+file=/root/.config/autostart/shutter.desktop; [ -e "${file}" ] && cp -n $file{,.bkup}
+cat <<EOF > "${file}" || echo -e ' '${RED}'[!] Issue with writing file'${RESET} 1>&2
 [Desktop Entry]
 Encoding=UTF-8
 Version=0.9.4
@@ -4205,8 +4207,8 @@ mkdir /opt/burpsuite-pro 2>/dev/null
 tar -xf $localDir/Burp.tar.gz -C /opt/burpsuite-pro
 ## Replace Free Version
 mv /usr/bin/burpsuite /usr/bin/burpsuite-free
-file=/usr/bin/burpsuite
-cat <<EOF > "$file"
+file=/usr/bin/burpsuite [ -e "${file}" ] && cp -n $file{,.bkup}
+cat <<EOF > "${file}" || echo -e ' '${RED}'[!] Issue with writing file'${RESET} 1>&2
 #!/bin/bash
 cd /opt/burpsuite-pro/
 burpLatest="$(ls -v burpsuite* | tail -n 1)"
@@ -4225,8 +4227,8 @@ cat <<EOF > "/etc/udev/rules.d/10-usb-drive.rules"
 SUBSYSTEMS=="usb",ACTION=="add",KERNEL=="sd?1", ATTRS{serial}=="4C531001430410121534", RUN+="/bin/mount /dev/%k /media/SANDISK",OPTIONS="last_rule"
 ACTION=="remove",KERNEL=="sd[b-z][1-9]",RUN+="/bin/umount /dev/%k",OPTIONS="last_rule"
 EOF
-file=/usr/bin/loadusb
-cat <<EOF > "$file"
+file=/usr/bin/loadusb [ -e "${file}" ] && cp -n $file{,.bkup}
+cat <<EOF > "${file}" || echo -e ' '${RED}'[!] Issue with writing file'${RESET} 1>&2
 #!/bin/bash
 /media/SANDISK/SETUP/loadusb "\$@"
 EOF
@@ -4234,8 +4236,8 @@ chmod +x /usr/bin/loadusb
 
 ##### Adding some resource files for Metasploit
 echo -e "\\n\\e[01;32m[+]\\e[00m Adding multi-proxy.rc file"
-file=~/.msf4/multi-proxy.rc
-cat <<EOF > "$file"
+file=~/.msf4/multi-proxy.rc [ -e "${file}" ] && cp -n $file{,.bkup}
+cat <<EOF > "${file}" || echo -e ' '${RED}'[!] Issue with writing file'${RESET} 1>&2
 use multi/handler
 set payload windows/meterpreter/reverse_https_proxy
 set LHOST <GLOBAL_IP>
@@ -4248,8 +4250,8 @@ set exitonsession false
 exploit -j
 EOF
 echo -e "\\n\\e[01;32m[+]\\e[00m Adding multi-https.rc file"
-file=~/.msf4/multi-proxy.rc
-cat <<EOF > "$file"
+file=~/.msf4/multi-proxy.rc [ -e "${file}" ] && cp -n $file{,.bkup}
+cat <<EOF > "${file}" || echo -e ' '${RED}'[!] Issue with writing file'${RESET} 1>&2
 use multi/handler
 set payload windows/meterpreter/reverse_https
 set LHOST <GLOBAL_IP>
