@@ -750,14 +750,14 @@ dpkg -i /tmp/google-chrome-stable_current_amd64.deb
 echo "--user-data-dir" >> /usr/bin/google-chrome 
 
 ##### Sanity break point for testing and debugging
-read -p "Are you sure you want to continue? <y/N> " prompt
-if [[ $prompt == "n" || $prompt == "N" || $prompt == "NO" || $prompt == "No" ]]
-then
-   echo -e "OK see you later then....goodbye."
-   exit 0
-else
-  echo -e "OK then we shall continue...."
-fi
+#read -p "Are you sure you want to continue? <y/N> " prompt
+#if [[ $prompt == "n" || $prompt == "N" || $prompt == "NO" || $prompt == "No" ]]
+#then
+#   echo -e "OK see you later then....goodbye."
+#   exit 0
+#else
+#  echo -e "OK then we shall continue...."
+#fi
 
 ##########   End of Netti-Header Section
 #########################################################################################
