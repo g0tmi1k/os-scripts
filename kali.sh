@@ -3681,7 +3681,7 @@ fi
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}rsh-client${RESET} ~ remote shell connections"
 apt-get -y -qq install rsh-client || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 
-##### Install finger
+##### Install finger - user information lookup program
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}finger${RESET} ~ user information lookup program"
 apt-get -y -qq install finger || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 
