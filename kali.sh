@@ -3681,11 +3681,33 @@ fi
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}rsh-client${RESET} ~ remote shell connections"
 apt-get -y -qq install rsh-client || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 
+##### Install finger - user information lookup program
+echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}finger${RESET} ~ user information lookup program"
+apt-get -y -qq install finger || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
+
+##### Installing jxplorer - Java LDAP Browser 
+echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}jxplorer${RESET} ~ Java LDAP Browser"
+apt-get -y -qq install jxplorer || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
+
+##### Installing smb4k - GUI SMB Mounting 
+echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}smb4k${RESET} ~ SMB GUI Browser"
+apt-get -y -qq install smb4k || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
+
+##### Installing oscanner - Oracle Scanner 
+echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}oscanner${RESET} ~ Oracle Scanner"
+apt-get -y -qq install oscanner || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
+
+##### Installing tnscmd10g - Prod / Version Oracle TNS process  
+echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}tnscmd10g${RESET} ~ Prod / version the oracle tnslsnr process"
+apt-get -y -qq install tnscmd10g || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
+
+##### Installing ike-scan - Discover and fingerprint IKE hosts (IPsec VPN Servers)
+echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}ike-scan${RESET} ~ Discover and fingerprint IKE hosts (IPsec VPN Servers)"
+apt-get -y -qq install ike-scan || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 
 ##### Install sshpass
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}sshpass${RESET} ~ automating SSH connections"
 apt-get -y -qq install sshpass || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
-
 
 ##### Install DBeaver
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}DBeaver${RESET} ~ GUI DB manager"
