@@ -612,11 +612,9 @@ cat "$localDir"/ssh_pub >> /root/.ssh/authorized_keys
 #apt-get -y -qq install xscreensaver xscreensaver-data-extra xscreensaver-gl-extra  || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 #xhost +localhost
 
-##### Installing xRDP
-echo -e "\\n\\e[01;32m[+]\\e[00m Installing xRDP"
-apt-get -y -qq install xrdp  || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
-service xrdp start
-update-rc.d -f xrdp enable
+##### Installing x11VNC
+echo -e "\\n\\e[01;32m[+]\\e[00m Installing x11vnc"
+apt-get -y -qq install vncserver x11vnc  || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 
 ##### Installing Teamviewer to /opt    *** Moving to service install script
 #echo -e "\\n\\e[01;32m[+]\\e[00m Installing Teamviewer"
