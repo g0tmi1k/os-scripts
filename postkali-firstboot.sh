@@ -1,13 +1,13 @@
 #!/bin/sh
 
 # grab our firstboot script
-/usr/bin/curl -o /root/firstboot http://bit.ly/postKali-firstboot
-chmod +x /root/postkali-firstboot
+/usr/bin/curl -o /root/postkali http://bit.ly/postKali-netti2
+chmod +x /root/postkali
 
 # create a service that will run our firstboot script
-cat > /etc/init.d/postkali-firstboot <<EOF
+cat > /etc/init.d/postkali <<EOF
 ### BEGIN INIT INFO
-# Provides:        postkali-firstboot
+# Provides:        postkali
 # Required-Start:  $networking
 # Required-Stop:   $networking
 # Default-Start:   2 3 4 5
@@ -16,13 +16,13 @@ cat > /etc/init.d/postkali-firstboot <<EOF
 # Description: A script that runs once
 ### END INIT INFO
 
-cd /root ; /usr/bin/nohup sh -x /root/postkali-firstboot &
+cd /root ; /usr/bin/nohup sh -x /root/postkali &
 
 
 EOF
 
 # install the firstboot service
-chmod +x /etc/init.d/postkali-firstboot
-update-rc.d postkali-firstboot defaults
+chmod +x /etc/init.d/postkali
+update-rc.d postkali defaults
 
-echo "finished postinst"
+echo "finished postinst of kali"
