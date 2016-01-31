@@ -11,7 +11,7 @@ Version=1.0
 Name=Postkali
 Comment=Configure Kali using Nettitude build script
 Exec=gnome-terminal -e /root/postkali
-Icon=utilities-terminal"' >> /root/Desktop/postKali.desktop
+Icon=utilities-terminal
 Terminal=false
 Type=Application
 
