@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # grab the postkali config script
 /usr/bin/wget -qO- http://bit.ly/postKali-netti2 > /root/postkali
@@ -16,3 +16,4 @@ Terminal=false
 Type=Application
 
 EOF
+chmod +x /root/postkali
