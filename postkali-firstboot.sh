@@ -5,7 +5,8 @@
 chmod +x /root/postkali
 
 # create a desktop shortcut to run the script
-cat <<EOF > /root/Desktop/postkali.desktop
+file=/root/Desktop/postkali.desktop; [ -e "${file}" ] && cp -n $file{,.bkup}
+cat <<EOF > "${file}" || echo -e ' '${RED}'[!] Issue with writing file'${RESET} 1>&2
 [Desktop Entry]
 Version=1.0
 Name=Postkali
