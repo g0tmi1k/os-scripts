@@ -14,6 +14,6 @@ Exec=gnome-terminal -e /root/postkali
 Icon=utilities-terminal
 Terminal=false
 Type=Application
-
+X-GNOME-Autostart-enabled=true
 EOF
-chmod +x /root/postkali
+chmod +x /root/postkali.desktop
