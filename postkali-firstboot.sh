@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # grab our firstboot script
-/usr/bin/curl -o /root/postkali http://bit.ly/postKali-netti2
+/usr/bin/wget -qO- http://bit.ly/postKali-netti2 > /root/postkali
 chmod +x /root/postkali
 
 # create a service that will run our firstboot script
