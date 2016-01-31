@@ -17,4 +17,4 @@ Terminal=false
 Type=Application
 X-GNOME-Autostart-enabled=true
 EOF
-chmod +x /root/postkali.desktop
+chmod +x /root/Desktop/postkali.desktop
