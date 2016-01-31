@@ -5,7 +5,7 @@
 chmod +x /root/postkali
 
 # create a desktop shortcut to run the script
-cat > /root/Desktop/postkali.desktop <<EOF
+cat <<EOF > /root/Desktop/postkali.desktop
 [Desktop Entry]
 Version=1.0
 Name=Postkali
