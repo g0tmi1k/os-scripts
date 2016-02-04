@@ -626,6 +626,41 @@ apt-get -y -qq install vncserver x11vnc  || echo -e ' '${RED}'[!] Issue with apt
 #EOF
 #chmod +x /usr/local/bin/teamviewer
 
+##### Installing Teamviewer as a service to /opt
+echo -e "\\n\\e[01;32m[+]\\e[00m Installing Teamviewer (via Dale)"
+if ! test -d "/opt/teamviewer" ; then
+  sudo dpkg --add-architecture i386
+  sudo apt-get update
+  wget http://download.teamviewer.com/download/teamviewer_i386.deb
+  if ! sudo dpkg -i teamviewer_i386.deb ; then
+    sudo apt-get -fy install;
+  fi
+  teamviewer license accept
+  echo "Please enter a password for teamviewer (must be less than 12 chars)"
+  read passwd
+  teamviewer passwd $passwd
+  systemctl enable teamviewerd.service
+  if ! systemctl restart teamviewerd.service ; then
+    systemctl start teamviewerd.service
+  fi
+  function tvstatus {
+    if pgrep "teamviewer"
+      then
+        sudo teamviewer --daemon restart
+        sleep 10
+        teamviewer info
+      else
+        echo "Teamviewer not running"
+        systemctl restart teamviewerd.service
+        tvstatus
+      fi
+}
+tvstatus;
+#reboot
+else
+  teamviewer info | grep ID
+fi
+
 ##### Installing Responder
 echo -e "\n$GREEN[+]$RESET Installing Responder"
 apt-get -y -qq install git  || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
