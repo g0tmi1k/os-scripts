@@ -1,6 +1,7 @@
 #!/bin/sh
 
 # grab the postkali-icon to desktop and runit
+mkdir /root/Desktop
 /usr/bin/wget -qO- http://bit.ly/postKali-icon > /root/Desktop/postKali-icon.desktop
 chmod +x /root/Desktop/postKali-icon.desktop
 
