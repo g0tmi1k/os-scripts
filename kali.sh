@@ -82,6 +82,7 @@ while [[ "${#}" -gt 0 && ."${1}" == .-* ]]; do
 
     -osx|--osx )
       keyboardApple=true;;
+
     -apple|--apple )
       keyboardApple=true;;
 
@@ -452,8 +453,8 @@ localDir=/root/tools
 ##### Setup a Password for MySQL, the OS and oterh places
 # Creating the password
 apt-get install -y -qq pwgen  || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
-mypassword_len=`shuf -i 20-30 -n 1`
-mypassword=`pwgen -scn $mypassword_len 1`
+buildpwd_len=`shuf -i 20-30 -n 1`
+buildpwd=`pwgen -scn $buildpwd_len 1`
 
 ##### Clearing out the local tools repo
 echo -e "\\n\\e[01;32m[+]\\e[00m Just clearing out the tools repo....DONE!"
@@ -478,24 +479,24 @@ do
             ;;
         "[TEST] SFTP")
             echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo (without Win7 VM)"
-                sftp sftp root@192.168.1.250:/media/root/41f3a409-06a8-48f9-bb23-54a9649cc0c3/Kali-Build-Repo/tools/* $localDir/
+                sftp sftp root@192.168.1.250:/media/SANDISK/Kali-Build-Repo/tools/* $localDir/
             break
             ;;
         "[TEST] SFTP w/Win7VM")  
             echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo and Win7 VM - this will take some time!"
-                sftp root@192.168.1.250:/media/root/41f3a409-06a8-48f9-bb23-54a9649cc0c3/Kali-Build-Repo/tools/* $localDir/
-                sftp root@192.168.1.250:/media/root/41f3a409-06a8-48f9-bb23-54a9649cc0c3/Kali-Build-Repo/Win7-X220.tar.gz $localDir/
+                sftp root@192.168.1.250:/media/SANDISK/Kali-Build-Repo/tools/* $localDir/
+                sftp root@192.168.1.250:/media/SANDISK/Kali-Build-Repo/Win7-X220.tar.gz $localDir/
             break
             ;;
         "[TEST] SANDISK")
             echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo (without Win7 VM)"
-                rsync -ah --progress /media/root/f70237e6-29c5-435c-85cb-734ecddfe262/Kali-Build-Repo/tools/* $localDir
+                rsync -ah --progress /media/SANDISK/Kali-Build-Repo/tools/* $localDir
             break
             ;;
         "[TEST] SANDISK w/Win7VM")  
             echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo and Win7 VM - this will take some time!"
-                rsync -ah --progress /media/root/f70237e6-29c5-435c-85cb-734ecddfe262/Kali-Build-Repo/tools/* $localDir
-                rsync -ah --progress /media/root/f70237e6-29c5-435c-85cb-734ecddfe262/Kali-Build-Repo/Win7-X220.tar.gz $localDir
+                rsync -ah --progress /media/SANDISK/Kali-Build-Repo/tools/* $localDir
+                rsync -ah --progress /media/SANDISK/Kali-Build-Repo/Win7-X220.tar.gz $localDir
             break
             ;;
         "Quit")
@@ -636,9 +637,9 @@ if ! test -d "/opt/teamviewer" ; then
     sudo apt-get -fy install;
   fi
   teamviewer license accept
-  echo "Please enter a password for teamviewer (must be less than 12 chars)"
-  read passwd
-  teamviewer passwd $passwd
+  #echo "Please enter a password for teamviewer (must be less than 12 chars)"
+  #read passwd
+  teamviewer passwd $buildpwd
   systemctl enable teamviewerd.service
   if ! systemctl restart teamviewerd.service ; then
     systemctl start teamviewerd.service
@@ -2164,7 +2165,7 @@ development:
   adapter: "postgresql"
   database: "msf"
   username: "msf"
-  password: "$mypassword"
+  password: "$buildpwd"
   port: 5432
   host: "localhost"
   pool: 256
@@ -2173,14 +2174,14 @@ production:
   adapter: "postgresql"
   database: "msf"
   username: "msf"
-  password: "$mypassword"
+  password: "$buildpwd"
   port: 5432
   host: "localhost"
   pool: 256
   timeout: 5
 EOL
 #--- Reset default postgresql password for msf3:
-sudo -u postgres psql -c "ALTER USER msf3 WITH PASSWORD '$mypassword';"
+sudo -u postgres psql -c "ALTER USER msf3 WITH PASSWORD '$buildpwd';"
 #--- Start services
 systemctl stop postgresql
 systemctl start postgresql   #systemctl restart postgresql
@@ -3881,9 +3882,9 @@ file=/usr/share/beef-xss/config.yaml; [ -e "${file}" ] && cp -n $file{,.bkup}
 username="root"
 password="toor"
 sed -i 's/user:.*".*"/user:   "'${username}'"/' "${file}"
-sed -i 's/passwd:.*".*"/passwd:  "'${mypassword}'"/'  "${file}"
+sed -i 's/passwd:.*".*"/passwd:  "'${buildpwd}'"/'  "${file}"
 echo -e " ${YELLOW}[i]${RESET} BeEF username: ${username}"
-echo -e " ${YELLOW}[i]${RESET} BeEF password: ${mypassword}"
+echo -e " ${YELLOW}[i]${RESET} BeEF password: ${buildpwd}"
 #--- Example hook
 #<script src="http://192.168.155.175:3000/hook.js" type="text/javascript"></script>
 
@@ -4088,13 +4089,13 @@ apt-get -y -qq install php5 php5-cli php5-curl
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}MySQL${RESET} ~ database"
 apt-get -y -qq install mysql-server
 echo -e " ${YELLOW}[i]${RESET} MySQL username: root"
-echo -e " ${YELLOW}[i]${RESET} MySQL password: $mypassword"
+echo -e " ${YELLOW}[i]${RESET} MySQL password: $buildpwd"
 if [[ ! -e ~/.my.cnf ]]; then
 cat <<EOF > ~/.my.cnf
 [client]
 user=root
 host=localhost
-password=$mypassword
+password=$buildpwd
 EOF
 fi
 
@@ -4203,11 +4204,11 @@ grep -q '^## ssh' "${file}" 2>/dev/null || echo -e '## ssh\nalias ssh-start="sys
 #killall -vw mysqld
 #--- Start mysql without grant tables
 #mysqld_safe --skip-grant-tables >res 2>&1 &
-#echo -e "\n$GREEN[+]$RESET Resetting password to: $mypassword"
+#echo -e "\n$GREEN[+]$RESET Resetting password to: $buildpwd"
 #--- Sleep for 5 while the new mysql process loads (if get a connection error you might need to increase this.)
 #sleep 5
 #--- Update root user with new password
-#mysql mysql -e "UPDATE user SET Password=PASSWORD('$mypassword') WHERE User='root';FLUSH PRIVILEGES;"
+#mysql mysql -e "UPDATE user SET Password=PASSWORD('$buildpwd') WHERE User='root';FLUSH PRIVILEGES;"
 #echo -e "\n$GREEN[+]$RESET Cleaning up..."
 #--- Kill the insecure mysql process
 #killall -v mysqld
@@ -4361,7 +4362,7 @@ echo -e " ${YELLOW}[i]${RESET}   + Agree/Accept to: Maltego, OWASP ZAP, w3af, et
 echo -e " ${YELLOW}[i]${RESET}   + Setup git:   git config --global user.name <name>;git config --global user.email <email>"
 #echo -e " ${YELLOW}[i]${RESET}   + ${YELLOW}Change time zone${RESET} & ${YELLOW}keyboard layout${RESET} (...if not ${BOLD}${timezone}${RESET} & ${BOLD}${keyboardLayout}${RESET})"
 echo -e " ${YELLOW}[i]${RESET}   + ${YELLOW}Change default passwords${RESET}: PostgreSQL/MSF, OpenVAS, BeEF XSS, etc"
-echo -e " ${YELLOW}[i]${RESET}   + MyPassword root password: ${RED}$mypassword${RESET}"
+echo -e " ${YELLOW}[i]${RESET}   + buildpwd root password: ${RED}$buildpwd${RESET}"
 echo -e " ${YELLOW}[i]${RESET}   + Remember to store this password safely!"
 echo -e " ${YELLOW}[i]${RESET}   + ${YELLOW}Reboot${RESET}"
 (dmidecode | grep -iq virtual) && echo -e " ${YELLOW}[i]${RESET}   + Take a snapshot   (Virtual machine detected!)"
