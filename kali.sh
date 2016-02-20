@@ -448,12 +448,12 @@ apt-get -y -qq install kali-linux-full || echo -e ' '${RED}'[!] Issue with apt-g
 ##########   Start of Netti-Header Section
 
 ##### Path to where to put the tools on Kali
-localDir=/root/tools
+localDir=/root/Downloads
 
-##### Setup a Password for MySQL, the OS and oterh places
+##### Setup a Password for MySQL, Teamviwer, MSFand other places
 # Creating the password
 apt-get install -y -qq pwgen  || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
-buildpwd_len=`shuf -i 20-30 -n 1`
+buildpwd_len=`shuf -i 8-12 -n 1`
 buildpwd=`pwgen -scn $buildpwd_len 1`
 
 ##### Clearing out the local tools repo
@@ -469,6 +469,7 @@ do
         "SFTP")
             echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo (without Win7 VM)"
                 sftp ptbuild@secure.nettitude.com:/ptbuild/tools/* $localDir/
+                
             break
             ;;
         "SFTP w/Win7VM")  
@@ -479,13 +480,18 @@ do
             ;;
         "[TEST] SFTP")
             echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo (without Win7 VM)"
-                sftp sftp root@192.168.1.250:/media/SANDISK/Kali-Build-Repo/tools/* $localDir/
+                sftp root@192.168.1.250:/media/SANDISK/Kali-Build-Repo/tools/* $localDir/
+                if [ "$?" -eq "0" ];
+                  then
+                    echo "SUCCESS"
+                  else
+                    sftp root@192.168.1.250:/media/SANDISK/Kali-Build-Repo/tools/* $localDir/
+                fi
             break
             ;;
         "[TEST] SFTP w/Win7VM")  
             echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo and Win7 VM - this will take some time!"
-                sftp root@192.168.1.250:/media/SANDISK/Kali-Build-Repo/tools/* $localDir/
-                sftp root@192.168.1.250:/media/SANDISK/Kali-Build-Repo/Win7-X220.tar.gz $localDir/
+                sftp root@192.168.1.250:/media/SANDISK/Kali-Build-Repo/tools/* $localDir/ && sftp root@192.168.1.250:/media/SANDISK/Kali-Build-Repo/Win7-X220.tar.gz $localDir/
             break
             ;;
         "[TEST] SANDISK")
@@ -519,7 +525,7 @@ apt-get -y -qq install virtualbox virtualbox-dkms  || echo -e ' '${RED}'[!] Issu
 vboxmanage hostonlyif create
 vboxmanage hostonlyif ipconfig vboxnet0 --ip 192.168.56.1 --netmask 255.255.255.0
 ifconfig vboxnet0 up
-vboxmanage registervm /root/tools/Virtual_Machines/Win7-X220/Win7-X220.vbox
+vboxmanage registervm $localDir/Virtual_Machines/Win7-X220/Win7-X220.vbox
 
 ##### Installing Nessus
 echo -e "\\n\\e[01;32m[+]\\e[00m Installing NessusPro - You will need to ACTIVATE THIS!"
@@ -541,27 +547,27 @@ chmod +x "$file"
 /opt/discover/update.sh
 
 ##### Update Java for Cobaltstrike
-echo -e "\\n\\e[01;32m[+]\\e[00m Updating Java to 1.7"
-update-java-alternatives --jre -s java-1.7.0-openjdk-amd64
+#echo -e "\\n\\e[01;32m[+]\\e[00m Updating Java to 1.7"
+#update-java-alternatives --jre -s java-1.7.0-openjdk-amd64
 
-##### Installing Cobaltstrike Pro
-echo -e "\\n\\e[01;32m[+]\\e[00m Installing Cobaltstrike Pro"
-tar -xvzf /$localDir/cobaltstrike.tgz -C /opt 2>/dev/null
-file=/usr/local/bin/cobaltstrike; [ -e "${file}" ] && cp -n $file{,.bkup}
-cat <<EOF > "${file}" || echo -e ' '${RED}'[!] Issue with writing file'${RESET} 1>&2
+##### Installing Cobaltstrike Pro - removed until new version brought
+#echo -e "\\n\\e[01;32m[+]\\e[00m Installing Cobaltstrike Pro"
+#tar -xvzf /$localDir/cobaltstrike.tgz -C /opt 2>/dev/null
+#file=/usr/local/bin/cobaltstrike; [ -e "${file}" ] && cp -n $file{,.bkup}
+#cat <<EOF > "${file}" || echo -e ' '${RED}'[!] Issue with writing file'${RESET} 1>&2
 #!/bin/bash
-
-cd /opt/cobaltstrike/ && ./cobaltstrike "\$@"
-EOF
-chmod +x "$file"
-echo -e "\\n\\e[01;32m[+]\\e[00m Updating pointer for Teamserver"
-file=/usr/local/bin/teamserver; [ -e "${file}" ] && cp -n $file{,.bkup}
-cat <<EOF > "${file}" || echo -e ' '${RED}'[!] Issue with writing file'${RESET} 1>&2
-#!/bin/bash
-
-cd /opt/cobaltstrike/ && ./teamserver "\$@"
-EOF
-chmod +x "$file"
+#
+#cd /opt/cobaltstrike/ && ./cobaltstrike "\$@"
+#EOF
+#chmod +x "$file"
+#echo -e "\\n\\e[01;32m[+]\\e[00m Updating pointer for Teamserver"
+#file=/usr/local/bin/teamserver; [ -e "${file}" ] && cp -n $file{,.bkup}
+#cat <<EOF > "${file}" || echo -e ' '${RED}'[!] Issue with writing file'${RESET} 1>&2
+##!/bin/bash
+#
+#cd /opt/cobaltstrike/ && ./teamserver "\$@"
+#EOF
+#chmod +x "$file"
 
 ##### Installing Frogger VLAN Hopping
 echo -e "\\n\\e[01;32m[+]\\e[00m Installing Frogger VLAN Hopping"
@@ -604,9 +610,9 @@ ufw allow http # For Apache
 ufw allow ssh # For SSH
 ufw logging on
 
-##### Installing Team SSH Keys
-echo -e "\\n\\e[01;32m[+]\\e[00m Installing Team SSH Keys"
-cat "$localDir"/ssh_pub >> /root/.ssh/authorized_keys
+##### Installing Team SSH Keys - removed as using TV instead of tunnelling X
+#echo -e "\\n\\e[01;32m[+]\\e[00m Installing Team SSH Keys"
+#cat "$localDir"/ssh_pub >> /root/.ssh/authorized_keys
 
 ##### Installing xscreensaver        *** Doesnt work when running as root
 #echo -e "\\n\\e[01;32m[+]\\e[00m Installing xScreensaver"
@@ -615,7 +621,7 @@ cat "$localDir"/ssh_pub >> /root/.ssh/authorized_keys
 
 ##### Installing x11VNC
 echo -e "\\n\\e[01;32m[+]\\e[00m Installing x11vnc"
-apt-get -y -qq install vncserver x11vnc  || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
+apt-get -y -qq install x11vnc  || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 
 ##### Installing Teamviewer to /opt    *** Moving to service install script
 #echo -e "\\n\\e[01;32m[+]\\e[00m Installing Teamviewer"
@@ -662,20 +668,20 @@ else
   teamviewer info | grep ID
 fi
 
-##### Installing Responder
-echo -e "\n$GREEN[+]$RESET Installing Responder"
-apt-get -y -qq install git  || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
-git clone git://github.com/SpiderLabs/Responder.git /opt/responder/ 2>/dev/null
-pushd /opt/responder/
-git pull
-popd >/dev/null
-file=/usr/local/bin/responder; [ -e "${file}" ] && cp -n $file{,.bkup}
-cat <<EOF > "${file}" || echo -e ' '${RED}'[!] Issue with writing file'${RESET} 1>&2
-#!/bin/bash
-
-cd /opt/responder/ && python responder.py "\$@"
-EOF
-chmod +x "$file"
+##### Installing Responder - removed as states already upto date
+#echo -e "\n$GREEN[+]$RESET Installing Responder"
+#apt-get -y -qq install git  || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
+#git clone git://github.com/SpiderLabs/Responder.git /opt/responder/ 2>/dev/null
+#pushd /opt/responder/
+#git pull
+#popd >/dev/null
+#file=/usr/local/bin/responder; [ -e "${file}" ] && cp -n $file{,.bkup}
+#cat <<EOF > "${file}" || echo -e ' '${RED}'[!] Issue with writing file'${RESET} 1>&2
+##!/bin/bash
+#
+#cd /opt/responder/ && python responder.py "\$@"
+#EOF
+#chmod +x "$file"
 
 #### Downloading Responder for Windows
 echo -e "\n$GREEN[+]$RESET Downloading Responder for Windows"
@@ -2156,8 +2162,10 @@ grep -q '^GOCOW' "${file}" 2>/dev/null || echo 'GOCOW=1' >> "${file}"
 #--- Fix any port issues
 file=$(find /etc/postgresql/*/main/ -maxdepth 1 -type f -name postgresql.conf -print -quit); [ -e "${file}" ] && cp -n $file{,.bkup}
 sed -i 's/port = .* #/port = 5432 /' "${file}"
+#--- Init Metasploit Database
+msfdb init
 #--- Reset Metasploit Password
-# Update the password in /opt/metasploit/apps/pro/ui/config/database.yml
+# Update the password in /usr/share/metasploit-framework/config/database.yml
 file=/usr/share/metasploit-framework/config/database.yml; [ -e "${file}" ] && cp -n $file{,.bkup}
 cat <<EOL > "${file}" || echo -e ' '${RED}'[!] Issue with writing file'${RESET} 1>&2
 # This is the full contents of the file
@@ -2180,12 +2188,11 @@ production:
   pool: 256
   timeout: 5
 EOL
-#--- Reset default postgresql password for msf3:
-sudo -u postgres psql -c "ALTER USER msf3 WITH PASSWORD '$buildpwd';"
+#--- Reset default postgresql password for msf:
+sudo -u postgres psql -c "ALTER USER msf WITH PASSWORD '$buildpwd';"
 #--- Start services
 systemctl stop postgresql
 systemctl start postgresql   #systemctl restart postgresql
-msfdb init
 sleep 5s
 #--- Setup alias
 file=~/.bash_aliases; [ -e "${file}" ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliasesa
@@ -2193,7 +2200,6 @@ grep -q '^## metasploit' "${file}" 2>/dev/null || echo -e '## metasploit\nalias 
 #--- Apply new alias
 if [[ "${SHELL}" == "/bin/zsh" ]]; then source ~/.zshrc else source "${file}"; fi
 #--- Autorun Metasploit commands each startup
-mkdir -p ~/.msf4/modules/
 file=~/.msf4/msf_autorunscript.rc; [ -e "${file}" ] && cp -n $file{,.bkup}
 [ -e "${file}" ] || cat <<EOF > "${file}"
 #run post/windows/escalate/getsystem
@@ -4356,12 +4362,13 @@ echo -e "\n ${YELLOW}[i]${RESET} Time (roughly) taken: ${YELLOW}$(( $(( finish_t
 ##### Done!
 echo -e "\n ${YELLOW}[i]${RESET} Don't forget to:"
 echo -e " ${YELLOW}[i]${RESET}   + Check the above output (Did everything install? Any errors? (${RED}HINT: What's in RED${RESET}?)"
-echo -e " ${YELLOW}[i]${RESET}   + Manually install: Veil and Metasploit Community"
-echo -e " ${YELLOW}[i]${RESET}   + Activate: Nessus, Burp Pro"
+echo -e " ${YELLOW}[i]${RESET}   + Manually install: Veil"
+echo -e " ${YELLOW}[i]${RESET}   + Activate: Nessus"
+echo -e " ${YELLOW}[i]${RESET}   + Register in Teamviewer"
 echo -e " ${YELLOW}[i]${RESET}   + Agree/Accept to: Maltego, OWASP ZAP, w3af, etc"
 echo -e " ${YELLOW}[i]${RESET}   + Setup git:   git config --global user.name <name>;git config --global user.email <email>"
 #echo -e " ${YELLOW}[i]${RESET}   + ${YELLOW}Change time zone${RESET} & ${YELLOW}keyboard layout${RESET} (...if not ${BOLD}${timezone}${RESET} & ${BOLD}${keyboardLayout}${RESET})"
-echo -e " ${YELLOW}[i]${RESET}   + ${YELLOW}Change default passwords${RESET}: PostgreSQL/MSF, OpenVAS, BeEF XSS, etc"
+echo -e " ${YELLOW}[i]${RESET}   + ${YELLOW}Change default passwords${RESET}: OpenVAS (if installed), BeEF XSS, etc"
 echo -e " ${YELLOW}[i]${RESET}   + buildpwd root password: ${RED}$buildpwd${RESET}"
 echo -e " ${YELLOW}[i]${RESET}   + Remember to store this password safely!"
 echo -e " ${YELLOW}[i]${RESET}   + ${YELLOW}Reboot${RESET}"
