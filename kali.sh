@@ -469,13 +469,23 @@ do
         "SFTP")
             echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo (without Win7 VM)"
                 sftp ptbuild@secure.nettitude.com:/ptbuild/tools/* $localDir/
-                
+                if [ "$?" -eq "0" ];
+                  then
+                    echo "SUCCESS"
+                  else
+                    sftp ptbuild@secure.nettitude.com:/ptbuild/tools/* $localDir/
+                fi
             break
             ;;
         "SFTP w/Win7VM")  
             echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo and Win7 VM - this will take some time!"
-                sftp ptbuild@secure.nettitude.com:/ptbuild/tools/* $localDir/
-                sftp ptbuild@secure.nettitude.com:/ptbuild/Win7-X220.tar.gz $localDir/
+                sftp ptbuild@secure.nettitude.com:/ptbuild/tools/* $localDir/ && sftp ptbuild@secure.nettitude.com:/ptbuild/Win7-X220.tar.gz $localDir/
+                if [ "$?" -eq "0" ];
+                  then
+                    echo "SUCCESS"
+                  else
+                    sftp ptbuild@secure.nettitude.com:/ptbuild/tools/* $localDir/ && sftp ptbuild@secure.nettitude.com:/ptbuild/Win7-X220.tar.gz $localDir/
+                fi
             break
             ;;
         "[TEST] SFTP")
@@ -632,41 +642,6 @@ apt-get -y -qq install x11vnc  || echo -e ' '${RED}'[!] Issue with apt-get'${RES
 #./teamviewer &
 #EOF
 #chmod +x /usr/local/bin/teamviewer
-
-##### Installing Teamviewer as a service to /opt
-echo -e "\\n\\e[01;32m[+]\\e[00m Installing Teamviewer (via Dale)"
-if ! test -d "/opt/teamviewer" ; then
-  sudo dpkg --add-architecture i386
-  sudo apt-get update
-  wget http://download.teamviewer.com/download/teamviewer_i386.deb
-  if ! sudo dpkg -i teamviewer_i386.deb ; then
-    sudo apt-get -fy install;
-  fi
-  teamviewer license accept
-  #echo "Please enter a password for teamviewer (must be less than 12 chars)"
-  #read passwd
-  teamviewer passwd $buildpwd
-  systemctl enable teamviewerd.service
-  if ! systemctl restart teamviewerd.service ; then
-    systemctl start teamviewerd.service
-  fi
-  function tvstatus {
-    if pgrep "teamviewer"
-      then
-        sudo teamviewer --daemon restart
-        sleep 10
-        teamviewer info
-      else
-        echo "Teamviewer not running"
-        systemctl restart teamviewerd.service
-        tvstatus
-      fi
-}
-tvstatus;
-#reboot
-else
-  teamviewer info | grep ID
-fi
 
 ##### Installing Responder - removed as states already upto date
 #echo -e "\n$GREEN[+]$RESET Installing Responder"
@@ -4259,6 +4234,41 @@ chmod +x /usr/bin/burpsuite
 ## Install preferences
 mkdir -p /root/.java/.userPrefs/burp 2>/dev/null
 cp -f /opt/burpsuite-pro/prefs.xml /root/.java/.userPrefs/burp/prefs.xml
+
+##### Installing Teamviewer as a service to /opt
+echo -e "\\n\\e[01;32m[+]\\e[00m Installing Teamviewer (via Dale)"
+if ! test -d "/opt/teamviewer" ; then
+  sudo dpkg --add-architecture i386
+  sudo apt-get update
+  wget http://download.teamviewer.com/download/teamviewer_i386.deb
+  if ! sudo dpkg -i teamviewer_i386.deb ; then
+    sudo apt-get -fy install;
+  fi
+  teamviewer license accept
+  #echo "Please enter a password for teamviewer (must be less than 12 chars)"
+  #read passwd
+  teamviewer passwd $buildpwd
+  systemctl enable teamviewerd.service
+  if ! systemctl restart teamviewerd.service ; then
+    systemctl start teamviewerd.service
+  fi
+  function tvstatus {
+    if pgrep "teamviewer"
+      then
+        sudo teamviewer --daemon restart
+        sleep 10
+        teamviewer info
+      else
+        echo "Teamviewer not running"
+        systemctl restart teamviewerd.service
+        tvstatus
+      fi
+}
+tvstatus;
+#reboot
+else
+  teamviewer info | grep ID
+fi
 
 ##### Fixing Matt's USB to mount point SANDISK
 echo -e "\\n\\e[01;32m[+]\\e[00m Fixing Matts USB to mount point SANDISK"
