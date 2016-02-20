@@ -502,6 +502,12 @@ do
         "[TEST] SFTP w/Win7VM")  
             echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo and Win7 VM - this will take some time!"
                 sftp root@192.168.1.250:/media/SANDISK/Kali-Build-Repo/tools/* $localDir/ && sftp root@192.168.1.250:/media/SANDISK/Kali-Build-Repo/Win7-X220.tar.gz $localDir/
+                if [ "$?" -eq "0" ];
+                  then
+                    echo "SUCCESS"
+                  else
+                    sftp root@192.168.1.250:/media/SANDISK/Kali-Build-Repo/tools/* $localDir/ && sftp root@192.168.1.250:/media/SANDISK/Kali-Build-Repo/Win7-X220.tar.gz $localDir/
+                fi
             break
             ;;
         "[TEST] SANDISK")
