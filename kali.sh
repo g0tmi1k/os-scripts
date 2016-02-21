@@ -690,10 +690,11 @@ mkdir /root/.autorandr
 cd /root/.autorandr/ && touch postswitch && chmod +x postswitch
 ln -sf /usr/local/bin/conky_refresh.sh /root/.autorandr/postswitch
 
-##### Downloading Powersploit & Powertools
-echo -e "\n$GREEN[+]$RESET Downloading Powersploit & Powertools"
-git clone https://github.com/PowerShellMafia/PowerSploit.git $localDir/Powershell/PowerSploit 
-git clone https://github.com/PowerShellEmpire/PowerTools.git $localDir/Powershell/PowerTools
+##### Downloading Powersploit & Powertools & Empire
+echo -e "\n$GREEN[+]$RESET Downloading Powersploit & Powertools & Empire"
+git clone https://github.com/PowerShellMafia/PowerSploit.git $localDir/PowerSploit 
+git clone https://github.com/PowerShellEmpire/PowerTools.git $localDir/PowerTools
+git clone https://github.com/PowerShellEmpire/Empire.git $localDir/Empire
 
 ##### Installing Shellter 
 echo -e "\n$GREEN[+]$RESET Installing Latest Shellter"
@@ -4393,6 +4394,7 @@ echo -e " ${YELLOW}[i]${RESET}   + Activate: Nessus"
 echo -e " ${YELLOW}[i]${RESET}   + Register in Teamviewer"
 echo -e " ${YELLOW}[i]${RESET}   + Agree/Accept to: Maltego, OWASP ZAP, w3af, etc"
 echo -e " ${YELLOW}[i]${RESET}   + Setup git:   git config --global user.name <name>;git config --global user.email <email>"
+echo -e " ${YELLOW}[i]${RESET}   + Setup Empire:   /root/Downloads/Empire/setup/install.sh"
 #echo -e " ${YELLOW}[i]${RESET}   + ${YELLOW}Change time zone${RESET} & ${YELLOW}keyboard layout${RESET} (...if not ${BOLD}${timezone}${RESET} & ${BOLD}${keyboardLayout}${RESET})"
 echo -e " ${YELLOW}[i]${RESET}   + ${YELLOW}Change default passwords${RESET}: OpenVAS (if installed), BeEF XSS, etc"
 echo -e " ${YELLOW}[i]${RESET}   + buildpwd root password: ${RED}$buildpwd${RESET}"
