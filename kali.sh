@@ -544,7 +544,7 @@ done
 echo -e "\\n\\e[01;32m[+]\\e[00m Extracting VM"
 mkdir $localDir/Virtual_Machines
 apt-get -y -qq install pv  || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
-pv $localDir/Win7-X220.tar.gz | tar xzp -C $localDir/Virtual_Machines/
+pv $localDir/Win8-X220.tar.gz | tar xzp -C $localDir/Virtual_Machines/
 
 ##### Installing VirtualBox
 echo -e "\\n\\e[01;32m[+]\\e[00m Installing VirtualBox"
@@ -552,7 +552,8 @@ apt-get -y -qq install virtualbox virtualbox-dkms  || echo -e ' '${RED}'[!] Issu
 vboxmanage hostonlyif create
 vboxmanage hostonlyif ipconfig vboxnet0 --ip 192.168.56.1 --netmask 255.255.255.0
 ifconfig vboxnet0 up
-vboxmanage registervm $localDir/Virtual_Machines/Win7-X220/Win7-X220.vbox
+vboxmanage import -n $localDir/Virtual_Machines/Win8-X220.ova
+rm -rf $localDir/Virtual_Machines/Win8-X220.ova
 
 ##### Installing Nessus
 echo -e "\\n\\e[01;32m[+]\\e[00m Installing NessusPro - You will need to ACTIVATE THIS!"
