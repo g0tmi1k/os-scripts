@@ -529,7 +529,7 @@ EOF
         "[TEST] SANDISK w/Win7VM")  
             echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo and Win7 VM - this will take some time!"
                 rsync -ah --progress /media/SANDISK/Kali-Build-Repo/tools/* $localDir
-                rsync -ah --progress /media/SANDISK/Kali-Build-Repo/Win7-X220.tar.gz $localDir
+                rsync -ah --progress /media/SANDISK/Kali-Build-Repo/Win8-X220.ova $localDir
             break
             ;;
         "Quit")
@@ -540,20 +540,14 @@ EOF
     esac
 done
 
-##### Extract VM
-echo -e "\\n\\e[01;32m[+]\\e[00m Extracting VM"
-mkdir $localDir/Virtual_Machines
-apt-get -y -qq install pv  || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
-pv $localDir/Win8-X220.tar.gz | tar xzp -C $localDir/Virtual_Machines/
-
 ##### Installing VirtualBox
 echo -e "\\n\\e[01;32m[+]\\e[00m Installing VirtualBox"
 apt-get -y -qq install virtualbox virtualbox-dkms  || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 vboxmanage hostonlyif create
 vboxmanage hostonlyif ipconfig vboxnet0 --ip 192.168.56.1 --netmask 255.255.255.0
 ifconfig vboxnet0 up
-vboxmanage import -n $localDir/Virtual_Machines/Win8-X220.ova
-rm -rf $localDir/Virtual_Machines/Win8-X220.ova
+vboxmanage import -n $localDir/Win8-X220.ova
+rm -rf $localDir/Win8-X220.ova
 
 ##### Installing Nessus
 echo -e "\\n\\e[01;32m[+]\\e[00m Installing NessusPro - You will need to ACTIVATE THIS!"
