@@ -101,6 +101,9 @@ while [[ "${#}" -gt 0 && ."${1}" == .-* ]]; do
     -rolling|--rolling )
       rolling=true;;
 
+    -teamviewer|--teamviewer )
+      teamviewer=true;;
+
     -keyboard|--keyboard )
        keyboardLayout="${1}"; shift;;
     -keyboard=*|--keyboard=* )
@@ -147,7 +150,7 @@ export TERM=xterm
 
 
 #####  Give VM users a little heads up to get ready
-(dmidecode | grep -iq virtual) && echo -e " ${YELLOW}[i]${RESET} VM Detected. Please be sure to have the ${YELLOW}correct tools ISO mounted${RESET}" && sleep 5s
+(dmidecode | grep -iq -e vmware -e virtualbox -e qemu -e xen -e microsoft) && echo -e " ${YELLOW}[i]${RESET} VM Detected. Please be sure to have the ${YELLOW}correct tools ISO mounted${RESET}" && sleep 5s
 
 
 if [[ $(which gnome-shell) ]]; then
@@ -193,7 +196,7 @@ if [[ "$?" -ne 0 ]]; then
     echo -e ' '${RED}'[!]'${RESET}" ${RED}Possible DNS issues${RESET}(?). Manually fix the issue & re-run the script" 1>&2
   fi
   if [[ "$_TMP" == false ]]; then
-    (dmidecode | grep -iq virtual) && echo -e " ${YELLOW}[i]${RESET} VM Detected. ${YELLOW}Try switching network adapter mode${RESET} (NAT/Bridged)"
+    (dmidecode | grep -iq -e vmware -e virtualbox -e qemu -e xen -e microsoft) && echo -e " ${YELLOW}[i]${RESET} VM Detected. ${YELLOW}Try switching network adapter mode${RESET} (NAT/Bridged)"
     echo -e ' '${RED}'[!]'${RESET}" Quitting..." 1>&2
     exit 1
   fi
@@ -468,47 +471,55 @@ do
     case $opt in
         "SFTP")
             echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo (without Win7 VM)"
-                sftp ptbuild@secure.nettitude.com:/ptbuild/tools/* $localDir/
+                sftp ptbuild@secure.nettitude.com:/ptbuild/tools/ $localDir/
                 if [ "$?" -eq "0" ];
                   then
                     echo "SUCCESS"
                   else
-                    sftp ptbuild@secure.nettitude.com:/ptbuild/tools/* $localDir/
+                    sftp ptbuild@secure.nettitude.com:/ptbuild/tools/ $localDir/
                 fi
             break
             ;;
         "SFTP w/Win7VM")  
             echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo and Win7 VM - this will take some time!"
-                sftp ptbuild@secure.nettitude.com:/ptbuild/tools/* $localDir/ && sftp ptbuild@secure.nettitude.com:/ptbuild/Win7-X220.tar.gz $localDir/
+                sftp ptbuild@secure.nettitude.com:/ptbuild/ $localDir/
                 if [ "$?" -eq "0" ];
                   then
                     echo "SUCCESS"
                   else
-                    sftp ptbuild@secure.nettitude.com:/ptbuild/tools/* $localDir/ && sftp ptbuild@secure.nettitude.com:/ptbuild/Win7-X220.tar.gz $localDir/
+                    sftp ptbuild@secure.nettitude.com:/ptbuild/ $localDir/
                 fi
             break
             ;;
         "[TEST] SFTP")
             echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo (without Win7 VM)"
-                sftp root@192.168.1.250:/media/SANDISK/Kali-Build-Repo/tools/* $localDir/
+                sftp -o StrictHostKeyChecking=no "root@192.168.1.250:/media/SANDISK/Kali-Build-Repo" <<EOF
+                  get tools/* $localDir 
+EOF
                 if [ "$?" -eq "0" ];
                   then
                     echo "SUCCESS"
                   else
-                    sftp root@192.168.1.250:/media/SANDISK/Kali-Build-Repo/tools/* $localDir/
+                sftp -o StrictHostKeyChecking=no "root@192.168.1.250:/media/SANDISK/Kali-Build-Repo" <<EOF
+                  get tools/* $localDir
+EOF
                 fi
-            break
+              break
             ;;
-        "[TEST] SFTP w/Win7VM")  
-            echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo and Win7 VM - this will take some time!"
-                sftp root@192.168.1.250:/media/SANDISK/Kali-Build-Repo/tools/* $localDir/ && sftp root@192.168.1.250:/media/SANDISK/Kali-Build-Repo/Win7-X220.tar.gz $localDir/
+        "[TEST] SFTP w/Win7VM")
+            echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo (with Win7 VM)"
+                sftp -o StrictHostKeyChecking=no "root@192.168.1.250:/media/SANDISK/Kali-Build-Repo" <<EOF
+                  get * $localDir 
+EOF
                 if [ "$?" -eq "0" ];
                   then
                     echo "SUCCESS"
                   else
-                    sftp root@192.168.1.250:/media/SANDISK/Kali-Build-Repo/tools/* $localDir/ && sftp root@192.168.1.250:/media/SANDISK/Kali-Build-Repo/Win7-X220.tar.gz $localDir/
+                sftp -o StrictHostKeyChecking=no "root@192.168.1.250:/media/SANDISK/Kali-Build-Repo" <<EOF
+                  get * $localDir
+EOF
                 fi
-            break
+              break
             ;;
         "[TEST] SANDISK")
             echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo (without Win7 VM)"
@@ -797,7 +808,7 @@ amixer set Master 50% >/dev/null
 ##### Configure GRUB
 echo -e "\n ${GREEN}[+]${RESET} Configuring ${GREEN}GRUB${RESET} ~ boot manager"
 grubTimeout=5
-(dmidecode | grep -iq virtual) && grubTimeout=1   # Much less if we are in a VM
+(dmidecode | grep -iq -e vmware -e virtualbox -e qemu -e xen -e microsoft) && grubTimeout=1   # Much less if we are in a VM
 file=/etc/default/grub; [ -e "${file}" ] && cp -n $file{,.bkup}
 sed -i 's/^GRUB_TIMEOUT=.*/GRUB_TIMEOUT='${grubTimeout}'/' "${file}"                 # Time out (lower if in a virtual machine, else possible dual booting)
 sed -i 's/^GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT=""/' "${file}"   # TTY resolution    #GRUB_CMDLINE_LINUX_DEFAULT="vga=0x0318 quiet"   (crashes VM/vmwgfx)   (See Cosmetics)
@@ -935,7 +946,7 @@ gsettings set org.gnome.shell.extensions.dash-to-dock dock-position 'RIGHT'     
 gsettings set org.gnome.shell.extensions.dash-to-dock dock-fixed true                    # Set dock to be always visible
 gsettings set org.gnome.shell favorite-apps "['gnome-terminal.desktop', 'org.gnome.Nautilus.desktop', 'iceweasel.desktop', 'kali-burpsuite.desktop', 'kali-msfconsole.desktop', 'geany.desktop']"
 #--- Keyboard shortcuts
-(dmidecode | grep -iq virtual) && gsettings set org.gnome.mutter overlay-key "Super_R"   # Change 'super' key to right side (rather than left key)
+(dmidecode | grep -iq -e vmware -e virtualbox -e qemu -e xen -e microsoft) && gsettings set org.gnome.mutter overlay-key "Super_R"   # Change 'super' key to right side (rather than left key)
 #--- Disable tracker service (But enables it in XFCE)
 gsettings set org.freedesktop.Tracker.Miner.Files crawling-interval -2
 gsettings set org.freedesktop.Tracker.Miner.Files enable-monitors false
@@ -1225,7 +1236,7 @@ xfconf-query -n -c xfce4-panel -p /plugins/plugin-9/items -t string -s "13684542
 # virtualbox
 xfconf-query -n -c xfce4-panel -p /plugins/plugin-30/items -t string -s "13684522860.desktop" -a
 # cobaltstrike
-xfconf-query -n -c xfce4-panel -p /plugins/plugin-31/items -t string -s "13684522861.desktop" -a
+#xfconf-query -n -c xfce4-panel -p /plugins/plugin-31/items -t string -s "13684522861.desktop" -a
 # UFW Gui
 xfconf-query -n -c xfce4-panel -p /plugins/plugin-32/items -t string -s "13684522862.desktop" -a
 # tasklist (& separator - required for padding)
@@ -4242,26 +4253,25 @@ mkdir -p /root/.java/.userPrefs/burp 2>/dev/null
 cp -f /opt/burpsuite-pro/prefs.xml /root/.java/.userPrefs/burp/prefs.xml
 
 ##### Installing Teamviewer as a service to /opt
+if [ "${teamviewer}" != "false" ]; then
 echo -e "\\n\\e[01;32m[+]\\e[00m Installing Teamviewer (via Dale)"
-if ! test -d "/opt/teamviewer" ; then
-  sudo dpkg --add-architecture i386
-  sudo apt-get update
-  wget http://download.teamviewer.com/download/teamviewer_i386.deb
-  if ! sudo dpkg -i teamviewer_i386.deb ; then
-    sudo apt-get -fy install;
-  fi
-  teamviewer license accept
-  #echo "Please enter a password for teamviewer (must be less than 12 chars)"
-  #read passwd
-  teamviewer passwd $buildpwd
-  systemctl enable teamviewerd.service
-  if ! systemctl restart teamviewerd.service ; then
-    systemctl start teamviewerd.service
-  fi
+  if ! test -d "/opt/teamviewer" ; then
+   dpkg --add-architecture i386
+   apt-get update
+   wget http://download.teamviewer.com/download/teamviewer_i386.deb
+   if ! dpkg -i teamviewer_i386.deb ; then
+    apt-get -fy install;
+    fi
+    teamviewer license accept
+    teamviewer passwd $buildpwd
+      systemctl enable teamviewerd.service
+        if ! systemctl restart teamviewerd.service ; then
+          systemctl start teamviewerd.service
+        fi
   function tvstatus {
     if pgrep "teamviewer"
       then
-        sudo teamviewer --daemon restart
+        teamviewer --daemon restart
         sleep 10
         teamviewer info
       else
@@ -4269,13 +4279,13 @@ if ! test -d "/opt/teamviewer" ; then
         systemctl restart teamviewerd.service
         tvstatus
       fi
-}
-tvstatus;
-#reboot
-else
-  teamviewer info | grep ID
+    }
+  tvstatus;
+  #reboot
+    else
+      teamviewer info | grep ID
+    fi
 fi
-
 ##### Fixing Matt's USB to mount point SANDISK
 echo -e "\\n\\e[01;32m[+]\\e[00m Fixing Matts USB to mount point SANDISK"
 mkdir /media/SANDISK
@@ -4388,7 +4398,7 @@ echo -e " ${YELLOW}[i]${RESET}   + ${YELLOW}Change default passwords${RESET}: Op
 echo -e " ${YELLOW}[i]${RESET}   + buildpwd root password: ${RED}$buildpwd${RESET}"
 echo -e " ${YELLOW}[i]${RESET}   + Remember to store this password safely!"
 echo -e " ${YELLOW}[i]${RESET}   + ${YELLOW}Reboot${RESET}"
-(dmidecode | grep -iq virtual) && echo -e " ${YELLOW}[i]${RESET}   + Take a snapshot   (Virtual machine detected!)"
+(dmidecode | grep -iq -e vmware -e virtualbox -e qemu -e xen -e microsoft) && echo -e " ${YELLOW}[i]${RESET}   + Take a snapshot   (Virtual machine detected!)"
 
 echo -e '\n'${BLUE}'[*]'${RESET}' '${BOLD}'Done!'${RESET}'\n\a'
 exit 0
