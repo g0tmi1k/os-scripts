@@ -465,7 +465,7 @@ rm -rf $localDir
 mkdir -p $localDir 2>/dev/null
 echo -e "\\n\\e[01;32m[+]\\e[00m Ready to download....."
 PS3='Please enter your choice: '
-options=("SFTP" "SFTP w/Win7VM" "[TEST] SFTP" "[TEST] SFTP w/Win7VM" "[TEST] SANDISK" "[TEST] SANDISK w/Win7VM" "Quit")
+options=("SFTP" "SFTP w/Win8VM" "[TEST] SFTP" "[TEST] SFTP w/Win8VM" "[TEST] SANDISK" "[TEST] SANDISK w/Win8VM" "Quit")
 select opt in "${options[@]}"
 do
     case $opt in
@@ -480,7 +480,7 @@ do
                 fi
             break
             ;;
-        "SFTP w/Win7VM")  
+        "SFTP w/Win8VM")  
             echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo and Win7 VM - this will take some time!"
                 sftp ptbuild@secure.nettitude.com:/ptbuild/ $localDir/
                 if [ "$?" -eq "0" ];
@@ -506,7 +506,7 @@ EOF
                 fi
               break
             ;;
-        "[TEST] SFTP w/Win7VM")
+        "[TEST] SFTP w/Win8VM")
             echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo (with Win7 VM)"
                 sftp -o StrictHostKeyChecking=no "root@192.168.1.250:/media/SANDISK/Kali-Build-Repo" <<EOF
                   get * $localDir 
@@ -526,7 +526,7 @@ EOF
                 rsync -ah --progress /media/SANDISK/Kali-Build-Repo/tools/* $localDir
             break
             ;;
-        "[TEST] SANDISK w/Win7VM")  
+        "[TEST] SANDISK w/Win8VM")  
             echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo and Win7 VM - this will take some time!"
                 rsync -ah --progress /media/SANDISK/Kali-Build-Repo/tools/* $localDir
                 rsync -ah --progress /media/SANDISK/Kali-Build-Repo/Win8-X220.ova $localDir
