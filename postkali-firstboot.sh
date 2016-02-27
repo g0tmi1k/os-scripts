@@ -15,9 +15,7 @@ EOF
 # Create the portkali-wrapper
 cat <<EOF > /root/postkali-wrapper.sh
 #!/bin/bash
-gnome-terminal -e "/root/postkali.sh --teamviewer 2>&1 | tee /root/postKali-build.log"
-rm -f /etc/xdg/autostart/postkali.desktop
-rm -f /etc/xdg/autostart/postkali-wrapper.sh
+gnome-terminal -x sh -c "/root/postkali.sh --teamviewer 2>&1 | tee /root/postKali-build.log"
 EOF
 # Make it executable
 chmod +x /root/postkali-wrapper.sh

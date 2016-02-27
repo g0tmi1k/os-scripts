@@ -4344,6 +4344,8 @@ EOF
 echo -e "termcapinfo rxvt-unicode ti@:te@\ntermcapinfo rxvt ti@:te@\ntermcapinfo rxvt 'hs:ts=\E]2;:fs=07:ds=\E]2;screen07'" >> ~/.screenrc
 #--- Added to msfconsole.rc
 echo -e "set PROMPT %blu%T %redS:%S %yelJ:%J %grnIP:%L msf" >> ~/.msf4/msfconsole.rc
+#### Remove autostart wrapper to rpevent re running at second boot
+rm -f /etc/xdg/autostart/postkali.desktop
 ##########   End of Netti-Footer Section
 ###########################################################################################
 
@@ -4383,7 +4385,7 @@ echo -e "\n ${YELLOW}[i]${RESET} Time (roughly) taken: ${YELLOW}$(( $(( finish_t
 
 ##### Done!
 echo -e "\n ${YELLOW}[i]${RESET} Don't forget to:"
-echo -e " ${YELLOW}[i]${RESET}   + Check the above output (Did everything install? Any errors? (${RED}HINT: What's in RED${RESET}?)"
+echo -e " ${YELLOW}[i]${RESET}   + Check the above output (Did everything install? Any errors? (${RED}HINT: What's in RED${RESET}?) or in /root/postKali-build.log"
 echo -e " ${YELLOW}[i]${RESET}   + Manually install: Veil"
 echo -e " ${YELLOW}[i]${RESET}   + Activate: Nessus"
 echo -e " ${YELLOW}[i]${RESET}   + Register in Teamviewer"
@@ -4393,7 +4395,7 @@ echo -e " ${YELLOW}[i]${RESET}   + Setup Empire:   /root/Downloads/Empire/setup/
 #echo -e " ${YELLOW}[i]${RESET}   + ${YELLOW}Change time zone${RESET} & ${YELLOW}keyboard layout${RESET} (...if not ${BOLD}${timezone}${RESET} & ${BOLD}${keyboardLayout}${RESET})"
 echo -e " ${YELLOW}[i]${RESET}   + ${YELLOW}Change default passwords${RESET}: OpenVAS (if installed), BeEF XSS, etc"
 echo -e " ${YELLOW}[i]${RESET}   + buildpwd root password: ${RED}$buildpwd${RESET}"
-echo -e " ${YELLOW}[i]${RESET}   + Remember to store this password safely!"
+echo -e " ${RED}[i]${RESET}      + Remember to store this password safely!"
 echo -e " ${YELLOW}[i]${RESET}   + ${YELLOW}Reboot${RESET}"
 (dmidecode | grep -iq -e vmware -e virtualbox -e qemu -e xen -e microsoft) && echo -e " ${YELLOW}[i]${RESET}   + Take a snapshot   (Virtual machine detected!)"
 
