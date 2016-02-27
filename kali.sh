@@ -546,7 +546,7 @@ apt-get -y -qq install virtualbox virtualbox-dkms  || echo -e ' '${RED}'[!] Issu
 vboxmanage hostonlyif create
 vboxmanage hostonlyif ipconfig vboxnet0 --ip 192.168.56.1 --netmask 255.255.255.0
 ifconfig vboxnet0 up
-vboxmanage import -n $localDir/Win8-X220.ova
+vboxmanage import $localDir/Win8-X220.ova
 rm -rf $localDir/Win8-X220.ova
 
 ##### Installing Nessus
