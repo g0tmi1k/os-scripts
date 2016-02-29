@@ -4265,27 +4265,21 @@ if [ "${teamviewer}" != "false" ]; then
 echo -e "\\n\\e[01;32m[+]\\e[00m Installing Teamviewer (via Dale)"
    dpkg --add-architecture i386
    apt-get update
+   apt-get -y -qq install libc6:i386 libgcc1:i386 libasound2:i386 libdbus-1-3:i386 libexpat1:i386 libfontconfig1:i386 libfreetype6:i386 libjpeg62:i386 libpng12-0:i386 libsm6:i386 libxdamage1:i386 libxext6:i386 libxfixes3:i386 libxinerama1:i386 libxrandr2:i386 libxrender1:i386 libxtst6:i386 zlib1g:i386
    wget http://download.teamviewer.com/download/teamviewer_i386.deb
    dpkg -i teamviewer_i386.deb
-    teamviewer license accept
+   #--- Configure TeamViewer
     teamviewer passwd $buildpwd
-      systemctl enable teamviewerd.service
-        if ! systemctl restart teamviewerd.service ; then
-          systemctl start teamviewerd.service
-        fi
-  function tvstatus {
-    if pgrep "teamviewer"
-      then
-        teamviewer --daemon restart
-        sleep 10
-        teamviewer info
-      else
-        echo "Teamviewer not running"
-        systemctl restart teamviewerd.service
-        tvstatus
-      fi
-    }
-  tvstatus;
+    teamviewer license accept
+    teamviewer --daemon stop
+    tvid=`teamviewer info |awk '/ID:/{print $5}'`
+   #--- Enable at boot
+    cp /opt/teamviewer/tv_bin/script/teamviewerd.sysv /etc/init.d/
+    chmod 755 /etc/init.d/teamviewerd.sysv
+else
+  echo -e "\n ${YELLOW}[i]${RESET} ${YELLOW}Skipping TeamViewer${RESET} (missing: '$0 ${BOLD}--teamviewer${RESET}')..." 1>&2
+fi
+
 fi
 ##### Fixing Matt's USB to mount point SANDISK
 echo -e "\\n\\e[01;32m[+]\\e[00m Fixing Matts USB to mount point SANDISK"
@@ -4393,7 +4387,7 @@ echo -e "\n ${YELLOW}[i]${RESET} Don't forget to:"
 echo -e " ${YELLOW}[i]${RESET}   + Check the above output (Did everything install? Any errors? (${RED}HINT: What's in RED${RESET}?) or in /root/postKali-build.log"
 echo -e " ${YELLOW}[i]${RESET}   + Manually install: Veil"
 echo -e " ${YELLOW}[i]${RESET}   + Activate: Nessus"
-echo -e " ${YELLOW}[i]${RESET}   + Register in Teamviewer"
+echo -e " ${YELLOW}[i]${RESET}   + Register in Teamviewer: ID:$tvid"
 echo -e " ${YELLOW}[i]${RESET}   + Agree/Accept to: Maltego, OWASP ZAP, w3af, etc"
 echo -e " ${YELLOW}[i]${RESET}   + Setup git:   git config --global user.name <name>;git config --global user.email <email>"
 echo -e " ${YELLOW}[i]${RESET}   + Setup Empire:   /root/Downloads/Empire/setup/install.sh"
