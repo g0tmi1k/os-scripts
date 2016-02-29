@@ -493,14 +493,14 @@ do
             ;;
         "[TEST] SFTP")
             echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo (without Win7 VM)"
-                sftp -o StrictHostKeyChecking=no "root@192.168.1.250:/media/SANDISK/Kali-Build-Repo" <<EOF
+                sftp -o StrictHostKeyChecking=no "root@192.168.1.183:/media/SANDISK/Kali-Build-Repo" <<EOF
                   get tools/* $localDir 
 EOF
                 if [ "$?" -eq "0" ];
                   then
                     echo "SUCCESS"
                   else
-                sftp -o StrictHostKeyChecking=no "root@192.168.1.250:/media/SANDISK/Kali-Build-Repo" <<EOF
+                sftp -o StrictHostKeyChecking=no "root@192.168.1.183:/media/SANDISK/Kali-Build-Repo" <<EOF
                   get tools/* $localDir
 EOF
                 fi
@@ -508,14 +508,14 @@ EOF
             ;;
         "[TEST] SFTP w/Win8VM")
             echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo (with Win7 VM)"
-                sftp -o StrictHostKeyChecking=no "root@192.168.1.250:/media/SANDISK/Kali-Build-Repo" <<EOF
+                sftp -o StrictHostKeyChecking=no "root@192.168.1.183:/media/SANDISK/Kali-Build-Repo" <<EOF
                   get * $localDir 
 EOF
                 if [ "$?" -eq "0" ];
                   then
                     echo "SUCCESS"
                   else
-                sftp -o StrictHostKeyChecking=no "root@192.168.1.250:/media/SANDISK/Kali-Build-Repo" <<EOF
+                sftp -o StrictHostKeyChecking=no "root@192.168.1.183:/media/SANDISK/Kali-Build-Repo" <<EOF
                   get * $localDir
 EOF
                 fi
