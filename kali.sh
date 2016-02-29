@@ -4263,13 +4263,10 @@ cp -f /opt/burpsuite-pro/prefs.xml /root/.java/.userPrefs/burp/prefs.xml
 ##### Installing Teamviewer as a service to /opt
 if [ "${teamviewer}" != "false" ]; then
 echo -e "\\n\\e[01;32m[+]\\e[00m Installing Teamviewer (via Dale)"
-  if ! test -d "/opt/teamviewer" ; then
    dpkg --add-architecture i386
    apt-get update
    wget http://download.teamviewer.com/download/teamviewer_i386.deb
-   if ! dpkg -i teamviewer_i386.deb ; then
-    apt-get -fy install;
-    fi
+   dpkg -i teamviewer_i386.deb
     teamviewer license accept
     teamviewer passwd $buildpwd
       systemctl enable teamviewerd.service
@@ -4289,10 +4286,6 @@ echo -e "\\n\\e[01;32m[+]\\e[00m Installing Teamviewer (via Dale)"
       fi
     }
   tvstatus;
-  #reboot
-    else
-      teamviewer info | grep ID
-    fi
 fi
 ##### Fixing Matt's USB to mount point SANDISK
 echo -e "\\n\\e[01;32m[+]\\e[00m Fixing Matts USB to mount point SANDISK"
