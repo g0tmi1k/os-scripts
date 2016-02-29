@@ -657,15 +657,25 @@ ufw logging on
 echo -e "\\n\\e[01;32m[+]\\e[00m Installing x11vnc"
 apt-get -y -qq install x11vnc  || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 
-##### Installing Teamviewer to /opt    *** Moving to service install script
-#echo -e "\\n\\e[01;32m[+]\\e[00m Installing Teamviewer"
-#wget -q "http://download.teamviewer.com/download/teamviewer_qs.tar.gz" -P /opt && tar -xf /opt/teamviewer_qs.tar.gz -C /opt && rm /opt/teamviewer_*;
-#cat <<EOF > /usr/local/bin/teamviewer
-##!/bin/bash
-#cd /opt/teamviewerqs
-#./teamviewer &
-#EOF
-#chmod +x /usr/local/bin/teamviewer
+##### Installing Teamviewer as a service to /opt
+if [ "${teamviewer}" != "false" ]; then
+echo -e "\\n\\e[01;32m[+]\\e[00m Installing Teamviewer"
+   dpkg --add-architecture i386
+   apt-get update
+   apt-get -y -qq install libc6:i386 libgcc1:i386 libasound2:i386 libdbus-1-3:i386 libexpat1:i386 libfontconfig1:i386 libfreetype6:i386 libjpeg62:i386 libpng12-0:i386 libsm6:i386 libxdamage1:i386 libxext6:i386 libxfixes3:i386 libxinerama1:i386 libxrandr2:i386 libxrender1:i386 libxtst6:i386 zlib1g:i386
+   wget http://download.teamviewer.com/download/teamviewer_i386.deb
+   dpkg -i teamviewer_i386.deb
+   #--- Configure TeamViewer
+    teamviewer passwd $buildpwd
+    teamviewer license accept
+    teamviewer --daemon stop
+    tvid=`teamviewer info |awk '/ID:/{print $5}'`
+   #--- Enable at boot
+    cp /opt/teamviewer/tv_bin/script/teamviewerd.sysv /etc/init.d/
+    chmod 755 /etc/init.d/teamviewerd.sysv
+else
+  echo -e "\n ${YELLOW}[i]${RESET} ${YELLOW}Skipping TeamViewer${RESET} (missing: '$0 ${BOLD}--teamviewer${RESET}')..." 1>&2
+fi
 
 ##### Installing Responder - removed as states already upto date
 #echo -e "\n$GREEN[+]$RESET Installing Responder"
@@ -790,14 +800,14 @@ dpkg -i /tmp/google-chrome-stable_current_amd64.deb
 echo "--user-data-dir" >> /usr/bin/google-chrome 
 
 ##### Sanity break point for testing and debugging
-#read -p "Are you sure you want to continue? <y/N> " prompt
-#if [[ $prompt == "n" || $prompt == "N" || $prompt == "NO" || $prompt == "No" ]]
-#then
-#   echo -e "OK see you later then....goodbye."
-#   exit 0
-#else
-#  echo -e "OK then we shall continue...."
-#fi
+read -p "Are you sure you want to continue? <y/N> " prompt
+if [[ $prompt == "n" || $prompt == "N" || $prompt == "NO" || $prompt == "No" ]]
+then
+   echo -e "OK see you later then....goodbye."
+   exit 0
+else
+  echo -e "OK then we shall continue...."
+fi
 
 ##########   End of Netti-Header Section
 #########################################################################################
@@ -4260,27 +4270,6 @@ chmod +x /usr/bin/burpsuite
 mkdir -p /root/.java/.userPrefs/burp 2>/dev/null
 cp -f /opt/burpsuite-pro/prefs.xml /root/.java/.userPrefs/burp/prefs.xml
 
-##### Installing Teamviewer as a service to /opt
-if [ "${teamviewer}" != "false" ]; then
-echo -e "\\n\\e[01;32m[+]\\e[00m Installing Teamviewer (via Dale)"
-   dpkg --add-architecture i386
-   apt-get update
-   apt-get -y -qq install libc6:i386 libgcc1:i386 libasound2:i386 libdbus-1-3:i386 libexpat1:i386 libfontconfig1:i386 libfreetype6:i386 libjpeg62:i386 libpng12-0:i386 libsm6:i386 libxdamage1:i386 libxext6:i386 libxfixes3:i386 libxinerama1:i386 libxrandr2:i386 libxrender1:i386 libxtst6:i386 zlib1g:i386
-   wget http://download.teamviewer.com/download/teamviewer_i386.deb
-   dpkg -i teamviewer_i386.deb
-   #--- Configure TeamViewer
-    teamviewer passwd $buildpwd
-    teamviewer license accept
-    teamviewer --daemon stop
-    tvid=`teamviewer info |awk '/ID:/{print $5}'`
-   #--- Enable at boot
-    cp /opt/teamviewer/tv_bin/script/teamviewerd.sysv /etc/init.d/
-    chmod 755 /etc/init.d/teamviewerd.sysv
-else
-  echo -e "\n ${YELLOW}[i]${RESET} ${YELLOW}Skipping TeamViewer${RESET} (missing: '$0 ${BOLD}--teamviewer${RESET}')..." 1>&2
-fi
-
-fi
 ##### Fixing Matt's USB to mount point SANDISK
 echo -e "\\n\\e[01;32m[+]\\e[00m Fixing Matts USB to mount point SANDISK"
 mkdir /media/SANDISK
