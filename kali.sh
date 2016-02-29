@@ -471,23 +471,33 @@ do
     case $opt in
         "SFTP")
             echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo (without Win7 VM)"
-                sftp ptbuild@secure.nettitude.com:/ptbuild/tools/ $localDir/
+                sftp -o StrictHostKeyChecking=no "ptbuild@secure.nettitude.com:/ptbuild" <<EOF
+                  get /tools/* $localDir 
+EOF                
                 if [ "$?" -eq "0" ];
                   then
                     echo "SUCCESS"
                   else
-                    sftp ptbuild@secure.nettitude.com:/ptbuild/tools/ $localDir/
+                sftp -o StrictHostKeyChecking=no "ptbuild@secure.nettitude.com:/ptbuild" <<EOF
+                  get /tools/* $localDir 
+EOF 
                 fi
             break
             ;;
         "SFTP w/Win8VM")  
             echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo and Win7 VM - this will take some time!"
-                sftp ptbuild@secure.nettitude.com:/ptbuild/ $localDir/
+                sftp -o StrictHostKeyChecking=no "ptbuild@secure.nettitude.com:/ptbuild" <<EOF
+                  get /tools/* $localDir
+                  get *.ova $localDir
+EOF 
                 if [ "$?" -eq "0" ];
                   then
                     echo "SUCCESS"
                   else
-                    sftp ptbuild@secure.nettitude.com:/ptbuild/ $localDir/
+                sftp -o StrictHostKeyChecking=no "ptbuild@secure.nettitude.com:/ptbuild" <<EOF
+                  get /tools/* $localDir
+                  get *.ova $localDir
+EOF 
                 fi
             break
             ;;
@@ -509,14 +519,16 @@ EOF
         "[TEST] SFTP w/Win8VM")
             echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo (with Win7 VM)"
                 sftp -o StrictHostKeyChecking=no "root@192.168.1.183:/media/SANDISK/Kali-Build-Repo" <<EOF
-                  get * $localDir 
+                  get *.ova $localDir
+                  get tools/* $localDir
 EOF
                 if [ "$?" -eq "0" ];
                   then
                     echo "SUCCESS"
                   else
                 sftp -o StrictHostKeyChecking=no "root@192.168.1.183:/media/SANDISK/Kali-Build-Repo" <<EOF
-                  get * $localDir
+                  get *.ova $localDir
+                  get tools/* $localDir
 EOF
                 fi
               break
