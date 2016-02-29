@@ -670,6 +670,7 @@ echo -e "\\n\\e[01;32m[+]\\e[00m Installing Teamviewer"
     teamviewer license accept
     teamviewer --daemon stop
     tvid=`teamviewer info |awk '/ID:/{print $5}'`
+    echo -e "TeamviwerID: $tvid"
    #--- Enable at boot
     cp /opt/teamviewer/tv_bin/script/teamviewerd.sysv /etc/init.d/
     chmod 755 /etc/init.d/teamviewerd.sysv
@@ -4334,6 +4335,8 @@ echo -e "termcapinfo rxvt-unicode ti@:te@\ntermcapinfo rxvt ti@:te@\ntermcapinfo
 echo -e "set PROMPT %blu%T %redS:%S %yelJ:%J %grnIP:%L msf" >> ~/.msf4/msfconsole.rc
 #### Remove autostart wrapper to rpevent re running at second boot
 rm -f /etc/xdg/autostart/postkali.desktop
+#### Start Teamviewer
+teamviewer --daemon start
 ##########   End of Netti-Footer Section
 ###########################################################################################
 
