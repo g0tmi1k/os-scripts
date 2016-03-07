@@ -4337,6 +4337,8 @@ echo -e "set PROMPT %blu%T %redS:%S %yelJ:%J %grnIP:%L msf" >> ~/.msf4/msfconsol
 rm -f /etc/xdg/autostart/postkali.desktop
 #### Start Teamviewer
 teamviewer --daemon start
+#### Enable extended history in Zsh
+echo -e "setopt hist_ignore_dups share_history inc_append_history extended_history" >> ~/.zshrc
 ##########   End of Netti-Footer Section
 ###########################################################################################
 
