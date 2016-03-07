@@ -50,12 +50,11 @@ echo -e "\\n\\e[01;32m[+]\\e[00m Installing TeamviewerPro as a service"
  #--- Configure TeamViewer
  teamviewer passwd $tvpwd 1>&2
  teamviewer license accept 1>&2
- teamviewer --daemon stop 1>&2
- echo -e "\\n\\e[01;32m[+]\\e[00m Teamviewer ID: $tvid Teamviewer Password: $tvpwd"
- #--- Enable at boot
-  cp /opt/teamviewer/tv_bin/script/teamviewerd.sysv /etc/init.d/
-  chmod 755 /etc/init.d/teamviewerd.sysv
- teamviewer --daemon start
+ teamviewer --daemon disable 1>&2
+ sleep 10
+ teamviewer --daemon enable 1>&2
+ sleep 60
  tvid=`teamviewer info |awk '/ID:/{print $5}'`
+ echo -e "\\n\\e[01;32m[+]\\e[00m Teamviewer ID: $tvid Teamviewer Password: $tvpwd"
  echo -e "\\n\\e[01;32m[+]\\e[00m Done! Please send ID and Password to your Account Manager"
 exit 0
