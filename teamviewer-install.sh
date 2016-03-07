@@ -8,7 +8,7 @@ BOLD="\033[01;01m"     # Highlight
 RESET="\033[00m"       # Normal
 
 ##### Check Internet access
-echo -e "\n${GREEN}[+]${RESET} Checking ${GREEN}Internet access${RESET}"
+echo -e "\n${GREEN}[+]${RESET} Checking Internet access"
 for i in {1..10}; do ping -c 1 -W ${i} www.google.com &>/dev/null && break; done
 if [[ "$?" -ne 0 ]]; then
   echo -e ' '${RED}'[!]'${RESET}" ${RED}Possible DNS issues${RESET}(?). Trying DHCP 'fix'" 1>&2
@@ -36,7 +36,7 @@ if [[ "$?" -ne 0 ]]; then
 fi
 
 ##### Install Teamviewer as a service
-echo -e "\\n\\e[01;32m[+]\\e[00m Installing TeamviewerPro as a service"
+echo -e "\\n\\e[01;32m[+]\\e[00m Installing Teamviewer dependancies"
 # Creating the password
  apt-get install -y -qq pwgen  || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
  tvpwd_len=`shuf -i 8-12 -n 1`
@@ -46,17 +46,17 @@ echo -e "\\n\\e[01;32m[+]\\e[00m Installing TeamviewerPro as a service"
  apt-get update || echo -e ' '${RED}'[!] Issue with adding i386 architecture'${RESET} 1>&2
  apt-get -y -qq install libc6:i386 libgcc1:i386 libasound2:i386 libdbus-1-3:i386 libexpat1:i386 libfontconfig1:i386 libfreetype6:i386 libjpeg62:i386 libpng12-0:i386 libsm6:i386 libxdamage1:i386 libxext6:i386 libxfixes3:i386 libxinerama1:i386 libxrandr2:i386 libxrender1:i386 libxtst6:i386 zlib1g:i386 || echo -e ' '${RED}'[!] Issue installing TeamViewer dependencies'${RESET} 1>&2
  echo -e "\\n\\e[01;32m[+]\\e[00m Downloading TeamViewer package"
- wget http://download.teamviewer.com/download/teamviewer_i386.deb || echo -e ' '${RED}'[!] Issue downloading TeamViewer - check internet access'${RESET} 1>&2
+ wget -q http://download.teamviewer.com/download/teamviewer_i386.deb || echo -e ' '${RED}'[!] Issue downloading TeamViewer - check internet access'${RESET} 1>&2
  echo -e "\\n\\e[01;32m[+]\\e[00m Installing TeamViewer package"
  dpkg -i teamviewer_i386.deb
  #--- Configure TeamViewer
  echo -e "\\n\\e[01;32m[+]\\e[00m Setting Random Password"
  teamviewer passwd $tvpwd 1>&2
- echo -e "\\n\\e[01;33m[!]\\e[00m Please accept license when prompted.....(this may take a while to appear)"
+ echo -e "\\n\\e[01;33m[!]\\e[00m Please accept license when prompted.....(please be patient)"
  teamviewer license accept 1>&2
  echo -e "\\n\\e[01;32m[+]\\e[00m Restarting service"
  teamviewer --daemon restart
  tvid=`teamviewer info |awk '/ID:/{print $5}'`
 echo -e "\\n\\e[01;32m[+] Done!\\e[00m  Please send ID and Password to your Account Manager"
-echo -e "\\n\\e[01;32m[+]\\e[00m Teamviewer ID: ${YELLOW}$tvid${RESET} Teamviewer Password: ${YELLOW}$tvpwd${RESET}"
+echo -e "\\n\\e[01;32m[+]\\e[00m Teamviewer ID & Password ${YELLOW}$tvid${RESET} ${YELLOW}$tvpwd${RESET}"
 exit 0
