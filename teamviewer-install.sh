@@ -48,6 +48,8 @@ echo -e "\\n\\e[01;32m[+]\\e[00m Installing TeamviewerPro as a service"
    wget http://download.teamviewer.com/download/teamviewer_i386.deb || echo -e ' '${RED}'[!] Issue downloading TeamViewer - check internet access'${RESET} 1>&2
    dpkg -i teamviewer_i386.deb
    #--- Configure TeamViewer
+   pause 20
+   teamviewer --daemon restart
    teamviewer passwd $tvpwd 1>&2
    teamviewer license accept 1>&2
    teamviewer --daemon stop 1>&2
