@@ -48,13 +48,16 @@ echo -e "\\n\\e[01;32m[+]\\e[00m Installing TeamviewerPro as a service"
  wget http://download.teamviewer.com/download/teamviewer_i386.deb || echo -e ' '${RED}'[!] Issue downloading TeamViewer - check internet access'${RESET} 1>&2
  dpkg -i teamviewer_i386.deb
  #--- Configure TeamViewer
+ echo -e "\\n\\e[01;32m[+]\\e[00m Setting Random Password"
  teamviewer passwd $tvpwd 1>&2
+ echo -e "\\n\\e[01;32m[+]\\e[00m Please accept license when prompted....."
  teamviewer license accept 1>&2
+ echo -e "\\n\\e[01;32m[+]\\e[00m Stopping TeamViewer (for good measure)"
  teamviewer --daemon disable 1>&2
- sleep 10
+ echo -e "\\n\\e[01;32m[+]\\e[00m Starting TeamViewer...this will take 1-2mins"
  teamviewer --daemon enable 1>&2
- sleep 60
+ sleep 10
  tvid=`teamviewer info |awk '/ID:/{print $5}'`
- echo -e "\\n\\e[01;32m[+]\\e[00m Teamviewer ID: $tvid Teamviewer Password: $tvpwd"
- echo -e "\\n\\e[01;32m[+]\\e[00m Done! Please send ID and Password to your Account Manager"
+echo -e "\\n\\e[01;32m[+] Done!\\e[00m  Please send ID and Password to your Account Manager"
+echo -e "\\n\\e[01;32m[+]\\e[00m Teamviewer ID: ${YELLOW}$tvid${RESET} Teamviewer Password: ${YELLOW}$tvpwd${RESET}"
 exit 0
