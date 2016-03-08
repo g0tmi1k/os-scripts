@@ -1187,14 +1187,43 @@ EOF
 fi
 cat <<EOF > /root/.config/xfce4/panel/launcher-31/13684522861.desktop || echo -e ' '${RED}'[!] Issue with writing file'${RESET} 1>&2
 [Desktop Entry]
-Type=Application
-Name=Cobaltstrike
-Comment=Cobaltstrike
-Icon=/opt/cobaltstrike/icon.jpg
-Exec=cobaltstrike
-Path=/opt/cobaltstrike
+Version=1.0
+Name=Shutter
+GenericName=Screenshot Tool
+Comment=Capture, edit and share screenshots
+Exec=shutter %F
+Icon=shutter
 Terminal=false
-StartupNotify=true
+Type=Application
+Categories=Utility;
+MimeType=image/bmp;image/jpeg;image/gif;image/png;image/tiff;image/x-bmp;image/x-ico;image/x-png;image/x-pcx;image/x-tga;image/xpm;image/svg+xml;
+Actions=Redo;Select;Screen;Window;Active;
+X-XFCE-Source=file:///usr/share/applications/shutter.desktop
+
+[Desktop Action Redo]
+Name=Redo last screenshot
+Exec=shutter --redo
+OnlyShowIn=Unity;
+
+[Desktop Action Select]
+Name=Capture an area of the screen
+Exec=shutter --select
+OnlyShowIn=Unity;
+
+[Desktop Action Screen]
+Name=Capture the entire screen
+Exec=shutter --full
+OnlyShowIn=Unity;
+
+[Desktop Action Window]
+Name=Select a window to capture
+Exec=shutter --window
+OnlyShowIn=Unity;
+
+[Desktop Action Active]
+Name=Capture the current active window
+Exec=shutter --active
+OnlyShowIn=Unity;
 EOF
 cat <<EOF > /root/.config/xfce4/panel/launcher-32/13684522862.desktop || echo -e ' '${RED}'[!] Issue with writing file'${RESET} 1>&2
 [Desktop Entry]
@@ -1225,7 +1254,7 @@ xfconf-query -n -c xfce4-panel -p /plugins/plugin-6 -t string -s launcher       
 xfconf-query -n -c xfce4-panel -p /plugins/plugin-8 -t string -s launcher          # geany     ID: 13684522859  (geany gets installed later)
 xfconf-query -n -c xfce4-panel -p /plugins/plugin-9 -t string -s launcher          # search    ID: 136845425410
 xfconf-query -n -c xfce4-panel -p /plugins/plugin-30 -t string -s launcher          # virtualbox    ID: 13684522860
-xfconf-query -n -c xfce4-panel -p /plugins/plugin-31 -t string -s launcher          # cobaltstrike    ID: 13684522861
+xfconf-query -n -c xfce4-panel -p /plugins/plugin-31 -t string -s launcher          # Shutter    ID: 13684522861
 xfconf-query -n -c xfce4-panel -p /plugins/plugin-32 -t string -s launcher          # UFW Gui    ID: 13684522862
 xfconf-query -n -c xfce4-panel -p /plugins/plugin-10 -t string -s tasklist
 xfconf-query -n -c xfce4-panel -p /plugins/plugin-11 -t string -s separator
@@ -1254,8 +1283,8 @@ xfconf-query -n -c xfce4-panel -p /plugins/plugin-8/items -t string -s "13684522
 xfconf-query -n -c xfce4-panel -p /plugins/plugin-9/items -t string -s "136845425410.desktop" -a
 # virtualbox
 xfconf-query -n -c xfce4-panel -p /plugins/plugin-30/items -t string -s "13684522860.desktop" -a
-# cobaltstrike
-#xfconf-query -n -c xfce4-panel -p /plugins/plugin-31/items -t string -s "13684522861.desktop" -a
+# shutter
+xfconf-query -n -c xfce4-panel -p /plugins/plugin-31/items -t string -s "13684522861.desktop" -a
 # UFW Gui
 xfconf-query -n -c xfce4-panel -p /plugins/plugin-32/items -t string -s "13684522862.desktop" -a
 # tasklist (& separator - required for padding)
@@ -4255,7 +4284,7 @@ EOF
 ##### Installing BurpPro to /opt
 echo -e "\\n\\e[01;32m[+]\\e[00m Installing BurpPro"
 mkdir /opt/burpsuite-pro 2>/dev/null
-tar -xf $localDir/Burp.tar.gz -C /opt/burpsuite-pro
+tar -xf $localDir/Burp.tar -C /opt/burpsuite-pro
 ## Replace Free Version
 mv /usr/bin/burpsuite /usr/bin/burpsuite-free
 file=/usr/bin/burpsuite [ -e "${file}" ] && cp -n $file{,.bkup}
