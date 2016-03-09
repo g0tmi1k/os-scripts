@@ -659,21 +659,24 @@ apt-get -y -qq install x11vnc  || echo -e ' '${RED}'[!] Issue with apt-get'${RES
 
 ##### Installing Teamviewer as a service to /opt
 if [ "${teamviewer}" != "false" ]; then
-echo -e "\\n\\e[01;32m[+]\\e[00m Installing Teamviewer"
-   dpkg --add-architecture i386
-   apt-get update
-   apt-get -y -qq install libc6:i386 libgcc1:i386 libasound2:i386 libdbus-1-3:i386 libexpat1:i386 libfontconfig1:i386 libfreetype6:i386 libjpeg62:i386 libpng12-0:i386 libsm6:i386 libxdamage1:i386 libxext6:i386 libxfixes3:i386 libxinerama1:i386 libxrandr2:i386 libxrender1:i386 libxtst6:i386 zlib1g:i386
-   wget http://download.teamviewer.com/download/teamviewer_i386.deb
-   dpkg -i teamviewer_i386.deb
-   #--- Configure TeamViewer
-    teamviewer passwd $buildpwd
-    teamviewer license accept
-    teamviewer --daemon stop
-    tvid=`teamviewer info |awk '/ID:/{print $5}'`
-    echo -e "TeamviwerID: $tvid"
-   #--- Enable at boot
-    cp /opt/teamviewer/tv_bin/script/teamviewerd.sysv /etc/init.d/
-    chmod 755 /etc/init.d/teamviewerd.sysv
+##### Install Teamviewer as a service
+echo -e "\\n\\e[01;32m[+]\\e[00m Installing Teamviewer dependancies"
+ #--- Download TeamViewer and dependencies
+ dpkg --add-architecture i386
+ apt-get update || echo -e ' '${RED}'[!] Issue with adding i386 architecture'${RESET} 1>&2
+ apt-get -y -qq install libc6:i386 libgcc1:i386 libasound2:i386 libdbus-1-3:i386 libexpat1:i386 libfontconfig1:i386 libfreetype6:i386 libjpeg62:i386 libpng12-0:i386 libsm6:i386 libxdamage1:i386 libxext6:i386 libxfixes3:i386 libxinerama1:i386 libxrandr2:i386 libxrender1:i386 libxtst6:i386 zlib1g:i386 || echo -e ' '${RED}'[!] Issue installing TeamViewer dependencies'${RESET} 1>&2
+ echo -e "\\n\\e[01;32m[+]\\e[00m Downloading TeamViewer package"
+ wget -q http://download.teamviewer.com/download/teamviewer_i386.deb || echo -e ' '${RED}'[!] Issue downloading TeamViewer - check internet access'${RESET} 1>&2
+ echo -e "\\n\\e[01;32m[+]\\e[00m Installing TeamViewer package"
+ dpkg -i teamviewer_i386.deb
+ #--- Configure TeamViewer
+ echo -e "\\n\\e[01;32m[+]\\e[00m Setting Random Password"
+ teamviewer passwd $buildpwd 1>&2
+ echo -e "\\n\\e[01;33m[!]\\e[00m Please accept license when prompted.....(please be patient)"
+ teamviewer license accept 1>&2
+ echo -e "\\n\\e[01;32m[+]\\e[00m Restarting service"
+ teamviewer --daemon restart
+ tvid=`teamviewer info |awk '/ID:/{print $5}'`
 else
   echo -e "\n ${YELLOW}[i]${RESET} ${YELLOW}Skipping TeamViewer${RESET} (missing: '$0 ${BOLD}--teamviewer${RESET}')..." 1>&2
 fi
@@ -780,6 +783,10 @@ echo -e "Done, just type 'bluebox-ng' :)"
 ##### Installing guake
 echo -e "\n$GREEN[+]$RESET Installing Guake"
 apt-get -y -qq install guake || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
+
+##### Installing ipmitool
+echo -e "\n$GREEN[+]$RESET Installing IPMITool"
+apt-get -y -qq install ipmitool || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 
 ##### Installing sublime
 echo -e "\n$GREEN[+]$RESET Installing Sublime"
