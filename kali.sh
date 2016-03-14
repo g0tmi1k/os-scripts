@@ -3394,6 +3394,7 @@ done
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}WINE${RESET} ~ run Windows programs on *nix"
 apt-get -y -qq install wine winetricks || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 #--- Using x64?
+sed -i -e 's/deb http/deb [arch=amd64] http/' "/etc/apt/sources.list.d/google-chrome.list" # Fix from here: http://www.webupd8.org/2016/03/fix-failed-to-fetch-google-chrome_3.html
 if [[ "$(uname -m)" == 'x86_64' ]]; then
   echo -e " ${GREEN}[+]${RESET} Configuring ${GREEN}WINE (x64)${RESET}"
   dpkg --add-architecture i386
