@@ -1466,7 +1466,8 @@ mkdir -p /usr/share/wallpapers/
 timeout 300 curl --progress -k -L -f "http://www.kali.org/images/wallpapers-01/kali-wp-june-2014_1920x1080_A.png" > /usr/share/wallpapers/kali_blue_3d_a.png || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_blue_3d_a.png" 1>&2     #***!!! hardcoded paths!
 timeout 300 curl --progress -k -L -f "http://www.kali.org/images/wallpapers-01/kali-wp-june-2014_1920x1080_B.png" > /usr/share/wallpapers/kali_blue_3d_b.png || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_blue_3d_b.png" 1>&2
 timeout 300 curl --progress -k -L -f "http://www.kali.org/images/wallpapers-01/kali-wp-june-2014_1920x1080_G.png" > /usr/share/wallpapers/kali_black_honeycomb.png || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_black_honeycomb.png" 1>&2
-timeout 300 curl --progress -k -L -f "http://imageshack.us/a/img17/4646/vzex.png" > /usr/share/wallpapers/kali_blue_splat.png || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_blue_splat.png" 1>&2
+timeout 300 curl --progress -k -L -f "https://bit.ly/kali_orange_splat" > /usr/share/wallpapers/kali_orange_splat.png || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_orange_splat.png" 1>&2
+timeout 300 curl --progress -k -L -f "https://bit.ly/kali_blue_splat" > /usr/share/wallpapers/kali_blue_splat.png || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_blue_splat.png" 1>&2
 timeout 300 curl --progress -k -L -f "http://wallpaperstock.net/kali-linux_wallpapers_39530_1920x1080.jpg" > /usr/share/wallpapers/kali-linux_wallpapers_39530.png || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali-linux_wallpapers_39530.png" 1>&2
 timeout 300 curl --progress -k -L -f "http://em3rgency.com/wp-content/uploads/2012/12/Kali-Linux-faded-no-Dragon-small-text.png" > /usr/share/wallpapers/kali_black_clean.png || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_black_clean.png" 1>&2
 timeout 300 curl --progress -k -L -f "http://www.hdwallpapers.im/download/kali_linux-wallpaper.jpg" > /usr/share/wallpapers/kali_black_stripes.jpg || echo -e ' '${RED}'[!]'${RESET}" Issue downloading kali_black_stripes.jpg" 1>&2
@@ -3049,8 +3050,8 @@ chmod +x "${file}"
 echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}Gnmap-Parser (Fork)${RESET} ~ Parse Nmap exports into various plain-text formats"
 apt-get -y -qq install git || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
 git clone -q https://github.com/nullmode/gnmap-parser.git /opt/gnmap-parser-git/ || echo -e ' '${RED}'[!] Issue when git cloning'${RESET} 1>&2
-ln -sf /opt/gnmap-parser-git/Gnmap-Parser.sh /usr/local/bin/gnmap-parser-git
-chmod +x /opt/gnmap-parser-git/Gnmap-Parser.sh
+ln -sf /opt/gnmap-parser-git/gnmap-parser.sh /usr/local/bin/gnmap-parser-git
+chmod +x /opt/gnmap-parser-git/gnmap-parser.sh
 
 
 ##### Install udp-proto-scanner
@@ -4291,32 +4292,13 @@ grep -q '^## ssh' "${file}" 2>/dev/null || echo -e '## ssh\nalias ssh-start="sys
 #sleep 5
 #systemctl start mysql
 
-##### Add Shutter to startup (each login)
-echo -e "\n$GREEN[+]$RESET Add shutter to startup"
-touch /root/.config/autostart/shutter.desktop
-file=/root/.config/autostart/shutter.desktop; [ -e "${file}" ] && cp -n $file{,.bkup}
-cat <<EOF > "${file}" || echo -e ' '${RED}'[!] Issue with writing file'${RESET} 1>&2
-[Desktop Entry]
-Encoding=UTF-8
-Version=0.9.4
-Type=Application
-Exec=shutter --min_at_startup
-Hidden=false
-NoDisplay=false
-X-GNOME-Autostart-enabled=true
-Name[en_US]=shutter
-Name=shutter
-Comment[en_US]=
-Comment=
-EOF
-
 ##### Installing BurpPro to /opt
 echo -e "\\n\\e[01;32m[+]\\e[00m Installing BurpPro"
 mkdir /opt/burpsuite-pro 2>/dev/null
 tar -xf $localDir/Burp.tar -C /opt/burpsuite-pro
 ## Replace Free Version
 mv /usr/bin/burpsuite /usr/bin/burpsuite-free
-file=/usr/bin/burpsuite [ -e "${file}" ] && cp -n $file{,.bkup}
+file=/usr/bin/burpsuite
 cat <<EOF > "${file}" || echo -e ' '${RED}'[!] Issue with writing file'${RESET} 1>&2
 #!/bin/bash
 cd /opt/burpsuite-pro/
@@ -4324,7 +4306,7 @@ burpLatest="$(ls -v burpsuite* | tail -n 1)"
 echo -e "Executing "$burpLatest""
 java -jar "$burpLatest" "\$@"
 EOF
-chmod +x /usr/bin/burpsuite
+chmod +x "${file}"
 ## Install preferences
 mkdir -p /root/.java/.userPrefs/burp 2>/dev/null
 cp -f /opt/burpsuite-pro/prefs.xml /root/.java/.userPrefs/burp/prefs.xml
@@ -4336,16 +4318,16 @@ cat <<EOF > "/etc/udev/rules.d/10-usb-drive.rules"
 SUBSYSTEMS=="usb",ACTION=="add",KERNEL=="sd?1", ATTRS{serial}=="4C531001430410121534", RUN+="/bin/mount /dev/%k /media/SANDISK",OPTIONS="last_rule"
 ACTION=="remove",KERNEL=="sd[b-z][1-9]",RUN+="/bin/umount /dev/%k",OPTIONS="last_rule"
 EOF
-file=/usr/bin/loadusb [ -e "${file}" ] && cp -n $file{,.bkup}
+file=/usr/bin/loadusb
 cat <<EOF > "${file}" || echo -e ' '${RED}'[!] Issue with writing file'${RESET} 1>&2
 #!/bin/bash
 /media/SANDISK/SETUP/loadusb "\$@"
 EOF
-chmod +x /usr/bin/loadusb
+chmod +x "${file}"
 
 ##### Adding some resource files for Metasploit
 echo -e "\\n\\e[01;32m[+]\\e[00m Adding multi-proxy.rc file"
-file=~/.msf4/multi-proxy.rc [ -e "${file}" ] && cp -n $file{,.bkup}
+file=~/.msf4/multi-proxy.rc
 cat <<EOF > "${file}" || echo -e ' '${RED}'[!] Issue with writing file'${RESET} 1>&2
 use multi/handler
 set payload windows/meterpreter/reverse_https_proxy
