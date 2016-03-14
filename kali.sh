@@ -503,14 +503,14 @@ EOF
             ;;
         "[TEST] SFTP")
             echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo (without Win7 VM)"
-                sftp -o StrictHostKeyChecking=no "root@192.168.1.183:/media/SANDISK/Kali-Build-Repo" <<EOF
+                sftp -o StrictHostKeyChecking=no "root@192.168.1.5:/media/SANDISK/Kali-Build-Repo" <<EOF
                   get tools/* $localDir 
 EOF
                 if [ "$?" -eq "0" ];
                   then
                     echo "SUCCESS"
                   else
-                sftp -o StrictHostKeyChecking=no "root@192.168.1.183:/media/SANDISK/Kali-Build-Repo" <<EOF
+                sftp -o StrictHostKeyChecking=no "root@192.168.1.5:/media/SANDISK/Kali-Build-Repo" <<EOF
                   get tools/* $localDir
 EOF
                 fi
@@ -518,7 +518,7 @@ EOF
             ;;
         "[TEST] SFTP w/Win8VM")
             echo -e "\\n\\e[01;32m[+]\\e[00m Downloading Nettitude Tool Repo (with Win7 VM)"
-                sftp -o StrictHostKeyChecking=no "root@192.168.1.183:/media/SANDISK/Kali-Build-Repo" <<EOF
+                sftp -o StrictHostKeyChecking=no "root@192.168.1.5:/media/SANDISK/Kali-Build-Repo" <<EOF
                   get *.ova $localDir
                   get tools/* $localDir
 EOF
@@ -526,7 +526,7 @@ EOF
                   then
                     echo "SUCCESS"
                   else
-                sftp -o StrictHostKeyChecking=no "root@192.168.1.183:/media/SANDISK/Kali-Build-Repo" <<EOF
+                sftp -o StrictHostKeyChecking=no "root@192.168.1.5:/media/SANDISK/Kali-Build-Repo" <<EOF
                   get *.ova $localDir
                   get tools/* $localDir
 EOF
@@ -648,10 +648,10 @@ ufw logging on
 #echo -e "\\n\\e[01;32m[+]\\e[00m Installing Team SSH Keys"
 #cat "$localDir"/ssh_pub >> /root/.ssh/authorized_keys
 
-##### Installing xscreensaver        *** Doesnt work when running as root
-#echo -e "\\n\\e[01;32m[+]\\e[00m Installing xScreensaver"
-#apt-get -y -qq install xscreensaver xscreensaver-data-extra xscreensaver-gl-extra  || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
-#xhost +localhost
+##### Installing Icedtea (Iceweasel) Java Plugin
+echo -e "\\n\\e[01;32m[+]\\e[00m Installing iced-tea java plugin"
+apt-get -y -qq install icedtea-7-plugin:i386  || echo -e ' '${RED}'[!] Issue with apt-get'${RESET} 1>&2
+
 
 ##### Installing x11VNC
 echo -e "\\n\\e[01;32m[+]\\e[00m Installing x11vnc"
