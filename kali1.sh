@@ -1,13 +1,13 @@
 #!/bin/bash
 #-Metadata----------------------------------------------------#
-#  Filename: kali.sh                     (Update: 2015-08-21) #
+#  Filename: kali.sh                     (Update: 2015-07-20) #
 #-Info--------------------------------------------------------#
 #  Personal post-install script for Kali Linux.               #
 #-Author(s)---------------------------------------------------#
 #  g0tmilk ~ https://blog.g0tmi1k.com/                        #
 #-Operating System--------------------------------------------#
-#  Designed for: Kali Linux 2.0.0 [x64] (VM - VMware)         #
-#     Tested on: Kali Linux 2.0.0 [x64, x84, light, mini, vm] #
+#  Designed for: Kali Linux 1.1.0a [x64] (VM - VMware)        #
+#     Tested on: Kali Linux 1.0.0 - 1.1.0a [x64 & x84 & mini] #
 #-Licence-----------------------------------------------------#
 #  MIT License ~ http://opensource.org/licenses/MIT           #
 #-Notes-------------------------------------------------------#
@@ -26,7 +26,7 @@
 #                             ---                             #
 #  Incomplete/buggy/hidden stuff - search for '***'.          #
 #                             ---                             #
-#  TODO: External resoureces, check http 200 - else error out - apt/curl/git/wget/axel
+#  TODO: External resoureces, check http 200 - else error out #
 #                             ---                             #
 #             ** This script is meant for _ME_. **            #
 #         ** EDIT this to meet _YOUR_ requirements! **        #
@@ -49,7 +49,7 @@ fi
 
 ##### Location information
 keyboardApple=false         # Using a Apple/Macintosh keyboard? Change to anything other than 'false' to enable   [ --osx ]
-keyboardlayout="gb"         # Great Britain      # curl ifconfig.io/country_code
+keyboardlayout="gb"         # Great Britain
 timezone="Europe/London"    # London, Europe
 
 ##### Optional steps
@@ -86,7 +86,7 @@ for x in $( tr '[:upper:]' '[:lower:]' <<< "$@" ); do
   elif [ "${x}" == "--openvas" ]; then
     openVAS=true
   else
-    echo -e ' '${RED}'[!]'${RESET}" Unknown option: ${RED}${x}${RESET}" 1>&2
+    echo -e ' '$RED'[!]'$RESET' Unknown option: '${x} 1>&2
     exit 1
   fi
 done
@@ -97,31 +97,23 @@ done
 
 ##### Check if we are running as root - else this script will fail (hard!)
 if [[ $EUID -ne 0 ]]; then
-  echo -e ' '${RED}'[!]'${RESET}" This script must be ${RED}run as root${RESET}. Quitting..." 1>&2
+  echo -e ' '$RED'[!]'$RESET' This script must be run as root. Quitting...' 1>&2
   exit 1
 else
   echo -e " $BLUE[*]$RESET Kali Linux post-install script"
 fi
 
 
-##### Display Kali information
-kaliVersion=$(lsb_release -a 2>/dev/null | grep Release | awk -F':' '{print $2}' | xargs)
-echo -e "\n ${YELLOW}[i]${RESET} Detected: ${YELLOW}Kali Linux ${kaliVersion} ($(uname -m))${RESET}"
-
-if awk "BEGIN {exit $kaliVersion < 2 ? 0 : 1}"; then echo kali is dated;kaliVersion="1"; fi
-
-
 ##### Fixing display output for GUI programs when connecting via SSH
 export DISPLAY=:0.0   #[[ -z $SSH_CONNECTION ]] || export DISPLAY=:0.0
 
 
-if [[ "$kaliVersion" == "1" ]]; then
 ##### Fixing NetworkManager issues
-echo -e "\n ${GREEN}[+]${RESET} Fixing ${GREEN}NetworkManager${RESET} issues"
+echo -e "\n $GREEN[+]$RESET Fixing NetworkManager issues"
 service network-manager stop
 #--- Fix 'device not managed' issue
-file=/etc/network/interfaces; [ -e "${file}" ] && cp -n $file{,.bkup}                     # ...or: /etc/NetworkManager/NetworkManager.conf
-echo "iface lo inet loopback" > "${file}"   #sed -i '/iface lo inet loopback/q' "${file}"   # ...or: sed -i 's/managed=.*/managed=true/' "${file}"
+file=/etc/network/interfaces; [ -e "$file" ] && cp -n $file{,.bkup}                     # ...or: /etc/NetworkManager/NetworkManager.conf
+echo "iface lo inet loopback" > "$file"   #sed -i '/iface lo inet loopback/q' "$file"   # ...or: sed -i 's/managed=.*/managed=true/' "$file"
 #service network-manager restart
 #--- Fix 'network disabled' issue
 rm -f /var/lib/NetworkManager/NetworkManager.state
@@ -129,13 +121,9 @@ rm -f /var/lib/NetworkManager/NetworkManager.state
 sleep 3
 service network-manager restart
 sleep 10
-fi
-
-##### Checking Internet access
-echo -e "\n ${GREEN}[+]${RESET} Checking ${GREEN}Internet access${RESET}"
 for i in {1..10}; do ping -c 1 -W $i www.google.com &>/dev/null && break; done
 if [[ "$?" -ne 0 ]]; then
-  echo -e ' '$RED'[!]'$RESET" ${RED}Possible DNS issues${RESET}(?). Trying DHCP 'fix'." 1>&2
+  echo -e ' '$RED'[!]'$RESET' Possible DNS issues(?). Trying DHCP "fix".' 1>&2
   chattr -i /etc/resolv.conf 2>/dev/null
   dhclient
   sleep 15
@@ -143,57 +131,55 @@ if [[ "$?" -ne 0 ]]; then
   _CMD="$(ping -c 1 8.8.8.8 &>/dev/null)"
   if [[ "$?" -ne 0 && "$_TMP" == true ]]; then
     _TMP=false
-    echo -e ' '${RED}'[!]'${RESET}" ${RED}No Internet access${RESET}. Manually fix the issue & re-run the script." 1>&2
+    echo -e ' '$RED'[!]'$RESET' No Internet access. Manually fix the issue & re-run the script.' 1>&2
   fi
   _CMD="$(ping -c 1 www.google.com &>/dev/null)"
   if [[ "$?" -ne 0 && "$_TMP" == true ]]; then
     _TMP=false
-    echo -e ' '${RED}'[!]'${RESET}" ${RED}Possible DNS issues${RESET}(?). Manually fix the issue & re-run the script." 1>&2
+    echo -e ' '$RED'[!]'$RESET' Possible DNS issues(?). Manually fix the issue & re-run the script.' 1>&2
   fi
   if [[ "$_TMP" == false ]]; then
-    (dmidecode | grep -iq virtual) && echo -e "${YELLOW}[i]${RESET} VM Detected. ${YELLOW}Try switching network adapter mode${RESET} (NAT/Bridged)."
-    echo -e ' '${RED}'[!]'${RESET}" Quitting..." 1>&2
+    (dmidecode | grep -iq virtual) && echo -e $YELLOW'[i]'$RESET' VM Detected. Try switching network adapter mode (NAT/Bridged).'
+    echo -e ' '$RED'[!]'$RESET' Quitting...' 1>&2
     exit 2
   fi
 fi
 
 
 ##### Enabling default network repositories ~ http://docs.kali.org/general-use/kali-linux-sources-list-repositories & Fix 'KEYEXPIRED 1425567400'
-echo -e "\n ${GREEN}[+]${RESET} Enabling ${GREEN}default network repositories${RESET} ~ if they were not selected during install"
-if [[ "$kaliVersion" == "1" ]]; then
+echo -e "\n $GREEN[+]$RESET Enabling default network repositories ~ if they were not selected during install"
 #--- Fixing old keys
 #find /var/cache/apt/ -type f -delete
 find /var/lib/apt/lists/ -type f -delete                                                                                        # Bug fix: https://forums.kali.org/showthread.php?24687-Problem-with-apt-get-update&p=42558&viewfull=1#post42558
 apt-key adv --keyserver hkp://keys.gnupg.net --recv-keys 7D8D0BF6   #gpg --keyserver hkp://keys.gnupg.net --recv-key 7D8D0BF6   # http://docs.kali.org/introduction/download-official-kali-linux-images
-fi
 #--- Add network repositories
-file=/etc/apt/sources.list; [ -e "${file}" ] && cp -n $file{,.bkup}
-([[ -e "${file}" && "$(tail -c 1 $file)" != "" ]]) && echo >> "${file}"
-grep -q 'kali main non-free contrib' "${file}" 2>/dev/null || echo "deb http://http.kali.org/kali kali main non-free contrib" >> "${file}"
-grep -q 'kali/updates main contrib non-free' "${file}" 2>/dev/null || echo "deb http://security.kali.org/kali-security kali/updates main contrib non-free" >> "${file}"
-#grep -q 'kali-proposed-updates main contrib non-free' "${file}" 2>/dev/null || echo -e "deb http://repo.kali.org/kali kali-proposed-updates main contrib non-free\ndeb-src http://repo.kali.org/kali kali-proposed-updates main contrib non-free" >> "${file}"
+file=/etc/apt/sources.list; [ -e "$file" ] && cp -n $file{,.bkup}
+([[ -e "$file" && "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
+grep -q 'kali main non-free contrib' "$file" 2>/dev/null || echo "deb http://http.kali.org/kali kali main non-free contrib" >> "$file"
+grep -q 'kali/updates main contrib non-free' "$file" 2>/dev/null || echo "deb http://security.kali.org/kali-security kali/updates main contrib non-free" >> "$file"
+#grep -q 'kali-proposed-updates main contrib non-free' "$file" 2>/dev/null || echo -e "deb http://repo.kali.org/kali kali-proposed-updates main contrib non-free\ndeb-src http://repo.kali.org/kali kali-proposed-updates main contrib non-free" >> "$file"
 #--- Disable CD repositories
-sed -i '/kali/ s/^\( \|\t\|\)deb cdrom/#deb cdrom/g' "${file}"
+sed -i '/kali/ s/^\( \|\t\|\)deb cdrom/#deb cdrom/g' "$file"
 #--- Update
 apt-get -qq update
-apt-get -y -qq install kali-archive-keyring || echo -e "${RED}issue with apt${RESET}"   # Fixing old keys
+apt-get -y -qq install kali-archive-keyring   # Fixing old keys
 
 
 ##### Installing kernel headers
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}kernel headers${RESET}"
+echo -e "\n $GREEN[+]$RESET Installing kernel headers"
 apt-get -y -qq install gcc make "linux-headers-$(uname -r)"
 if [[ $? -ne 0 ]]; then
-  echo -e ' '${RED}'[!]'${RESET}" There was an ${RED}issue installing kernel headers${RESET}" 1>&2
-  echo -e "${YELLOW}[i]${RESET} Are you using the ${YELLOW}latest kernel?${RESET}"
+  echo -e ' '$RED'[!]'$RESET' There was an issue installing kernel headers' 1>&2
+  echo -e $YELLOW'[i]'$RESET' Are you using the latest kernel?'
 fi
 
 
 ##### (Optional) Checking to see if Kali is in a VM. If so, install "Virtual Machine Addons/Tools" for a "better" virtual experiment
 if [ -e "/etc/vmware-tools" ]; then
-  echo -e '\n '$RED'[!]'$RESET' VMware Tools is already installed. Skipping...' 1>&2
+  echo -e '\n'$RED'[!]'$RESET' VMware Tools is already installed. Skipping...' 1>&2
 elif (dmidecode | grep -iq vmware); then
   ##### Installing virtual machines tools ~ http://docs.kali.org/general-use/install-vmware-tools-kali-guest
-  echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}virtual machines tools${RESET}"
+  echo -e "\n $GREEN[+]$RESET Installing virtual machines tools"
   #--- VM -> Install VMware Tools.    Note: you may need to apply a patch: https://github.com/offensive-security/kali-vmware-tools-patches
   mkdir -p /mnt/cdrom/
   umount -f /mnt/cdrom 2>/dev/null
@@ -201,8 +187,8 @@ elif (dmidecode | grep -iq vmware); then
   mount -o ro /dev/cdrom /mnt/cdrom 2>/dev/null; _mount=$?   # This will only check the first CD drive (if there are multiple bays)
   sleep 2
   file=$(find /mnt/cdrom/ -maxdepth 1 -type f -name 'VMwareTools-*.tar.gz' -print -quit)
-  ([[ "$_mount" == 0 && -z "${file}" ]]) && echo -e ' '$RED'[!]'$RESET' Incorrect CD/ISO mounted' 1>&2
-  if [[ "$_mount" == 0 && -n "${file}" ]]; then             # If there is a CD in (and its right!), try to install native Guest Additions
+  ([[ "$_mount" == 0 && -z "$file" ]]) && echo -e ' '$RED'[!]'$RESET' Incorrect CD/ISO mounted' 1>&2
+  if [[ "$_mount" == 0 && -n "$file" ]]; then             # If there is a CD in (and its right!), try to install native Guest Additions
     echo -e $YELLOW'[i]'$RESET' Patching & using "native VMware tools"'
     apt-get -y -qq install gcc make "linux-headers-$(uname -r)" git
     git clone git://github.com/rasa/vmware-tools-patches.git /tmp/vmware-tools-patches
@@ -224,10 +210,10 @@ elif (dmidecode | grep -iq vmware); then
   #--- Slow mouse? ~ http://docs.kali.org/general-use/install-vmware-tools-kali-guest
   #apt-get -y -qq install xserver-xorg-input-vmmouse
 elif [ -e "/etc/init.d/vboxadd" ]; then
-  echo -e '\n '$RED'[!]'$RESET' Virtualbox Guest Additions is already installed. Skipping...' 1>&2
+  echo -e '\n'$RED'[!]'$RESET' Virtualbox Guest Additions is already installed. Skipping...' 1>&2
 elif (dmidecode | grep -iq virtualbox); then
   ##### (Optional) Installing Virtualbox Guest Additions.   Note: Need VirtualBox 4.2.xx+ (http://docs.kali.org/general-use/kali-linux-virtual-box-guest)
-  echo -e "\n ${GREEN}[+]${RESET} (Optional) Installing ${GREEN}Virtualbox Guest Additions${RESET}"
+  echo -e "\n $GREEN[+]$RESET (Optional) Installing Virtualbox Guest Additions"
   #--- Devices -> Install Guest Additions CD image...
   mkdir -p /mnt/cdrom/
   umount -f /mnt/cdrom 2>/dev/null
@@ -246,7 +232,7 @@ fi
 
 
 ###### Checking display resolutions - just for post-install setup ***
-#echo -e "\n ${GREEN}[+]${RESET} Checking possible display resolutions"
+#echo -e "\n $GREEN[+]$RESET Checking possible display resolutions"
 #export DISPLAY=:0.0   #[[ -z $SSH_CONNECTION ]] || export DISPLAY=:0.0
 #current_res=$(xrandr | awk '/\*/ {print $1}')
 #if [[ $current_res == "800x600" ]]; then
@@ -259,10 +245,10 @@ fi
 ifconfig eth1 &>/dev/null
 if [[ $? == 0 ]]; then
   ##### Setting a static IP address (192.168.155.175/24) on eth1
-  echo -e "\n ${GREEN}[+]${RESET} Setting a ${GREEN}static IP address${RESET} (192.168.155.175/24) on eth1"
+  echo -e "\n $GREEN[+]$RESET Setting a static IP address (192.168.155.175/24) on eth1"
   ifconfig eth1 192.168.155.175/24
-  file=/etc/network/interfaces; [ -e "${file}" ] && cp -n $file{,.bkup}
-  grep -q '^iface eth1 inet static' "${file}" 2>/dev/null || cat <<EOF >> "${file}"
+  file=/etc/network/interfaces; [ -e "$file" ] && cp -n $file{,.bkup}
+  grep -q '^iface eth1 inet static' "$file" 2>/dev/null || cat <<EOF >> "$file"
 
 auto eth1
 iface eth1 inet static
@@ -275,56 +261,55 @@ fi
 
 ##### Setting static & protecting DNS name servers.   Note: May cause issues with forced values (e.g. captive portals etc)
 if [ "$hardenDNS" != "false" ]; then
-  echo -e "\n ${GREEN}[+]${RESET} Setting static & protecting ${GREEN}DNS name servers${RESEt}"
-  file=/etc/resolv.conf; [ -e "${file}" ] && cp -n $file{,.bkup}
-  chattr -i "${file}" 2>/dev/null
+  echo -e "\n $GREEN[+]$RESET Setting static & protecting DNS name servers"
+  file=/etc/resolv.conf; [ -e "$file" ] && cp -n $file{,.bkup}
+  chattr -i "$file" 2>/dev/null
   #--- Remove duplicate results
-  #uniq "${file}" > "$file.new"; mv $file{.new,}
+  #uniq "$file" > "$file.new"; mv $file{.new,}
   #--- Use OpenDNS DNS
-  #echo -e 'nameserver 208.67.222.222\nnameserver 208.67.220.220' > "${file}"
+  #echo -e 'nameserver 208.67.222.222\nnameserver 208.67.220.220' > "$file"
   #--- Use Google DNS
-  echo -e 'nameserver 8.8.8.8\nnameserver 8.8.4.4' > "${file}"
+  echo -e 'nameserver 8.8.8.8\nnameserver 8.8.4.4' > "$file"
   #--- Add domain
-  #echo -e "domain $domainName\n#search $domainName" >> "${file}"
+  #echo -e "domain $domainName\n#search $domainName" >> "$file"
   #--- Protect it
-  chattr +i "${file}" 2>/dev/null
+  chattr +i "$file" 2>/dev/null
 else
-  echo -e '\n '$RED'[!]'$RESET" ${RED}Skipping DNS${RESET} (missing: '$0 --dns')..." 1>&2
+  echo -e ' '$RED'[!]'$RESET' Skipping DNS (missing --dns)...' 1>&2
 fi
 
 
 ###### Updating hostname (to 'kali') - but not domain name ***
-#echo -e "\n ${GREEN}[+]${RESET} Updating ${GREEN}hostname${RESET} (to 'kali')"
+#echo -e "\n $GREEN[+]$RESET Updating hostname (to 'kali')"
 #hostname="kali"
 ##--- Change it now
 #hostname "$hostname"
 ##--- Make sure it sticks after reboot
-#file=/etc/hostname; [ -e "${file}" ] && cp -n $file{,.bkup}
-#echo "$(hostname)" > "${file}"
+#file=/etc/hostname; [ -e "$file" ] && cp -n $file{,.bkup}
+#echo "$(hostname)" > "$file"
 ##--- Set host file
-#file=/etc/hosts; [ -e "${file}" ] && cp -n $file{,.bkup}
-#sed -i 's/127.0.1.1.*/127.0.1.1  '$hostname'/' "${file}"    #echo -e "127.0.0.1  localhost.localdomain localhost\n127.0.0.1  $hostname.$domainname $hostname" > "${file}"    #$(hostname) $domainname
+#file=/etc/hosts; [ -e "$file" ] && cp -n $file{,.bkup}
+#sed -i 's/127.0.1.1.*/127.0.1.1  '$hostname'/' "$file"    #echo -e "127.0.0.1  localhost.localdomain localhost\n127.0.0.1  $hostname.$domainname $hostname" > "$file"    #$(hostname) $domainname
 ##--- Check
 ##hostname; hostname -f
 
 
 ##### Updating location information - set either value to "" to skip.
-echo -e "\n ${GREEN}[+]${RESET} Updating ${GREEN}location information${RESET} ~ keyboard layout & time zone ($keyboardlayout & $timezone)"
-[ "$keyboardApple" != "false" ]  && echo -e "\n ${GREEN}[+]${RESET} Applying ${GREEN}Apple hardware${RESET} profile"
+echo -e "\n $GREEN[+]$RESET Updating location information ~ keyboard layout & time zone ($keyboardlayout & $timezone)"
+[ "$keyboardApple" != "false" ]  && echo -e "\n $GREEN[+]$RESET Applying Apple hardware profile"
 #keyboardlayout="gb"          # Great Britain
 #timezone="Europe/London"     # London, Europe
 #--- Configure keyboard layout
 if [ ! -z "$keyboardlayout" ]; then
-  file=/etc/default/keyboard; #[ -e "${file}" ] && cp -n $file{,.bkup}
-  sed -i 's/XKBLAYOUT=".*"/XKBLAYOUT="'$keyboardlayout'"/' "${file}"
-  [ "$keyboardApple" != "false" ] && sed -i 's/XKBVARIANT=".*"/XKBVARIANT="mac"/' "${file}"   # Enable if you are using Apple based products.
+  file=/etc/default/keyboard; #[ -e "$file" ] && cp -n $file{,.bkup}
+  sed -i 's/XKBLAYOUT=".*"/XKBLAYOUT="'$keyboardlayout'"/' "$file"
+  [ "$keyboardApple" != "false" ] && sed -i 's/XKBVARIANT=".*"/XKBVARIANT="mac"/' "$file"   # Enable if you are using Apple based products.
   #dpkg-reconfigure -f noninteractive keyboard-configuration   #dpkg-reconfigure console-setup   #dpkg-reconfigure keyboard-configuration -u    # Need to restart xserver for effect
 fi
 #--- Changing time zone
 [ -z "$timezone" ] && timezone=Etc/UTC     #Etc/GMT vs Etc/UTC vs UTC
 echo "$timezone" > /etc/timezone           #Etc/GMT vs Etc/UTC vs UTC vs Europe/London
 ln -sf "/usr/share/zoneinfo/$(cat /etc/timezone)" /etc/localtime
-#dpkg-reconfigure -f noninteractive tzdata
 #--- Setting locale
 #sed -i 's/^# en_/en_/' /etc/locale.gen   #en_GB en_US
 #locale-gen
@@ -335,8 +320,8 @@ ln -sf "/usr/share/zoneinfo/$(cat /etc/timezone)" /etc/localtime
 apt-get -qq update
 apt-get -y -qq install ntp ntpdate
 #--- Configuring ntp
-#file=/etc/default/ntp; [ -e "${file}" ] && cp -n $file{,.bkup}
-#grep -q "interface=127.0.0.1" "${file}" || sed -i "s/NTPD_OPTS='/NTPD_OPTS='--interface=127.0.0.1 /" "${file}"
+#file=/etc/default/ntp; [ -e "$file" ] && cp -n $file{,.bkup}
+#grep -q "interface=127.0.0.1" "$file" || sed -i "s/NTPD_OPTS='/NTPD_OPTS='--interface=127.0.0.1 /" "$file"
 #--- Update time
 ntpdate -b -s -u pool.ntp.org
 #--- Start service
@@ -351,22 +336,22 @@ start_time=$(date +%s)
 
 if [ "$freezeDEB" != "false" ]; then
   ##### Don't ever update these packages
-  echo -e "\n ${GREEN}[+]${RESET} ${GREEN}Don't update${RESET} these packages:"
-  for x in metasploit-framework; do
-    echo -e " $YELLOW[i]$RESET   + ${x}"
+  echo -e "\n $GREEN[+]$RESET Don't ever update these packages:"
+  for x in metasploit metasploit-framework metasploit-common; do
+    echo -e " $YELLOW[i]$RESET   + $x"
     echo "$x hold" | dpkg --set-selections   # To update: echo "$x install" | dpkg --set-selections
   done
 fi
 
 
 ##### Updating OS from repositories
-echo -e "\n ${GREEN}[+]${RESET} ${GREEN}Updating OS${RESET} from repositories (this may take a while depending on your Internet connection & Kali version/age)"
-for FILE in clean autoremove; do apt-get -y -qq "${FILE}"; done         # Clean up      clean remove autoremove autoclean
+echo -e "\n $GREEN[+]$RESET Updating OS from repositories (this may take a while depending on your Internet connection & Kali version/age)"
+for FILE in clean autoremove; do apt-get -y -qq "$FILE"; done         # Clean up      clean remove autoremove autoclean
 export DEBIAN_FRONTEND=noninteractive
 apt-get -qq update && apt-get -y -qq dist-upgrade --fix-missing
 #--- Enable bleeding edge ~ http://www.kali.org/kali-monday/bleeding-edge-kali-repositories/
-#file=/etc/apt/sources.list; [ -e "${file}" ] && cp -n $file{,.bkup}
-#grep -q 'kali-bleeding-edge' "${file}" 2>/dev/null || echo -e "\n\n## Bleeding edge\ndeb http://repo.kali.org/kali kali-bleeding-edge main" >> "${file}"
+#file=/etc/apt/sources.list; [ -e "$file" ] && cp -n $file{,.bkup}
+#grep -q 'kali-bleeding-edge' "$file" 2>/dev/null || echo -e "\n\n## Bleeding edge\ndeb http://repo.kali.org/kali kali-bleeding-edge main" >> "$file"
 #apt-get -qq update && apt-get -y -qq upgrade
 #--- Check kernel stuff
 _TMP=$(dpkg -l | grep linux-image- | grep -vc meta)
@@ -381,26 +366,26 @@ apt-get -y -qq install kali-linux-full
 
 
 ###### Settings services to listen to listen to loopback interface ***
-#echo -e "\n ${GREEN}[+]${RESET} Settings services to listen to listen to ${GREEN}loopback interface${RESET}"
+#echo -e "\n $GREEN[+]$RESET Settings services to listen to listen to loopback interface"
 #--- Configuring ntp
-#file=/etc/default/ntp; [ -e "${file}" ] && cp -n $file{,.bkup}
-#grep -q "interface=127.0.0.1" "${file}" || sed -i "s/^NTPD_OPTS='/NTPD_OPTS='--interface=127.0.0.1 /" "${file}"
+#file=/etc/default/ntp; [ -e "$file" ] && cp -n $file{,.bkup}
+#grep -q "interface=127.0.0.1" "$file" || sed -i "s/^NTPD_OPTS='/NTPD_OPTS='--interface=127.0.0.1 /" "$file"
 #service ntp restart
 #--- Configuring rpcbind
-#file=/etc/default/rpcbind; [ -e "${file}" ] && cp -n $file{,.bkup}
-#if [ -e "${file}" ]; then grep -q "127.0.0.1" "${file}" || sed -i 's/OPTIONS="/OPTIONS="-h 127.0.0.1 /' "${file}"; else echo 'OPTIONS="-w -h 127.0.0.1"' > "${file}"; fi
+#file=/etc/default/rpcbind; [ -e "$file" ] && cp -n $file{,.bkup}
+#if [ -e "$file" ]; then grep -q "127.0.0.1" "$file" || sed -i 's/OPTIONS="/OPTIONS="-h 127.0.0.1 /' "$file"; else echo 'OPTIONS="-w -h 127.0.0.1"' > "$file"; fi
 #service ntp rpcbind
 #--- Configuring nfs
-#file=/etc/default/rpcbind; [ -e "${file}" ] && cp -n $file{,.bkup}
-#grep -q "--name 127.0.0.1" "${file}" || sed -i 's/^STATDOPTS=/STATDOPTS="--name 127.0.0.1"/' "${file}"
+#file=/etc/default/rpcbind; [ -e "$file" ] && cp -n $file{,.bkup}
+#grep -q "--name 127.0.0.1" "$file" || sed -i 's/^STATDOPTS=/STATDOPTS="--name 127.0.0.1"/' "$file"
 #service nfs-common restart
 
 
 ##### Fixing audio issues
-echo -e "\n ${GREEN}[+]${RESET} Fixing ${GREEN}audio${RESET} issues"
+echo -e "\n $GREEN[+]$RESET Fixing audio issues"
 #--- PulseAudio warnings
-#file=/etc/default/pulseaudio; [ -e "${file}" ] && cp -n $file{,.bkup}
-#sed -i 's/^PULSEAUDIO_SYSTEM_START=.*/PULSEAUDIO_SYSTEM_START=1/' "${file}"
+#file=/etc/default/pulseaudio; [ -e "$file" ] && cp -n $file{,.bkup}
+#sed -i 's/^PULSEAUDIO_SYSTEM_START=.*/PULSEAUDIO_SYSTEM_START=1/' "$file"
 #--- Unmute on startup
 apt-get -y -qq install alsa-utils
 #--- Set volume now
@@ -409,48 +394,47 @@ amixer set Master 50% >/dev/null
 
 
 ##### Configuring GRUB
-echo -e "\n ${GREEN}[+]${RESET} Configuring ${GREEN}GRUB${RESET} ~ boot manager"
+echo -e "\n $GREEN[+]$RESET Configuring GRUB ~ boot manager"
 (dmidecode | grep -iq virtual) && grubTimeout=1 || grubTimeout=5
-file=/etc/default/grub; [ -e "${file}" ] && cp -n $file{,.bkup}
-sed -i 's/^GRUB_TIMEOUT=.*/GRUB_TIMEOUT='$grubTimeout'/' "${file}"                   # Time out (lower if in a virtual machine, else possible dual booting)
-sed -i 's/^GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT=""/' "${file}"   # TTY resolution    #GRUB_CMDLINE_LINUX_DEFAULT="vga=0x0318 quiet"   (crashes VM/vmwgfx)
+file=/etc/default/grub; [ -e "$file" ] && cp -n $file{,.bkup}
+sed -i 's/^GRUB_TIMEOUT=.*/GRUB_TIMEOUT='$grubTimeout'/' "$file"                   # Time out (lower if in a virtual machine, else possible dual booting)
+sed -i 's/^GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT=""/' "$file"   # TTY resolution    #GRUB_CMDLINE_LINUX_DEFAULT="vga=0x0318 quiet"   (crashes VM/vmwgfx)
 update-grub
 
 
 ###### Disabling login manager (console login - non GUI) ***
-#echo -e "\n ${GREEN}[+]${RESET} ${GREEN}Disabling GUI${RESET} login screen"
+#echo -e "\n $GREEN[+]$RESET Disabling login (console login - non GUI)"
 #--- Disable GUI login screen
 #apt-get -y -qq install chkconfig
-#chkconfig gdm3 off                                 # ...or: mv -f /etc/rc2.d/S19gdm3 /etc/rc2.d/K17gdm           #file=/etc/X11/default-display-manager; [ -e "${file}" ] && cp -n $file{,.bkup}   #echo /bin/true > "${file}"
+#chkconfig gdm3 off                                 # ...or: mv -f /etc/rc2.d/S19gdm3 /etc/rc2.d/K17gdm           #file=/etc/X11/default-display-manager; [ -e "$file" ] && cp -n $file{,.bkup}   #echo /bin/true > "$file"
 #--- Enable auto (gui) login
-#file=/etc/gdm3/daemon.conf; [ -e "${file}" ] && cp -n $file{,.bkup}
-#sed -i 's/^.*AutomaticLoginEnable = .*/AutomaticLoginEnable = true/' "${file}"
-#sed -i 's/^.*AutomaticLogin = .*/AutomaticLogin = root/' "${file}"
+#file=/etc/gdm3/daemon.conf; [ -e "$file" ] && cp -n $file{,.bkup}
+#sed -i 's/^.*AutomaticLoginEnable = .*/AutomaticLoginEnable = true/' "$file"
+#sed -i 's/^.*AutomaticLogin = .*/AutomaticLogin = root/' "$file"
 #--- Shortcut for when you want to start GUI
 #ln -sf /usr/sbin/gdm3 /usr/bin/startx
 
 
-###### Configuring startup   ***
-#echo -e "\n ${GREEN}[+]${RESET} Configuring ${GREEN}startup${RESET} ~ randomize the hostname, eth0 & wlan0s MAC address"
+###### Configuring startup (randomize the hostname, eth0 & wlan0s MAC address) ***
+#echo -e "\n $GREEN[+]$RESET Configuring startup (randomize the hostname, eth0 & wlan0s MAC address)"
 #--- Start up
-#file=/etc/rc.local; [ -e "${file}" ] && cp -n $file{,.bkup}
-#grep -q "macchanger" "${file}" 2>/dev/null || sed -i 's#^exit 0#for INT in eth0 wlan0; do\n  ifconfig $INT down\n  '$(whereis macchanger)' -r $INT \&\& sleep 3\n  ifconfig $INT up\ndone\n\n\nexit 0#' "${file}"
-#grep -q "hostname" "${file}" 2>/dev/null || sed -i 's#^exit 0#'$(whereis hostname)' $(cat /dev/urandom | tr -dc "A-Za-z" | head -c8)\nexit 0#' "${file}"
+#file=/etc/rc.local; [ -e "$file" ] && cp -n $file{,.bkup}
+#grep -q "macchanger" "$file" 2>/dev/null || sed -i 's#^exit 0#for INT in eth0 wlan0; do\n  ifconfig $INT down\n  '$(whereis macchanger)' -r $INT \&\& sleep 3\n  ifconfig $INT up\ndone\n\n\nexit 0#' "$file"
+#grep -q "hostname" "$file" 2>/dev/null || sed -i 's#^exit 0#'$(whereis hostname)' $(cat /dev/urandom | tr -dc "A-Za-z" | head -c8)\nexit 0#' "$file"
 #--- On demand (*** kinda broken)
-##file=/etc/init.d/macchanger; [ -e "${file}" ] && cp -n $file{,.bkup}
-##echo -e '#!/bin/bash\nfor INT in eth0 wlan0; do\n  echo "Randomizing: $INT"\n  ifconfig $INT down\n  macchanger -r $INT\n  sleep 3\n  ifconfig $INT up\n  echo "--------------------"\ndone\nexit 0' > "${file}"
-##chmod -f 0500 "${file}"
+##file=/etc/init.d/macchanger; [ -e "$file" ] && cp -n $file{,.bkup}
+##echo -e '#!/bin/bash\nfor INT in eth0 wlan0; do\n  echo "Randomizing: $INT"\n  ifconfig $INT down\n  macchanger -r $INT\n  sleep 3\n  ifconfig $INT up\n  echo "--------------------"\ndone\nexit 0' > "$file"
+##chmod -f 0500 "$file"
 #--- Auto on interface change state (untested)
-##file=/etc/network/if-pre-up.d/macchanger; [ -e "${file}" ] && cp -n $file{,.bkup}
-##echo -e '#!/bin/bash\n[ "$IFACE" == "lo" ] && exit 0\nifconfig $IFACE down\nmacchanger -r $IFACE\nifconfig $IFACE up\nexit 0' > "${file}"
-##chmod -f 0500 "${file}"
+##file=/etc/network/if-pre-up.d/macchanger; [ -e "$file" ] && cp -n $file{,.bkup}
+##echo -e '#!/bin/bash\n[ "$IFACE" == "lo" ] && exit 0\nifconfig $IFACE down\nmacchanger -r $IFACE\nifconfig $IFACE up\nexit 0' > "$file"
+##chmod -f 0500 "$file"
 
 
 ##### Configuring GNOME 3
-echo -e "\n ${GREEN}[+]${RESET} Configuring ${GREEN}GNOME 3${RESET} ~ desktop environment"
+echo -e "\n $GREEN[+]$RESET Configuring GNOME 3 ~ desktop environment"
 #--- Move bottom panel to top panel
-gsettings set org.gnome.gnome-panel.layout toplevel-id-list "['top-panel']"  # ***kali2
-dconf write /org/gnome/settings-daemon/plugins/updates/active false   # ***kali2
+gsettings set org.gnome.gnome-panel.layout toplevel-id-list "['top-panel']"
 dconf write /org/gnome/gnome-panel/layout/objects/workspace-switcher/toplevel-id "'top-panel'"
 dconf write /org/gnome/gnome-panel/layout/objects/window-list/toplevel-id "'top-panel'"
 #--- Panel position
@@ -468,10 +452,6 @@ dconf write /org/gnome/gnome-panel/layout/objects/workspace-switcher/pack-index 
 dconf write /org/gnome/gnome-panel/layout/objects/clock/pack-index 2
 dconf write /org/gnome/gnome-panel/layout/objects/user-menu/pack-index 3
 dconf write /org/gnome/gnome-panel/layout/objects/notification-area/pack-index 4
-#--- Disable tracker service
-gsettings set org.freedesktop.Tracker.Miner.Files crawling-interval -2
-gsettings set org.freedesktop.Tracker.Miner.Files enable-monitors false
-tracker-control -r
 #--- Enable auto hide
 #dconf write /org/gnome/gnome-panel/layout/toplevels/top-panel/auto-hide true
 #--- Add top 10 tools to toolbar
@@ -513,8 +493,8 @@ dconf write /org/gnome/nautilus/desktop/computer-icon-visible false
 apt-get -y -qq install nautilus-open-terminal
 #--- Enable num lock at start up (might not be smart if you're using a smaller keyboard (laptop?))
 apt-get -y -qq install numlockx
-file=/etc/gdm3/Init/Default; [ -e "${file}" ] && cp -n $file{,.bkup}     #/etc/rc.local
-grep -q '^/usr/bin/numlockx' "${file}" 2>/dev/null || sed -i 's#exit 0#if [ -x /usr/bin/numlockx ]; then\n /usr/bin/numlockx on\nfi\nexit 0#' "${file}"   # GNOME
+file=/etc/gdm3/Init/Default; [ -e "$file" ] && cp -n $file{,.bkup}     #/etc/rc.local
+grep -q '^/usr/bin/numlockx' "$file" 2>/dev/null || sed -i 's#exit 0#if [ -x /usr/bin/numlockx ]; then\n /usr/bin/numlockx on\nfi\nexit 0#' "$file"   # GNOME
 #--- Change wallpaper & login (happens later)
 #wget -q "http://www.kali.org/images/wallpapers-01/kali-wp-june-2014_1920x1080_A.png" -P /usr/share/wallpapers/
 #gsettings set org.gnome.desktop.background picture-uri 'file:///usr/share/wallpapers/kali-wp-june-2014_1920x1080_A.png'
@@ -524,7 +504,7 @@ grep -q '^/usr/bin/numlockx' "${file}" 2>/dev/null || sed -i 's#exit 0#if [ -x /
 
 
 ##### Installing & configuring XFCE 4
-echo -e "\n ${GREEN}[+]${RESET} Installing & configuring ${GREEN}XFCE 4${RESET}${RESET} ~ desktop environment"
+echo -e "\n $GREEN[+]$RESET Installing & configuring XFCE 4 ~ desktop environment"
 apt-get -y -qq install curl
 apt-get -y -qq install xfce4 xfce4-places-plugin
 #apt-get -y -qq install shiki-colors-xfwm-theme    # theme
@@ -982,33 +962,35 @@ cat <<EOF > /root/.config/xfce4/menu/top10.menu
 </Menu>
 EOF
 #--- Get shiki-colors-light theme
-curl --progress -k -L -f "http://xfce-look.org/CONTENT/content-files/142110-Shiki-Colors-Light-Menus.tar.gz" > /tmp/Shiki-Colors-Light-Menus.tar.gz   #***!!! hardcoded path!
+curl --progress -k -L "http://xfce-look.org/CONTENT/content-files/142110-Shiki-Colors-Light-Menus.tar.gz" > /tmp/Shiki-Colors-Light-Menus.tar.gz   #***!!! hardcoded path!
 tar zxf /tmp/Shiki-Colors-Light-Menus.tar.gz -C /root/.themes/
 xfconf-query -c xsettings -p /Net/ThemeName -s "Shiki-Colors-Light-Menus"
 xfconf-query -c xsettings -p /Net/IconThemeName -s "gnome-brave"
 #--- Enable compositing
 xfconf-query -c xfwm4 -p /general/use_compositing -s true
 #--- Fix gnome keyring issue
-file=/etc/xdg/autostart/gnome-keyring-pkcs11.desktop;   #[ -e "${file}" ] && cp -n $file{,.bkup}
-grep -q "XFCE" "${file}" || sed -i 's/^OnlyShowIn=*/OnlyShowIn=XFCE;/' "${file}"
+file=/etc/xdg/autostart/gnome-keyring-pkcs11.desktop;   #[ -e "$file" ] && cp -n $file{,.bkup}
+grep -q "XFCE" "$file" || sed -i 's/^OnlyShowIn=*/OnlyShowIn=XFCE;/' "$file"
 #--- Disable user folders
 apt-get -y -qq install xdg-user-dirs
 xdg-user-dirs-update
-file=/etc/xdg/user-dirs.conf; [ -e "${file}" ] && cp -n $file{,.bkup}
-sed -i 's/^enable=.*/enable=False/' "${file}"   #sed -i 's/^XDG_/#XDG_/; s/^#XDG_DESKTOP/XDG_DESKTOP/;' /root/.config/user-dirs.dirs
+file=/etc/xdg/user-dirs.conf; [ -e "$file" ] && cp -n $file{,.bkup}
+sed -i 's/^enable=.*/enable=False/' "$file"   #sed -i 's/^XDG_/#XDG_/; s/^#XDG_DESKTOP/XDG_DESKTOP/;' /root/.config/user-dirs.dirs
 rm -rf /root/{Documents,Music,Pictures,Public,Templates,Videos}/
 xdg-user-dirs-update
 #--- Get new desktop wallpaper
 mkdir -p /usr/share/wallpapers/
-curl --progress -k -L -f "http://www.kali.org/images/wallpapers-01/kali-wp-june-2014_1920x1080_A.png" > /usr/share/wallpapers/kali_blue_3d_a.png    #***!!! hardcoded paths!
-curl --progress -k -L -f "http://www.kali.org/images/wallpapers-01/kali-wp-june-2014_1920x1080_B.png" > /usr/share/wallpapers/kali_blue_3d_b.png
-curl --progress -k -L -f "http://www.kali.org/images/wallpapers-01/kali-wp-june-2014_1920x1080_G.png" >  /usr/share/wallpapers/kali_black_honeycomb.png
-curl --progress -k -L -f "http://imageshack.us/a/img17/4646/vzex.png" >  /usr/share/wallpapers/kali_blue_splat.png
-curl --progress -k -L -f "http://em3rgency.com/wp-content/uploads/2012/12/Kali-Linux-faded-no-Dragon-small-text.png" > /usr/share/wallpapers/kali_black_clean.png
-curl --progress -k -L -f "http://www.hdwallpapers.im/download/kali_linux-wallpaper.jpg" > /usr/share/wallpapers/kali_black_stripes.jpg
-curl --progress -k -L -f "http://fc01.deviantart.net/fs71/f/2011/118/e/3/bt___edb_wallpaper_by_xxdigipxx-d3f4nxv.png" > /usr/share/wallpapers/kali_bt_edb.jpg
+curl --progress -k -L "http://www.kali.org/images/wallpapers-01/kali-wp-june-2014_1920x1080_A.png" > /usr/share/wallpapers/kali_blue_3d_a.png    #***!!! hardcoded paths!
+curl --progress -k -L "http://www.kali.org/images/wallpapers-01/kali-wp-june-2014_1920x1080_B.png" > /usr/share/wallpapers/kali_blue_3d_b.png
+curl --progress -k -L "http://www.kali.org/images/wallpapers-01/kali-wp-june-2014_1920x1080_G.png" >  /usr/share/wallpapers/kali_black_honeycomb.png
+curl --progress -k -L "http://imageshack.us/a/img17/4646/vzex.png" >  /usr/share/wallpapers/kali_blue_splat.png
+curl --progress -k -L "http://em3rgency.com/wp-content/uploads/2012/12/Kali-Linux-faded-no-Dragon-small-text.png" > /usr/share/wallpapers/kali_black_clean.png
+curl --progress -k -L "http://www.hdwallpapers.im/download/kali_linux-wallpaper.jpg" > /usr/share/wallpapers/kali_black_stripes.jpg
+curl --progress -k -L "http://fc01.deviantart.net/fs71/f/2011/118/e/3/bt___edb_wallpaper_by_xxdigipxx-d3f4nxv.png" > /usr/share/wallpapers/kali_bt_edb.jpg
 _TMP="$(find /usr/share/wallpapers/ -maxdepth 1 -type f \( -name 'kali_*' -o -empty \) | xargs -n1 file | grep -i 'HTML\|empty' | cut -d ':' -f1)"
-for FILE in $(echo ${_TMP}); do rm -f "${FILE}"; done
+for FILE in $(echo $_TMP); do
+  rm -f "$FILE"
+done
 [[ -e "/usr/share/wallpapers/kali_default-1440x900.jpg" ]] && ln -sf /usr/share/wallpapers/kali/contents/images/1440x900.png /usr/share/wallpapers/kali_default-1440x900.jpg
 #--- Change desktop wallpaper (single random pick - on each install).   Note: For now...
 wallpaper=$(shuf -n1 -e /usr/share/wallpapers/kali_*)   #wallpaper=/usr/share/wallpapers/kali_blue_splat.png
@@ -1019,8 +1001,8 @@ cp -f "$wallpaper" /usr/share/images/desktop-base/login-background.png
 #--- Reload XFCE
 #/usr/bin/xfdesktop --reload
 #--- New wallpaper - add to startup (random each login)
-file=/usr/local/bin/wallpaper.sh; [ -e "${file}" ] && cp -n $file{,.bkup}
-cat <<EOF > "${file}"
+file=/usr/local/bin/wallpaper.sh; [ -e "$file" ] && cp -n $file{,.bkup}
+cat <<EOF > "$file"
 #!/bin/bash
 
 wallpaper="\$(shuf -n1 -e \$(find /usr/share/wallpapers/ -maxdepth 1 -type f -name 'kali_*'))"
@@ -1028,10 +1010,10 @@ xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitor0/image-path -s \$wall
 cp -f \$wallpaper /usr/share/images/desktop-base/login-background.png
 /usr/bin/xfdesktop --reload
 EOF
-chmod -f 0500 "${file}"
+chmod -f 0500 "$file"
 mkdir -p /root/.config/autostart/
-file=/root/.config/autostart/wallpaper.desktop; [ -e "${file}" ] && cp -n $file{,.bkup}
-cat <<EOF > "${file}"
+file=/root/.config/autostart/wallpaper.desktop; [ -e "$file" ] && cp -n $file{,.bkup}
+cat <<EOF > "$file"
 [Desktop Entry]
 Type=Application
 Exec=/usr/local/bin/wallpaper.sh
@@ -1045,189 +1027,189 @@ Comment=
 EOF
 #--- Configure file browser (need to re-login for effect)
 mkdir -p /root/.config/Thunar/
-file=/root/.config/Thunar/thunarrc; [ -e "${file}" ] && cp -n $file{,.bkup}
-([[ -e "${file}" && "$(tail -c 1 $file)" != "" ]]) && echo >> "${file}"
-sed -i 's/LastShowHidden=.*/LastShowHidden=TRUE/' "${file}" 2>/dev/null || echo -e "[Configuration]\nLastShowHidden=TRUE" > /root/.config/Thunar/thunarrc;
+file=/root/.config/Thunar/thunarrc; [ -e "$file" ] && cp -n $file{,.bkup}
+([[ -e "$file" && "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
+sed -i 's/LastShowHidden=.*/LastShowHidden=TRUE/' "$file" 2>/dev/null || echo -e "[Configuration]\nLastShowHidden=TRUE" > /root/.config/Thunar/thunarrc;
 #--- Enable num lock at start up (might not be smart if you're using a smaller keyboard (laptop?)) ~ https://wiki.xfce.org/faq
 #xfconf-query -c keyboards -p /Default/Numlock -s true
 apt-get -y -qq install numlockx
-file=/etc/xdg/xfce4/xinitrc; [ -e "${file}" ] && cp -n $file{,.bkup}     #/etc/rc.local
-([[ -e "${file}" && "$(tail -c 1 $file)" != "" ]]) && echo >> "${file}"
-grep -q '^/usr/bin/numlockx' "${file}" 2>/dev/null || echo "/usr/bin/numlockx on" >> "${file}"
+file=/etc/xdg/xfce4/xinitrc; [ -e "$file" ] && cp -n $file{,.bkup}     #/etc/rc.local
+([[ -e "$file" && "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
+grep -q '^/usr/bin/numlockx' "$file" 2>/dev/null || echo "/usr/bin/numlockx on" >> "$file"
 #--- XFCE fixes for default applications
 mkdir -p /root/.local/share/applications/
-file=/root/.local/share/applications/mimeapps.list; [ -e "${file}" ] && cp -n $file{,.bkup}
-[ ! -e "${file}" ] && echo '[Added Associations]' > "${file}"
-([[ -e "${file}" && "$(tail -c 1 $file)" != "" ]]) && echo >> "${file}"
+file=/root/.local/share/applications/mimeapps.list; [ -e "$file" ] && cp -n $file{,.bkup}
+[ ! -e "$file" ] && echo '[Added Associations]' > "$file"
+([[ -e "$file" && "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
 for VALUE in file trash; do
-  sed -i 's#x-scheme-handler/'${VALUE}'=.*#x-scheme-handler/'${VALUE}'=exo-file-manager.desktop#' "${file}"
-  grep -q '^x-scheme-handler/'${VALUE}'=' "${file}" 2>/dev/null || echo -e 'x-scheme-handler/'${VALUE}'=exo-file-manager.desktop' >> "${file}"
+  sed -i 's#x-scheme-handler/'$VALUE'=.*#x-scheme-handler/'$VALUE'=exo-file-manager.desktop#' "$file"
+  grep -q '^x-scheme-handler/'$VALUE'=' "$file" 2>/dev/null || echo -e 'x-scheme-handler/'$VALUE'=exo-file-manager.desktop' >> "$file"
 done
 for VALUE in http https; do
-  sed -i 's#^x-scheme-handler/'${VALUE}'=.*#x-scheme-handler/'${VALUE}'=exo-web-browser.desktop#' "${file}"
-  grep -q '^x-scheme-handler/'${VALUE}'=' "${file}" 2>/dev/null || echo -e 'x-scheme-handler/'${VALUE}'=exo-web-browser.desktop' >> "${file}"
+  sed -i 's#^x-scheme-handler/'$VALUE'=.*#x-scheme-handler/'$VALUE'=exo-web-browser.desktop#' "$file"
+  grep -q '^x-scheme-handler/'$VALUE'=' "$file" 2>/dev/null || echo -e 'x-scheme-handler/'$VALUE'=exo-web-browser.desktop' >> "$file"
 done
-[[ $(tail -n 1 "${file}") != "" ]] && echo >> "${file}"
-file=/root/.config/xfce4/helpers.rc; [ -e "${file}" ] && cp -n $file{,.bkup}    #exo-preferred-applications   #xdg-mime default
-sed -i 's#^FileManager=.*#FileManager=Thunar#' "${file}" 2>/dev/null
-grep -q '^FileManager=Thunar' "${file}" 2>/dev/null || echo -e 'FileManager=Thunar' >> "${file}"
+[[ $(tail -n 1 "$file") != "" ]] && echo >> "$file"
+file=/root/.config/xfce4/helpers.rc; [ -e "$file" ] && cp -n $file{,.bkup}    #exo-preferred-applications   #xdg-mime default
+sed -i 's#^FileManager=.*#FileManager=Thunar#' "$file" 2>/dev/null
+grep -q '^FileManager=Thunar' "$file" 2>/dev/null || echo -e 'FileManager=Thunar' >> "$file"
 #--- Remove any old sessions
 rm -f /root/.cache/sessions/*
 #--- XFCE fixes for GNOME Terminator (We do this later)
 #mkdir -p /root/.local/share/xfce4/helpers/
-#file=/root/.local/share/xfce4/helpers/custom-TerminalEmulator.desktop; [ -e "${file}" ] && cp -n $file{,.bkup}
-#sed -i 's#^X-XFCE-CommandsWithParameter=.*#X-XFCE-CommandsWithParameter=/usr/bin/terminator --command="%s"#' "${file}" 2>/dev/null || echo -e '[Desktop Entry]\nNoDisplay=true\nVersion=1.0\nEncoding=UTF-8\nType=X-XFCE-Helper\nX-XFCE-Category=TerminalEmulator\nX-XFCE-CommandsWithParameter=/usr/bin/terminator --command="%s"\nIcon=terminator\nName=terminator\nX-XFCE-Commands=/usr/bin/terminator' > "${file}"
-#file=/root/.config/xfce4/helpers.rc; [ -e "${file}" ] && cp -n $file{,.bkup}    #exo-preferred-applications   #xdg-mime default
-#sed -i 's#^TerminalEmulator=.*#TerminalEmulator=custom-TerminalEmulator#' "${file}"
-#grep -q '^TerminalEmulator=custom-TerminalEmulator' "${file}" 2>/dev/null || echo -e 'TerminalEmulator=custom-TerminalEmulator' >> "${file}"
+#file=/root/.local/share/xfce4/helpers/custom-TerminalEmulator.desktop; [ -e "$file" ] && cp -n $file{,.bkup}
+#sed -i 's#^X-XFCE-CommandsWithParameter=.*#X-XFCE-CommandsWithParameter=/usr/bin/terminator --command="%s"#' "$file" 2>/dev/null || echo -e '[Desktop Entry]\nNoDisplay=true\nVersion=1.0\nEncoding=UTF-8\nType=X-XFCE-Helper\nX-XFCE-Category=TerminalEmulator\nX-XFCE-CommandsWithParameter=/usr/bin/terminator --command="%s"\nIcon=terminator\nName=terminator\nX-XFCE-Commands=/usr/bin/terminator' > "$file"
+#file=/root/.config/xfce4/helpers.rc; [ -e "$file" ] && cp -n $file{,.bkup}    #exo-preferred-applications   #xdg-mime default
+#sed -i 's#^TerminalEmulator=.*#TerminalEmulator=custom-TerminalEmulator#' "$file"
+#grep -q '^TerminalEmulator=custom-TerminalEmulator' "$file" 2>/dev/null || echo -e 'TerminalEmulator=custom-TerminalEmulator' >> "$file"
 #--- Set XFCE as default desktop manager
-file=/root/.xsession; [ -e "${file}" ] && cp -n $file{,.bkup}       #~/.xsession
-echo xfce4-session > "${file}"
+file=/root/.xsession; [ -e "$file" ] && cp -n $file{,.bkup}       #~/.xsession
+echo xfce4-session > "$file"
 #--- Add keyboard shortcut (CTRL+SPACE) to open Application Finder
-file=/root/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortcuts.xml   #; [ -e "${file}" ] && cp -n $file{,.bkup}
-grep -q '<property name="&lt;Primary&gt;space" type="string" value="xfce4-appfinder"/>' "${file}" || sed -i 's#<property name="\&lt;Alt\&gt;F2" type="string" value="xfrun4"/>#<property name="\&lt;Alt\&gt;F2" type="string" value="xfrun4"/>\n      <property name="\&lt;Primary\&gt;space" type="string" value="xfce4-appfinder"/>#' "${file}"
+file=/root/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortcuts.xml   #; [ -e "$file" ] && cp -n $file{,.bkup}
+grep -q '<property name="&lt;Primary&gt;space" type="string" value="xfce4-appfinder"/>' "$file" || sed -i 's#<property name="\&lt;Alt\&gt;F2" type="string" value="xfrun4"/>#<property name="\&lt;Alt\&gt;F2" type="string" value="xfrun4"/>\n      <property name="\&lt;Primary\&gt;space" type="string" value="xfce4-appfinder"/>#' "$file"
 #--- Add keyboard shortcut (CTRL+ALT+t) to start a terminal window
-file=/root/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortcuts.xml   #; [ -e "${file}" ] && cp -n $file{,.bkup}
-grep -q '<property name="&lt;Primary&gt;&lt;Alt&gt;t" type="string" value="/usr/bin/exo-open --launch TerminalEmulator"/>' "${file}" || sed -i 's#<property name="\&lt;Alt\&gt;F2" type="string" value="xfrun4"/>#<property name="\&lt;Alt\&gt;F2" type="string" value="xfrun4"/>\n      <property name="\&lt;Primary\&gt;\&lt;Alt\&gt;t" type="string" value="/usr/bin/exo-open --launch TerminalEmulator"/>#' "${file}"
+file=/root/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortcuts.xml   #; [ -e "$file" ] && cp -n $file{,.bkup}
+grep -q '<property name="&lt;Primary&gt;&lt;Alt&gt;t" type="string" value="/usr/bin/exo-open --launch TerminalEmulator"/>' "$file" || sed -i 's#<property name="\&lt;Alt\&gt;F2" type="string" value="xfrun4"/>#<property name="\&lt;Alt\&gt;F2" type="string" value="xfrun4"/>\n      <property name="\&lt;Primary\&gt;\&lt;Alt\&gt;t" type="string" value="/usr/bin/exo-open --launch TerminalEmulator"/>#' "$file"
 #--- Create Conky refresh script (conky gets installed later)
-file=/usr/local/bin/conky_refresh.sh; [ -e "${file}" ] && cp -n $file{,.bkup}
-echo -e '#!/bin/bash\n\n/usr/bin/timeout 5 /usr/bin/killall -9 -q -w conky\n/usr/bin/conky &' > "${file}"
-chmod -f 0500 "${file}"
+file=/usr/local/bin/conky_refresh.sh; [ -e "$file" ] && cp -n $file{,.bkup}
+echo -e '#!/bin/bash\n\n/usr/bin/timeout 5 /usr/bin/killall -9 -q -w conky\n/usr/bin/conky &' > "$file"
+chmod -f 0500 "$file"
 #--- Add keyboard shortcut (CTRL+r) to run the conky refresh script
-file=/root/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortcuts.xml   #; [ -e "${file}" ] && cp -n $file{,.bkup}
-grep -q '<property name="&lt;Primary&gt;r" type="string" value="/usr/local/bin/conky_refresh.sh"/>' "${file}" || sed -i 's#<property name="\&lt;Alt\&gt;F2" type="string" value="xfrun4"/>#<property name="\&lt;Alt\&gt;F2" type="string" value="xfrun4"/>\n      <property name="\&lt;Primary\&gt;r" type="string" value="/usr/local/bin/conky_refresh.sh"/>#' "${file}"
+file=/root/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortcuts.xml   #; [ -e "$file" ] && cp -n $file{,.bkup}
+grep -q '<property name="&lt;Primary&gt;r" type="string" value="/usr/local/bin/conky_refresh.sh"/>' "$file" || sed -i 's#<property name="\&lt;Alt\&gt;F2" type="string" value="xfrun4"/>#<property name="\&lt;Alt\&gt;F2" type="string" value="xfrun4"/>\n      <property name="\&lt;Primary\&gt;r" type="string" value="/usr/local/bin/conky_refresh.sh"/>#' "$file"
 #--- Remove old temp files
 rm -f /tmp/Shiki-Colors-Light-Menus.tar*
 
 
-##### Configuring file   Note: need to restart xserver for effect
-echo -e "\n ${GREEN}[+]${RESET} Configuring ${GREEN}file${RESET} ~ GUI file system navigation"
+##### Configuring file browser   Note: need to restart xserver for effect
+echo -e "\n $GREEN[+]$RESET Configuring file browser"
 mkdir -p /root/.config/gtk-2.0/
-file=/root/.config/gtk-2.0/gtkfilechooser.ini; [ -e "${file}" ] && cp -n $file{,.bkup}
-([[ -e "${file}" && "$(tail -c 1 $file)" != "" ]]) && echo >> "${file}"
-sed -i 's/^.*ShowHidden.*/ShowHidden=true/' "${file}" 2>/dev/null || echo -e "\n[Filechooser Settings]\nLocationMode=path-bar\nShowHidden=true\nExpandFolders=false\nShowSizeColumn=true\nGeometryX=66\nGeometryY=39\nGeometryWidth=780\nGeometryHeight=618\nSortColumn=name\nSortOrder=ascending" > "${file}"    #Open/save Window -> Right click -> Show Hidden Files: Enabled
+file=/root/.config/gtk-2.0/gtkfilechooser.ini; [ -e "$file" ] && cp -n $file{,.bkup}
+([[ -e "$file" && "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
+sed -i 's/^.*ShowHidden.*/ShowHidden=true/' "$file" 2>/dev/null || echo -e "\n[Filechooser Settings]\nLocationMode=path-bar\nShowHidden=true\nExpandFolders=false\nShowSizeColumn=true\nGeometryX=66\nGeometryY=39\nGeometryWidth=780\nGeometryHeight=618\nSortColumn=name\nSortOrder=ascending" > "$file"    #Open/save Window -> Right click -> Show Hidden Files: Enabled
 dconf write /org/gnome/nautilus/preferences/show-hidden-files true
-file=/root/.gtk-bookmarks; [ -e "${file}" ] && cp -n $file{,.bkup}
-([[ -e "${file}" && "$(tail -c 1 $file)" != "" ]]) && echo >> "${file}"
-grep -q '^file:///root/Downloads ' "${file}" 2>/dev/null || echo 'file:///root/Downloads Downloads' >> "${file}"
-(dmidecode | grep -iq vmware) && (mkdir -p /mnt/hgfs/; grep -q '^file:///mnt/hgfs ' "${file}" 2>/dev/null || echo 'file:///mnt/hgfs VMShare' >> "${file}")
-grep -q '^file:///tmp ' "${file}" 2>/dev/null || echo 'file:///tmp TMP' >> "${file}"
-grep -q '^file:///usr/local/src ' "${file}" 2>/dev/null || echo 'file:///usr/local/src SRC' >> "${file}"
-grep -q '^file:///usr/share ' "${file}" 2>/dev/null || echo 'file:///usr/share Kali Tools' >> "${file}"
-grep -q '^file:///var/ftp ' "${file}" 2>/dev/null || echo 'file:///var/ftp FTP' >> "${file}"
-grep -q '^file:///var/samba ' "${file}" 2>/dev/null || echo 'file:///var/samba Samba' >> "${file}"
-grep -q '^file:///var/tftp ' "${file}" 2>/dev/null || echo 'file:///var/tftp TFTP' >> "${file}"
-grep -q '^file:///var/www ' "${file}" 2>/dev/null || echo 'file:///var/www WWW' >> "${file}"
+file=/root/.gtk-bookmarks; [ -e "$file" ] && cp -n $file{,.bkup}
+([[ -e "$file" && "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
+grep -q '^file:///root/Downloads ' "$file" 2>/dev/null || echo 'file:///root/Downloads Downloads' >> "$file"
+(dmidecode | grep -iq vmware) && (mkdir -p /mnt/hgfs/; grep -q '^file:///mnt/hgfs ' "$file" 2>/dev/null || echo 'file:///mnt/hgfs VMShare' >> "$file")
+grep -q '^file:///tmp ' "$file" 2>/dev/null || echo 'file:///tmp TMP' >> "$file"
+grep -q '^file:///usr/local/src ' "$file" 2>/dev/null || echo 'file:///usr/local/src SRC' >> "$file"
+grep -q '^file:///usr/share ' "$file" 2>/dev/null || echo 'file:///usr/share Kali Tools' >> "$file"
+grep -q '^file:///var/ftp ' "$file" 2>/dev/null || echo 'file:///var/ftp FTP' >> "$file"
+grep -q '^file:///var/samba ' "$file" 2>/dev/null || echo 'file:///var/samba Samba' >> "$file"
+grep -q '^file:///var/tftp ' "$file" 2>/dev/null || echo 'file:///var/tftp TFTP' >> "$file"
+grep -q '^file:///var/www ' "$file" 2>/dev/null || echo 'file:///var/www WWW' >> "$file"
 
 
 ##### Configuring terminal   Note: need to restart xserver for effect
-echo -e "\n ${GREEN}[+]${RESET} Configuring GNOME ${GREEN}terminal${RESET} ~ CLI interface"
+echo -e "\n $GREEN[+]$RESET Configuring terminal"
 gconftool-2 --type bool --set /apps/gnome-terminal/profiles/Default/scrollback_unlimited true                   # Terminal -> Edit -> Profile Preferences -> Scrolling -> Scrollback: Unlimited -> Close
 gconftool-2 --type string --set /apps/gnome-terminal/profiles/Default/background_darkness 0.85611499999999996   # Not working 100%!
 gconftool-2 --type string --set /apps/gnome-terminal/profiles/Default/background_type transparent
 
 
 ##### Configuring bash - all users
-echo -e "\n ${GREEN}[+]${RESET} Configuring ${GREEN}bash${RESEt} ~ CLI shell"
-file=/etc/bash.bashrc; [ -e "${file}" ] && cp -n $file{,.bkup}    #/root/.bashrc
-grep -q "cdspell" "${file}" || echo "shopt -sq cdspell" >> "${file}"             # Spell check 'cd' commands
-grep -q "checkwinsize" "${file}" || echo "shopt -sq checkwinsize" >> "${file}"   # Wrap lines correctly after resizing
-grep -q "nocaseglob" "${file}" || echo "shopt -sq nocaseglob" >> "${file}"       # Case insensitive pathname expansion
-grep -q "HISTSIZE" "${file}" || echo "HISTSIZE=10000" >> "${file}"               # Bash history (memory scroll back)
-grep -q "HISTFILESIZE" "${file}" || echo "HISTFILESIZE=10000" >> "${file}"       # Bash history (file .bash_history)
+echo -e "\n $GREEN[+]$RESET Configuring bash"
+file=/etc/bash.bashrc; [ -e "$file" ] && cp -n $file{,.bkup}    #/root/.bashrc
+grep -q "cdspell" "$file" || echo "shopt -sq cdspell" >> "$file"             # Spell check 'cd' commands
+grep -q "checkwinsize" "$file" || echo "shopt -sq checkwinsize" >> "$file"   # Wrap lines correctly after resizing
+grep -q "nocaseglob" "$file" || echo "shopt -sq nocaseglob" >> "$file"       # Case insensitive pathname expansion
+grep -q "HISTSIZE" "$file" || echo "HISTSIZE=10000" >> "$file"               # Bash history (memory scroll back)
+grep -q "HISTFILESIZE" "$file" || echo "HISTFILESIZE=10000" >> "$file"       # Bash history (file .bash_history)
 #--- Apply new configs
-if [[ "$SHELL" == "/bin/zsh" ]]; then source ~/.zshrc else source "${file}"; fi
+if [[ "$SHELL" == "/bin/zsh" ]]; then source ~/.zshrc else source "$file"; fi
 
 
-##### Installing bash colour - all users
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}bash colour${RESET} ~ colours shell output"
-file=/etc/bash.bashrc; [ -e "${file}" ] && cp -n $file{,.bkup}   #/root/.bashrc
-([[ -e "${file}" && "$(tail -c 1 $file)" != "" ]]) && echo >> "${file}"
-sed -i 's/.*force_color_prompt=.*/force_color_prompt=yes/' "${file}"
-grep -q '^force_color_prompt' "${file}" 2>/dev/null || echo 'force_color_prompt=yes' >> "${file}"
-sed -i 's#PS1='"'"'.*'"'"'#PS1='"'"'${debian_chroot:+($debian_chroot)}\\[\\033\[01;31m\\]\\u@\\h\\\[\\033\[00m\\]:\\[\\033\[01;34m\\]\\w\\[\\033\[00m\\]\\$ '"'"'#' "${file}"
-grep -q "^export LS_OPTIONS='--color=auto'" "${file}" 2>/dev/null || echo "export LS_OPTIONS='--color=auto'" >> "${file}"
-grep -q '^eval "$(dircolors)"' "${file}" 2>/dev/null || echo 'eval "$(dircolors)"' >> "${file}"
-grep -q "^alias ls='ls $LS_OPTIONS'" "${file}" 2>/dev/null || echo "alias ls='ls $LS_OPTIONS'" >> "${file}"
-grep -q "^alias ll='ls $LS_OPTIONS -l'" "${file}" 2>/dev/null || echo "alias ll='ls $LS_OPTIONS -l'" >> "${file}"
-grep -q "^alias l='ls $LS_OPTIONS -lA'" "${file}" 2>/dev/null || echo "alias l='ls $LS_OPTIONS -lA'" >> "${file}"
+##### Configuring bash colour - all users
+echo -e "\n $GREEN[+]$RESET Configuring bash colour"
+file=/etc/bash.bashrc; [ -e "$file" ] && cp -n $file{,.bkup}   #/root/.bashrc
+([[ -e "$file" && "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
+sed -i 's/.*force_color_prompt=.*/force_color_prompt=yes/' "$file"
+grep -q '^force_color_prompt' "$file" 2>/dev/null || echo 'force_color_prompt=yes' >> "$file"
+sed -i 's#PS1='"'"'.*'"'"'#PS1='"'"'${debian_chroot:+($debian_chroot)}\\[\\033\[01;31m\\]\\u@\\h\\\[\\033\[00m\\]:\\[\\033\[01;34m\\]\\w\\[\\033\[00m\\]\\$ '"'"'#' "$file"
+grep -q "^export LS_OPTIONS='--color=auto'" "$file" 2>/dev/null || echo "export LS_OPTIONS='--color=auto'" >> "$file"
+grep -q '^eval "$(dircolors)"' "$file" 2>/dev/null || echo 'eval "$(dircolors)"' >> "$file"
+grep -q "^alias ls='ls $LS_OPTIONS'" "$file" 2>/dev/null || echo "alias ls='ls $LS_OPTIONS'" >> "$file"
+grep -q "^alias ll='ls $LS_OPTIONS -l'" "$file" 2>/dev/null || echo "alias ll='ls $LS_OPTIONS -l'" >> "$file"
+grep -q "^alias l='ls $LS_OPTIONS -lA'" "$file" 2>/dev/null || echo "alias l='ls $LS_OPTIONS -lA'" >> "$file"
 #--- All other users that are made afterwards
-file=/etc/skel/.bashrc   #; [ -e "${file}" ] && cp -n $file{,.bkup}
-sed -i 's/.*force_color_prompt=.*/force_color_prompt=yes/' "${file}"
+file=/etc/skel/.bashrc   #; [ -e "$file" ] && cp -n $file{,.bkup}
+sed -i 's/.*force_color_prompt=.*/force_color_prompt=yes/' "$file"
 #--- Apply new colours
-if [[ "$SHELL" == "/bin/zsh" ]]; then source ~/.zshrc else source "${file}"; fi
+if [[ "$SHELL" == "/bin/zsh" ]]; then source ~/.zshrc else source "$file"; fi
 
 
 ##### Installing bash completion - all users
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}bash completion${RESET} ~ tab complete CLI commands"
+echo -e "\n $GREEN[+]$RESET Installing bash completion"
 apt-get -y -qq install bash-completion
-file=/etc/bash.bashrc; [ -e "${file}" ] && cp -n $file{,.bkup}    #/root/.bashrc
-sed -i '/# enable bash completion in/,+7{/enable bash completion/!s/^#//}' "${file}"
+file=/etc/bash.bashrc; [ -e "$file" ] && cp -n $file{,.bkup}    #/root/.bashrc
+sed -i '/# enable bash completion in/,+7{/enable bash completion/!s/^#//}' "$file"
 #--- Apply new function
-if [[ "$SHELL" == "/bin/zsh" ]]; then source ~/.zshrc else source "${file}"; fi
+if [[ "$SHELL" == "/bin/zsh" ]]; then source ~/.zshrc else source "$file"; fi
 
 
 ##### Configuring aliases - root user
-echo -e "\n ${GREEN}[+]${RESET} Configuring ${GREEN}aliases${RESET} ~ CLI shortcuts"
+echo -e "\n $GREEN[+]$RESET Configuring aliases"
 #--- Enable defaults - root user
 for FILE in /etc/bash.bashrc /root/.bashrc /root/.bash_aliases; do    #/etc/profile /etc/bashrc /etc/bash_aliases /etc/bash.bash_aliases
-  [[ ! -f "${FILE}" ]] && continue
+  [[ ! -f "$FILE" ]] && continue
   cp -n $FILE{,.bkup}
-  sed -i 's/#alias/alias/g' "${FILE}"
+  sed -i 's/#alias/alias/g' "$FILE"
 done
 #--- General system ones
-file=/root/.bash_aliases; [ -e "${file}" ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
-([[ -e "${file}" && "$(tail -c 1 $file)" != "" ]]) && echo >> "${file}"
-grep -q '^## grep aliases' "${file}" 2>/dev/null || echo -e '## grep aliases\nalias grep="grep --color=always"\nalias ngrep="grep -n"\n' >> "${file}"
-grep -q '^alias egrep=' "${file}" 2>/dev/null || echo -e 'alias egrep="egrep --color=auto"\n' >> "${file}"
-grep -q '^alias fgrep=' "${file}" 2>/dev/null || echo -e 'alias fgrep="fgrep --color=auto"\n' >> "${file}"
+file=/root/.bash_aliases; [ -e "$file" ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
+([[ -e "$file" && "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
+grep -q '^## grep aliases' "$file" 2>/dev/null || echo -e '## grep aliases\nalias grep="grep --color=always"\nalias ngrep="grep -n"\n' >> "$file"
+grep -q '^alias egrep=' "$file" 2>/dev/null || echo -e 'alias egrep="egrep --color=auto"\n' >> "$file"
+grep -q '^alias fgrep=' "$file" 2>/dev/null || echo -e 'alias fgrep="fgrep --color=auto"\n' >> "$file"
 #--- Add in ours (OS programs)
-grep -q '^alias tmux' "${file}" 2>/dev/null || echo -e '## tmux\nalias tmux="tmux attach || tmux new"\n' >> "${file}"    #alias tmux="tmux attach -t $HOST || tmux new -s $HOST"
-grep -q '^alias axel' "${file}" 2>/dev/null || echo -e '## axel\nalias axel="axel -a"\n' >> "${file}"
-grep -q '^alias screen' "${file}" 2>/dev/null || echo -e '## screen\nalias screen="screen -xRR"\n' >> "${file}"
+grep -q '^alias tmux' "$file" 2>/dev/null || echo -e '## tmux\nalias tmux="tmux attach || tmux new"\n' >> "$file"    #alias tmux="tmux attach -t $HOST || tmux new -s $HOST"
+grep -q '^alias axel' "$file" 2>/dev/null || echo -e '## axel\nalias axel="axel -a"\n' >> "$file"
+grep -q '^alias screen' "$file" 2>/dev/null || echo -e '## screen\nalias screen="screen -xRR"\n' >> "$file"
 #--- Add in ours (shortcuts)
-grep -q '^## Checksums' "${file}" 2>/dev/null || echo -e '## Checksums\nalias sha1="openssl sha1"\nalias md5="openssl md5"\n' >> "${file}"
-grep -q '^## Force create folders' "${file}" 2>/dev/null || echo -e '## Force create folders\nalias mkdir="/bin/mkdir -pv"\n' >> "${file}"
-#grep -q '^## Mount' "${file}" 2>/dev/null || echo -e '## Mount\nalias mount="mount | column -t"\n' >> "${file}"
-grep -q '^## List open ports' "${file}" 2>/dev/null || echo -e '## List open ports\nalias ports="netstat -tulanp"\n' >> "${file}"
-grep -q '^## Get header' "${file}" 2>/dev/null || echo -e '## Get header\nalias header="curl -I"\n' >> "${file}"
-grep -q '^## Get external IP address' "${file}" 2>/dev/null || echo -e '## Get external IP address\nalias ipx="curl -s http://ipinfo.io/ip"\n' >> "${file}"
-grep -q '^## Directory navigation aliases' "${file}" 2>/dev/null || echo -e '## Directory navigation aliases\nalias ..="cd .."\nalias ...="cd ../.."\nalias ....="cd ../../.."\nalias .....="cd ../../../.."\n' >> "${file}"
-grep -q '^## Add more aliases' "${file}" 2>/dev/null || echo -e '## Add more aliases\nalias upd="sudo apt-get update"\nalias upg="sudo apt-get upgrade"\nalias ins="sudo apt-get install"\nalias rem="sudo apt-get purge"\nalias fix="sudo apt-get install -f"\n' >> "${file}"
-grep -q '^## Extract file' "${file}" 2>/dev/null || echo -e '## Extract file, example. "ex package.tar.bz2"\nex() {\n    if [[ -f $1 ]]; then\n        case $1 in\n            *.tar.bz2)   tar xjf $1  ;;\n            *.tar.gz)    tar xzf $1  ;;\n            *.bz2)       bunzip2 $1  ;;\n            *.rar)       rar x $1    ;;\n            *.gz)        gunzip $1   ;;\n            *.tar)       tar xf $1   ;;\n            *.tbz2)      tar xjf $1  ;;\n            *.tgz)       tar xzf $1  ;;\n            *.zip)       unzip $1    ;;\n            *.Z)         uncompress $1  ;;\n            *.7z)        7z x $1     ;;\n            *)           echo $1 cannot be extracted ;;\n        esac\n    else\n        echo $1 is not a valid file\n    fi\n}\n' >> "${file}"
-grep -q '^## strings' "${file}" 2>/dev/null || echo -e '## strings\nalias strings="strings -a"\n' >> "${file}"
-grep -q '^## history' "${file}" 2>/dev/null || echo -e '## history\nalias hg="history | grep"\n' >> "${file}"
-grep -q '^## DNS - External IP #1' "${file}" 2>/dev/null || echo -e '## DNS - External IP #1\nalias dns1="dig +short @resolver1.opendns.com myip.opendns.com"\n' >> "${file}"
-grep -q '^## DNS - External IP #2' "${file}" 2>/dev/null || echo -e '## DNS - External IP #2\nalias dns2="dig +short @208.67.222.222 myip.opendns.com"\n' >> "${file}"
-grep -q '^## DNS - Check' "${file}" 2>/dev/null || echo -e '### DNS - Check ("#.abc" is Okay)\nalias dns3="dig +short @208.67.220.220 which.opendns.com txt"\n' >> "${file}"
+grep -q '^## Checksums' "$file" 2>/dev/null || echo -e '## Checksums\nalias sha1="openssl sha1"\nalias md5="openssl md5"\n' >> "$file"
+grep -q '^## Force create folders' "$file" 2>/dev/null || echo -e '## Force create folders\nalias mkdir="/bin/mkdir -pv"\n' >> "$file"
+#grep -q '^## Mount' "$file" 2>/dev/null || echo -e '## Mount\nalias mount="mount | column -t"\n' >> "$file"
+grep -q '^## List open ports' "$file" 2>/dev/null || echo -e '## List open ports\nalias ports="netstat -tulanp"\n' >> "$file"
+grep -q '^## Get header' "$file" 2>/dev/null || echo -e '## Get header\nalias header="curl -I"\n' >> "$file"
+grep -q '^## Get external IP address' "$file" 2>/dev/null || echo -e '## Get external IP address\nalias ipx="curl -s http://ipinfo.io/ip"\n' >> "$file"
+grep -q '^## Directory navigation aliases' "$file" 2>/dev/null || echo -e '## Directory navigation aliases\nalias ..="cd .."\nalias ...="cd ../.."\nalias ....="cd ../../.."\nalias .....="cd ../../../.."\n' >> "$file"
+grep -q '^## Add more aliases' "$file" 2>/dev/null || echo -e '## Add more aliases\nalias upd="sudo apt-get update"\nalias upg="sudo apt-get upgrade"\nalias ins="sudo apt-get install"\nalias rem="sudo apt-get purge"\nalias fix="sudo apt-get install -f"\n' >> "$file"
+grep -q '^## Extract file' "$file" 2>/dev/null || echo -e '## Extract file, example. "ex package.tar.bz2"\nex() {\n    if [[ -f $1 ]]; then\n        case $1 in\n            *.tar.bz2)   tar xjf $1  ;;\n            *.tar.gz)    tar xzf $1  ;;\n            *.bz2)       bunzip2 $1  ;;\n            *.rar)       rar x $1    ;;\n            *.gz)        gunzip $1   ;;\n            *.tar)       tar xf $1   ;;\n            *.tbz2)      tar xjf $1  ;;\n            *.tgz)       tar xzf $1  ;;\n            *.zip)       unzip $1    ;;\n            *.Z)         uncompress $1  ;;\n            *.7z)        7z x $1     ;;\n            *)           echo $1 cannot be extracted ;;\n        esac\n    else\n        echo $1 is not a valid file\n    fi\n}\n' >> "$file"
+grep -q '^## strings' "$file" 2>/dev/null || echo -e '## strings\nalias strings="strings -a"\n' >> "$file"
+grep -q '^## history' "$file" 2>/dev/null || echo -e '## history\nalias hg="history | grep"\n' >> "$file"
+grep -q '^## DNS - External IP #1' "$file" 2>/dev/null || echo -e '## DNS - External IP #1\nalias dns1="dig +short @resolver1.opendns.com myip.opendns.com"\n' >> "$file"
+grep -q '^## DNS - External IP #2' "$file" 2>/dev/null || echo -e '## DNS - External IP #2\nalias dns2="dig +short @208.67.222.222 myip.opendns.com"\n' >> "$file"
+grep -q '^## DNS - Check' "$file" 2>/dev/null || echo -e '### DNS - Check ("#.abc" is Okay)\nalias dns3="dig +short @208.67.220.220 which.opendns.com txt"\n' >> "$file"
 #alias ll="ls -l --block-size=\'1 --color=auto"
 #--- Add in tools
-grep -q '^## nmap' "${file}" 2>/dev/null || echo -e '## nmap\nalias nmap="nmap --reason --open"\n' >> "${file}"
-grep -q '^## aircrack-ng' "${file}" 2>/dev/null || echo -e '## aircrack-ng\nalias aircrack-ng="aircrack-ng -z"\n' >> "${file}"
-grep -q '^## airodump-ng' "${file}" 2>/dev/null || echo -e '## airodump-ng \nalias airodump-ng="airodump-ng --manufacturer --wps --uptime"\n' >> "${file}"    # aircrack-ng 1.2 rc2
-grep -q '^## metasploit' "${file}" 2>/dev/null || echo -e '## metasploit\nalias msfc="service postgresql start; service metasploit start; msfconsole -q \"$@\""\n' >> "${file}"
-[ "$openVAS" != "false" ] && grep -q '^## openvas' "${file}" 2>/dev/null || echo -e '## openvas\nalias openvas="service openvas-manager restart; service openvas-scanner restart; service greenbone-security-assistant restart; xdg-open https://127.0.0.1:9392/"\n' >> "${file}"
+grep -q '^## nmap' "$file" 2>/dev/null || echo -e '## nmap\nalias nmap="nmap --reason --open"\n' >> "$file"
+grep -q '^## aircrack-ng' "$file" 2>/dev/null || echo -e '## aircrack-ng\nalias aircrack-ng="aircrack-ng -z"\n' >> "$file"
+grep -q '^## airodump-ng' "$file" 2>/dev/null || echo -e '## airodump-ng \nalias airodump-ng="airodump-ng --manufacturer --wps --uptime"\n' >> "$file"    # aircrack-ng 1.2 rc2
+grep -q '^## metasploit' "$file" 2>/dev/null || echo -e '## metasploit\nalias msfc="service postgresql start; service metasploit start; msfconsole -q \"$@\""\n' >> "$file"
+[ "$openVAS" != "false" ] && grep -q '^## openvas' "$file" 2>/dev/null || echo -e '## openvas\nalias openvas="service openvas-manager restart; service openvas-scanner restart; service greenbone-security-assistant restart; xdg-open https://127.0.0.1:9392/"\n' >> "$file"
 #airmon-vz --verbose
 #--- Add in folders
-grep -q '^## www' "${file}" 2>/dev/null || echo -e '## www\nalias wwwroot="cd /var/www/"\n' >> "${file}"                                            # service apache2 start
-grep -q '^## ftp' "${file}" 2>/dev/null || echo -e '## ftp\nalias ftproot="cd /var/ftp/"\n' >> "${file}"                                            # service pure-ftpd start
-grep -q '^## tftp' "${file}" 2>/dev/null || echo -e '## tftp\nalias tftproot="cd /var/tftp/"\n' >> "${file}"                                        # service atftpd start
-grep -q '^## smb' "${file}" 2>/dev/null || echo -e '## smb\nalias sambaroot="cd /var/samba/"\n#alias smbroot="cd /var/samba/"\n' >> "${file}"       # service samba start
-(dmidecode | grep -iq vmware) && (grep -q '^## vmware' "${file}" 2>/dev/null || echo -e '## vmware\nalias vmroot="cd /mnt/hgfs/"' >> "${file}")
-grep -q '^## edb' "${file}" 2>/dev/null || echo -e '## edb\nalias edbroot="cd /opt/exploitdb/"' >> "${file}"
+grep -q '^## www' "$file" 2>/dev/null || echo -e '## www\nalias wwwroot="cd /var/www/"\n' >> "$file"                                            # service apache2 start
+grep -q '^## ftp' "$file" 2>/dev/null || echo -e '## ftp\nalias ftproot="cd /var/ftp/"\n' >> "$file"                                            # service pure-ftpd start
+grep -q '^## tftp' "$file" 2>/dev/null || echo -e '## tftp\nalias tftproot="cd /var/tftp/"\n' >> "$file"                                        # service atftpd start
+grep -q '^## smb' "$file" 2>/dev/null || echo -e '## smb\nalias sambaroot="cd /var/samba/"\n#alias smbroot="cd /var/samba/"\n' >> "$file"       # service samba start
+(dmidecode | grep -iq vmware) && (grep -q '^## vmware' "$file" 2>/dev/null || echo -e '## vmware\nalias vmroot="cd /mnt/hgfs/"' >> "$file")
+grep -q '^## edb' "$file" 2>/dev/null || echo -e '## edb\nalias edbroot="cd /usr/share/exploitdb/"' >> "$file"
 #--- Apply new aliases
-if [[ "$SHELL" == "/bin/zsh" ]]; then source ~/.zshrc else source "${file}"; fi
+if [[ "$SHELL" == "/bin/zsh" ]]; then source ~/.zshrc else source "$file"; fi
 #--- Check
 #alias
 
 
 ##### Installing GNOME Terminator
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}GNOME Terminator${RESET} ~ multiple terminals in a single window"
+echo -e "\n $GREEN[+]$RESET Installing GNOME Terminator ~ multiple terminals in a single window"
 apt-get -y -qq install terminator
 #--- Configure terminator
 mkdir -p /root/.config/terminator/
-file=/root/.config/terminator/config; [ -e "${file}" ] && cp -n $file{,.bkup}
-cat <<EOF > "${file}"
+file=/root/.config/terminator/config; [ -e "$file" ] && cp -n $file{,.bkup}
+cat <<EOF > "$file"
 [global_config]
   enabled_plugins = TerminalShot, LaunchpadCodeURLHandler, APTURLHandler, LaunchpadBugURLHandler
 [keybindings]
@@ -1251,8 +1233,8 @@ cat <<EOF > "${file}"
 EOF
 #--- XFCE fix for terminator
 mkdir -p /root/.local/share/xfce4/helpers/
-file=/root/.local/share/xfce4/helpers/custom-TerminalEmulator.desktop; [ -e "${file}" ] && cp -n $file{,.bkup}
-sed -i 's#^X-XFCE-CommandsWithParameter=.*#X-XFCE-CommandsWithParameter=/usr/bin/terminator --command="%s"#' "${file}" 2>/dev/null || cat <<EOF > "${file}"
+file=/root/.local/share/xfce4/helpers/custom-TerminalEmulator.desktop; [ -e "$file" ] && cp -n $file{,.bkup}
+sed -i 's#^X-XFCE-CommandsWithParameter=.*#X-XFCE-CommandsWithParameter=/usr/bin/terminator --command="%s"#' "$file" 2>/dev/null || cat <<EOF > "$file"
 [Desktop Entry]
 NoDisplay=true
 Version=1.0
@@ -1264,37 +1246,37 @@ Icon=terminator
 Name=terminator
 X-XFCE-Commands=/usr/bin/terminator
 EOF
-file=/root/.config/xfce4/helpers.rc; [ -e "${file}" ] && cp -n $file{,.bkup}    #exo-preferred-applications   #xdg-mime default
-([[ -e "${file}" && "$(tail -c 1 $file)" != "" ]]) && echo >> "${file}"
-sed -i 's#^TerminalEmulator=.*#TerminalEmulator=custom-TerminalEmulator#' "${file}"
-grep -q '^TerminalEmulator=custom-TerminalEmulator' "${file}" 2>/dev/null || echo -e 'TerminalEmulator=custom-TerminalEmulator' >> "${file}"
+file=/root/.config/xfce4/helpers.rc; [ -e "$file" ] && cp -n $file{,.bkup}    #exo-preferred-applications   #xdg-mime default
+([[ -e "$file" && "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
+sed -i 's#^TerminalEmulator=.*#TerminalEmulator=custom-TerminalEmulator#' "$file"
+grep -q '^TerminalEmulator=custom-TerminalEmulator' "$file" 2>/dev/null || echo -e 'TerminalEmulator=custom-TerminalEmulator' >> "$file"
 
 
 ##### Installing ZSH & Oh-My-ZSH - root user.   Note: If you use thurar, 'Open terminal here', will not work.
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}ZSH & Oh-My-ZSH${RESET} ~ unix shell"
+echo -e "\n $GREEN[+]$RESET Installing ZSH & Oh-My-ZSH ~ unix shell"
 #group="sudo"
 apt-get -y -qq install zsh git curl
 #--- Setup oh-my-zsh
-curl --progress -k -L -f "https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh" | zsh    #curl -s -L "https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh"
+curl --progress -k -L "https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh" | zsh    #curl -s -L "https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh"
 #--- Configure zsh
-file=/root/.zshrc; [ -e "${file}" ] && cp -n $file{,.bkup}   #/etc/zsh/zshrc
-([[ -e "${file}" && "$(tail -c 1 $file)" != "" ]]) && echo >> "${file}"
-grep -q 'interactivecomments' "${file}" 2>/dev/null || echo 'setopt interactivecomments' >> "${file}"
-grep -q 'ignoreeof' "${file}" 2>/dev/null || echo 'setopt ignoreeof' >> "${file}"
-grep -q 'correctall' "${file}" 2>/dev/null || echo 'setopt correctall' >> "${file}"
-grep -q 'globdots' "${file}" 2>/dev/null || echo 'setopt globdots' >> "${file}"
-grep -q '.bash_aliases' "${file}" 2>/dev/null || echo 'source $HOME/.bash_aliases' >> "${file}"
-grep -q '/usr/bin/tmux' "${file}" 2>/dev/null || echo '#if ([[ -z "$TMUX" && -n "$SSH_CONNECTION" ]]); then /usr/bin/tmux attach || /usr/bin/tmux new; fi' >> "${file}"   # If not already in tmux and via SSH
+file=/root/.zshrc; [ -e "$file" ] && cp -n $file{,.bkup}   #/etc/zsh/zshrc
+([[ -e "$file" && "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
+grep -q 'interactivecomments' "$file" 2>/dev/null || echo 'setopt interactivecomments' >> "$file"
+grep -q 'ignoreeof' "$file" 2>/dev/null || echo 'setopt ignoreeof' >> "$file"
+grep -q 'correctall' "$file" 2>/dev/null || echo 'setopt correctall' >> "$file"
+grep -q 'globdots' "$file" 2>/dev/null || echo 'setopt globdots' >> "$file"
+grep -q '.bash_aliases' "$file" 2>/dev/null || echo 'source $HOME/.bash_aliases' >> "$file"
+grep -q '/usr/bin/tmux' "$file" 2>/dev/null || echo '#if ([[ -z "$TMUX" && -n "$SSH_CONNECTION" ]]); then /usr/bin/tmux attach || /usr/bin/tmux new; fi' >> "$file"   # If not already in tmux and via SSH
 #--- Configure zsh (themes) ~ https://github.com/robbyrussell/oh-my-zsh/wiki/Themes
-sed -i 's/ZSH_THEME=.*/ZSH_THEME="alanpeabody"/' "${file}"   # Other themes: alanpeabody, jreese,   mh,   candy,   terminalparty, kardan,   nicoulaj, sunaku
+sed -i 's/ZSH_THEME=.*/ZSH_THEME="alanpeabody"/' "$file"   # Other themes: alanpeabody, jreese,   mh,   candy,   terminalparty, kardan,   nicoulaj, sunaku
 #--- Configure oh-my-zsh
-sed -i 's/.*DISABLE_AUTO_UPDATE="true"/DISABLE_AUTO_UPDATE="true"/' "${file}"
-sed -i 's/plugins=(.*)/plugins=(git tmux last-working-dir)/' "${file}"
+sed -i 's/.*DISABLE_AUTO_UPDATE="true"/DISABLE_AUTO_UPDATE="true"/' "$file"
+sed -i 's/plugins=(.*)/plugins=(git tmux last-working-dir)/' "$file"
 #--- Set zsh as default shell (current user)
 chsh -s "$(which zsh)"
 #--- Use it ~ Not much point to it being a post-install script
 #/usr/bin/env zsh      # Use it
-#source "${file}"          # Make sure to reload our config
+#source "$file"          # Make sure to reload our config
 #--- Copy it to other user(s)
 #if [ -e "/home/$username/" ]; then   # Will do this later on again, if there isn't already a user
 #  cp -f /{root,home/$username}/.zshrc
@@ -1306,13 +1288,13 @@ chsh -s "$(which zsh)"
 
 
 ##### Installing tmux - all users
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}tmux${RESET} ~ multiplex virtual consoles"
+echo -e "\n $GREEN[+]$RESET Installing tmux ~ multiplex virtual consoles"
 #group="sudo"
 #apt-get -y -qq remove screen   # Optional: If we're going to have/use tmux, why have screen?
 apt-get -y -qq install tmux
 #--- Configure tmux
-file=/root/.tmux.conf; [ -e "${file}" ] && cp -n $file{,.bkup}   #/etc/tmux.conf
-cat <<EOF > "${file}"
+file=/root/.tmux.conf; [ -e "$file" ] && cp -n $file{,.bkup}   #/etc/tmux.conf
+cat <<EOF > "$file"
 #-Settings---------------------------------------------------------------------
 ## Make it like screen (use CTRL+a)
 unbind C-b
@@ -1355,8 +1337,8 @@ bind r source-file /etc/tmux.conf
 #source ~/.bashrc   #(issues if you use /bin/bash & Debian)
 
 EOF
-[ -e /bin/zsh ] && echo -e '## Use ZSH as default shell\nset-option -g default-shell /bin/zsh\n' >> "${file}"      # Need to have ZSH installed before running this command/line
-cat <<EOF >> "${file}"
+[ -e /bin/zsh ] && echo -e '## Use ZSH as default shell\nset-option -g default-shell /bin/zsh\n' >> "$file"      # Need to have ZSH installed before running this command/line
+cat <<EOF >> "$file"
 ## Show tmux messages for longer
 set -g display-time 3000
 
@@ -1384,28 +1366,28 @@ set-window-option -g window-status-current-format '#[fg=red,bold](#[fg=white,bol
 set -g status-right '#[fg=green][#[fg=yellow]%Y-%m-%d #[fg=white]%H:%M#[fg=green]]'
 EOF
 #--- Setup alias
-file=/root/.bash_aliases; [ -e "${file}" ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
-([[ -e "${file}" && "$(tail -c 1 $file)" != "" ]]) && echo >> "${file}"
-grep -q '^alias tmux' "${file}" 2>/dev/null || echo -e '## tmux\nalias tmux="tmux attach || tmux new"\n' >> "${file}"    #alias tmux="tmux attach -t $HOST || tmux new -s $HOST"
+file=/root/.bash_aliases; [ -e "$file" ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
+([[ -e "$file" && "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
+grep -q '^alias tmux' "$file" 2>/dev/null || echo -e '## tmux\nalias tmux="tmux attach || tmux new"\n' >> "$file"    #alias tmux="tmux attach -t $HOST || tmux new -s $HOST"
 #--- Apply new aliases
-if [[ "$SHELL" == "/bin/zsh" ]]; then source ~/.zshrc else source "${file}"; fi
+if [[ "$SHELL" == "/bin/zsh" ]]; then source ~/.zshrc else source "$file"; fi
 #--- Copy it to other user(s) ~
 #if [ -e /home/$username/ ]; then   # Will do this later on again, if there isn't already a user
 #  cp -f /{etc/,home/$username/.}tmux.conf    #cp -f /{root,home/$username}/.tmux.conf
 #  chown $username\:$group /home/$username/.tmux.conf
-#  file=/home/$username/.bash_aliases; [ -e "${file}" ] && cp -n $file{,.bkup}
-#  grep -q '^alias tmux' "${file}" 2>/dev/null || echo -e '## tmux\nalias tmux="tmux attach || tmux new"\n' >> "${file}"    #alias tmux="tmux attach -t $HOST || tmux new -s $HOST"
+#  file=/home/$username/.bash_aliases; [ -e "$file" ] && cp -n $file{,.bkup}
+#  grep -q '^alias tmux' "$file" 2>/dev/null || echo -e '## tmux\nalias tmux="tmux attach || tmux new"\n' >> "$file"    #alias tmux="tmux attach -t $HOST || tmux new -s $HOST"
 #fi
 #--- Use it ~ bit pointless if used in a post-install script
 #tmux
 
 
 ##### Configuring screen ~ if possible, use tmux instead!
-echo -e "\n ${GREEN}[+]${RESET} Configuring ${GREEN}screen${RESET} ~ multiplex virtual consoles"
+echo -e "\n $GREEN[+]$RESET Configuring screen ~ multiplex virtual consoles"
 #apt-get -y -qq install screen
 #--- Configure screen
-file=/root/.screenrc; [ -e "${file}" ] && cp -n $file{,.bkup}
-cat <<EOF > "${file}"
+file=/root/.screenrc; [ -e "$file" ] && cp -n $file{,.bkup}
+cat <<EOF > "$file"
 ## Don't display the copyright page
 startup_message off
 
@@ -1432,40 +1414,40 @@ select 0
 EOF
 
 
-##### Installing vim - all users
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}vim${RESET} ~ CLI text editor"
+##### Configuring vim - all users
+echo -e "\n $GREEN[+]$RESET Configuring vim ~ CLI text editor"
 apt-get -y -qq install vim
 #--- Configure vim
-file=/etc/vim/vimrc; [ -e "${file}" ] && cp -n $file{,.bkup}   #/root/.vimrc
-([[ -e "${file}" && "$(tail -c 1 $file)" != "" ]]) && echo >> "${file}"
-sed -i 's/.*syntax on/syntax on/' "${file}"
-sed -i 's/.*set background=dark/set background=dark/' "${file}"
-sed -i 's/.*set showcmd/set showcmd/' "${file}"
-sed -i 's/.*set showmatch/set showmatch/' "${file}"
-sed -i 's/.*set ignorecase/set ignorecase/' "${file}"
-sed -i 's/.*set smartcase/set smartcase/' "${file}"
-sed -i 's/.*set incsearch/set incsearch/' "${file}"
-sed -i 's/.*set autowrite/set autowrite/' "${file}"
-sed -i 's/.*set hidden/set hidden/' "${file}"
-sed -i 's/.*set mouse=.*/"set mouse=a/' "${file}"
-grep -q '^set number' "${file}" 2>/dev/null || echo 'set number' >> "${file}"                                                                        # Add line numbers
-grep -q '^set autoindent' "${file}" 2>/dev/null || echo 'set autoindent' >> "${file}"                                                                # Set auto indent
-grep -q '^set expandtab' "${file}" 2>/dev/null || echo -e 'set expandtab\nset smarttab' >> "${file}"                                                 # Set use spaces instead of tabs
-grep -q '^set softtabstop' "${file}" 2>/dev/null || echo -e 'set softtabstop=4\nset shiftwidth=4' >> "${file}"                                       # Set 4 spaces as a 'tab'
-grep -q '^set foldmethod=marker' "${file}" 2>/dev/null || echo 'set foldmethod=marker' >> "${file}"                                                  # Folding
-grep -q '^nnoremap <space> za' "${file}" 2>/dev/null || echo 'nnoremap <space> za' >> "${file}"                                                      # Space toggle folds
-grep -q '^set hlsearch' "${file}" 2>/dev/null || echo 'set hlsearch' >> "${file}"                                                                    # Highlight search results
-grep -q '^set laststatus' "${file}" 2>/dev/null || echo -e 'set laststatus=2\nset statusline=%F%m%r%h%w\ (%{&ff}){%Y}\ [%l,%v][%p%%]' >> "${file}"   # Status bar
-grep -q '^filetype on' "${file}" 2>/dev/null || echo -e 'filetype on\nfiletype plugin on\nsyntax enable\nset grepprg=grep\ -nH\ $*' >> "${file}"     # Syntax highlighting
-grep -q '^set wildmenu' "${file}" 2>/dev/null || echo -e 'set wildmenu\nset wildmode=list:longest,full' >> "${file}"                                 # Tab completion
-grep -q '^set invnumber' "${file}" 2>/dev/null || echo -e ':nmap <F8> :set invnumber<CR>' >> "${file}"                                               # Toggle line numbers
-grep -q '^set pastetoggle=<F9>' "${file}" 2>/dev/null || echo -e 'set pastetoggle=<F9>' >> "${file}"                                                 # Hotkey - turning off auto indent when pasting
-grep -q '^:command Q q' "${file}" 2>/dev/null || echo -e ':command Q q' >> "${file}"                                                                 # Fix stupid typo I always make
+file=/etc/vim/vimrc; [ -e "$file" ] && cp -n $file{,.bkup}   #/root/.vimrc
+([[ -e "$file" && "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
+sed -i 's/.*syntax on/syntax on/' "$file"
+sed -i 's/.*set background=dark/set background=dark/' "$file"
+sed -i 's/.*set showcmd/set showcmd/' "$file"
+sed -i 's/.*set showmatch/set showmatch/' "$file"
+sed -i 's/.*set ignorecase/set ignorecase/' "$file"
+sed -i 's/.*set smartcase/set smartcase/' "$file"
+sed -i 's/.*set incsearch/set incsearch/' "$file"
+sed -i 's/.*set autowrite/set autowrite/' "$file"
+sed -i 's/.*set hidden/set hidden/' "$file"
+sed -i 's/.*set mouse=.*/"set mouse=a/' "$file"
+grep -q '^set number' "$file" 2>/dev/null || echo 'set number' >> "$file"                                                                        # Add line numbers
+grep -q '^set autoindent' "$file" 2>/dev/null || echo 'set autoindent' >> "$file"                                                                # Set auto indent
+grep -q '^set expandtab' "$file" 2>/dev/null || echo -e 'set expandtab\nset smarttab' >> "$file"                                                 # Set use spaces instead of tabs
+grep -q '^set softtabstop' "$file" 2>/dev/null || echo -e 'set softtabstop=4\nset shiftwidth=4' >> "$file"                                       # Set 4 spaces as a 'tab'
+grep -q '^set foldmethod=marker' "$file" 2>/dev/null || echo 'set foldmethod=marker' >> "$file"                                                  # Folding
+grep -q '^nnoremap <space> za' "$file" 2>/dev/null || echo 'nnoremap <space> za' >> "$file"                                                      # Space toggle folds
+grep -q '^set hlsearch' "$file" 2>/dev/null || echo 'set hlsearch' >> "$file"                                                                    # Highlight search results
+grep -q '^set laststatus' "$file" 2>/dev/null || echo -e 'set laststatus=2\nset statusline=%F%m%r%h%w\ (%{&ff}){%Y}\ [%l,%v][%p%%]' >> "$file"   # Status bar
+grep -q '^filetype on' "$file" 2>/dev/null || echo -e 'filetype on\nfiletype plugin on\nsyntax enable\nset grepprg=grep\ -nH\ $*' >> "$file"     # Syntax highlighting
+grep -q '^set wildmenu' "$file" 2>/dev/null || echo -e 'set wildmenu\nset wildmode=list:longest,full' >> "$file"                                 # Tab completion
+grep -q '^set invnumber' "$file" 2>/dev/null || echo -e ':nmap <F8> :set invnumber<CR>' >> "$file"                                               # Toggle line numbers
+grep -q '^set pastetoggle=<F9>' "$file" 2>/dev/null || echo -e 'set pastetoggle=<F9>' >> "$file"                                                 # Hotkey - turning off auto indent when pasting
+grep -q '^:command Q q' "$file" 2>/dev/null || echo -e ':command Q q' >> "$file"                                                                 # Fix stupid typo I always make
 #--- Set as default editor
 export EDITOR="vim"   #update-alternatives --config editor
-file=/etc/bash.bashrc; [ -e "${file}" ] && cp -n $file{,.bkup}
-([[ -e "${file}" && "$(tail -c 1 $file)" != "" ]]) && echo >> "${file}"
-grep -q '^EDITOR' "${file}" 2>/dev/null || echo 'EDITOR="vim"' >> "${file}"
+file=/etc/bash.bashrc; [ -e "$file" ] && cp -n $file{,.bkup}
+([[ -e "$file" && "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
+grep -q '^EDITOR' "$file" 2>/dev/null || echo 'EDITOR="vim"' >> "$file"
 git config --global core.editor "vim"
 #--- Set as default mergetool
 git config --global merge.tool vimdiff
@@ -1474,45 +1456,44 @@ git config --global mergetool.prompt false
 
 
 ##### Setting up iceweasel
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}iceweasel${RESET} ~ GUI web browser"
+echo -e "\n $GREEN[+]$RESET Setting up iceweasel ~ GUI web browser"
 apt-get install -y -qq unzip curl iceweasel
 #--- Configure iceweasel
 export DISPLAY=:0.0   #[[ -z $SSH_CONNECTION ]] || export DISPLAY=:0.0
 timeout 15 iceweasel   #iceweasel & sleep 15; killall -q -w iceweasel >/dev/null   # Start and kill. Files needed for first time run
 timeout 5 killall -9 -q -w iceweasel >/dev/null
-file=$(find /root/.mozilla/firefox/*.default*/ -maxdepth 1 -type f -name 'prefs.js' -print -quit) && [ -e "${file}" ] && cp -n $file{,.bkup}   #/etc/iceweasel/pref/*.js
-([[ -e "${file}" && "$(tail -c 1 $file)" != "" ]]) && echo >> "${file}"
-#sed -i 's/^.network.proxy.socks_remote_dns.*/user_pref("network.proxy.socks_remote_dns", true);' "${file}" 2>/dev/null || echo 'user_pref("network.proxy.socks_remote_dns", true);' >> "${file}"
-sed -i 's/^.browser.safebrowsing.enabled.*/user_pref("browser.safebrowsing.enabled", false);' "${file}" 2>/dev/null || echo 'user_pref("browser.safebrowsing.enabled", false);' >> "${file}"                             # Iceweasel -> Edit -> Preferences -> Security -> Block reported web forgeries
-sed -i 's/^.browser.safebrowsing.malware.enabled.*/user_pref("browser.safebrowsing.malware.enabled", false);' "${file}" 2>/dev/null || echo 'user_pref("browser.safebrowsing.malware.enabled", false);' >> "${file}"     # Iceweasel -> Edit -> Preferences -> Security -> Block reported attack sites
-sed -i 's/^.browser.safebrowsing.remoteLookups.enabled.*/user_pref("browser.safebrowsing.remoteLookups.enabled", false);' "${file}" 2>/dev/null || echo 'user_pref("browser.safebrowsing.remoteLookups.enabled", false);' >> "${file}"
-sed -i 's/^.*browser.startup.page.*/user_pref("browser.startup.page", 0);' "${file}" 2>/dev/null || echo 'user_pref("browser.startup.page", 0);' >> "${file}"                                              # Iceweasel -> Edit -> Preferences -> General -> When firefox starts: Show a blank page
-sed -i 's/^.*privacy.donottrackheader.enabled.*/user_pref("privacy.donottrackheader.enabled", true);' "${file}" 2>/dev/null || echo 'user_pref("privacy.donottrackheader.enabled", true);' >> "${file}"    # Privacy -> Enable: Tell websites I do not want to be tracked
-sed -i 's/^.*browser.showQuitWarning.*/user_pref("browser.showQuitWarning", true);' "${file}" 2>/dev/null || echo 'user_pref("browser.showQuitWarning", true);' >> "${file}"                               # Stop Ctrl+Q from quitting without warning
-sed -i 's/^.*extensions.https_everywhere._observatory.popup_shown.*/user_pref("extensions.https_everywhere._observatory.popup_shown", true);' "${file}" 2>/dev/null || echo 'user_pref("extensions.https_everywhere._observatory.popup_shown", true);' >> "${file}"
-sed -i 's/^.network.security.ports.banned.override/user_pref("network.security.ports.banned.override", "1-65455");' "${file}" 2>/dev/null || echo 'user_pref("network.security.ports.banned.override", "1-65455");' >> "${file}"    # Remove "This address is restricted"
+file=$(find /root/.mozilla/firefox/*.default*/ -maxdepth 1 -type f -name 'prefs.js' -print -quit) && [ -e "$file" ] && cp -n $file{,.bkup}   #/etc/iceweasel/pref/*.js
+([[ -e "$file" && "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
+#sed -i 's/^.network.proxy.socks_remote_dns.*/user_pref("network.proxy.socks_remote_dns", true);' "$file" 2>/dev/null || echo 'user_pref("network.proxy.socks_remote_dns", true);' >> "$file"
+sed -i 's/^.browser.safebrowsing.enabled.*/user_pref("browser.safebrowsing.enabled", false);' "$file" 2>/dev/null || echo 'user_pref("browser.safebrowsing.enabled", false);' >> "$file"                             # Iceweasel -> Edit -> Preferences -> Security -> Block reported web forgeries
+sed -i 's/^.browser.safebrowsing.malware.enabled.*/user_pref("browser.safebrowsing.malware.enabled", false);' "$file" 2>/dev/null || echo 'user_pref("browser.safebrowsing.malware.enabled", false);' >> "$file"     # Iceweasel -> Edit -> Preferences -> Security -> Block reported attack sites
+sed -i 's/^.browser.safebrowsing.remoteLookups.enabled.*/user_pref("browser.safebrowsing.remoteLookups.enabled", false);' "$file" 2>/dev/null || echo 'user_pref("browser.safebrowsing.remoteLookups.enabled", false);' >> "$file"
+sed -i 's/^.*browser.startup.page.*/user_pref("browser.startup.page", 0);' "$file" 2>/dev/null || echo 'user_pref("browser.startup.page", 0);' >> "$file"                                              # Iceweasel -> Edit -> Preferences -> General -> When firefox starts: Show a blank page
+sed -i 's/^.*privacy.donottrackheader.enabled.*/user_pref("privacy.donottrackheader.enabled", true);' "$file" 2>/dev/null || echo 'user_pref("privacy.donottrackheader.enabled", true);' >> "$file"    # Privacy -> Enable: Tell websites I do not want to be tracked
+sed -i 's/^.*browser.showQuitWarning.*/user_pref("browser.showQuitWarning", true);' "$file" 2>/dev/null || echo 'user_pref("browser.showQuitWarning", true);' >> "$file"                               # Stop Ctrl+Q from quitting without warning
+sed -i 's/^.*extensions.https_everywhere._observatory.popup_shown.*/user_pref("extensions.https_everywhere._observatory.popup_shown", true);' "$file" 2>/dev/null || echo 'user_pref("extensions.https_everywhere._observatory.popup_shown", true);' >> "$file"
 #--- Replace bookmarks (base: http://pentest-bookmarks.googlecode.com)
-file=$(find /root/.mozilla/firefox/*.default*/ -maxdepth 1 -type f -name 'bookmarks.html' -print -quit) && [ -e "${file}" ] && cp -n $file{,.bkup}   #/etc/iceweasel/profile/bookmarks.html
-curl --progress -k -L -f "http://pentest-bookmarks.googlecode.com/files/bookmarksv1.5.html" > /tmp/bookmarks_new.html     #***!!! hardcoded version! Need to manually check for updates
+file=$(find /root/.mozilla/firefox/*.default*/ -maxdepth 1 -type f -name 'bookmarks.html' -print -quit) && [ -e "$file" ] && cp -n $file{,.bkup}   #/etc/iceweasel/profile/bookmarks.html
+curl --progress -k -L "http://pentest-bookmarks.googlecode.com/files/bookmarksv1.5.html" > /tmp/bookmarks_new.html     #***!!! hardcoded version! Need to manually check for updates
 #--- Configure bookmarks
-awk '!a[$0]++' /tmp/bookmarks_new.html | \egrep -v ">(Latest Headlines|Getting Started|Recently Bookmarked|Recent Tags|Mozilla Firefox|Help and Tutorials|Customize Firefox|Get Involved|About Us|Hacker Media|Bookmarks Toolbar|Most Visited)</" | \egrep -v "^    </DL><p>" | \egrep -v "^<DD>Add" > "${file}"
-sed -i 's#^</DL><p>#        </DL><p>\n    </DL><p>\n</DL><p>#' "${file}"                                                          # Fix import issues from pentest-bookmarks...
-sed -i 's#^    <DL><p>#    <DL><p>\n    <DT><A HREF="http://127.0.0.1/">localhost</A>#' "${file}"                                 # Add localhost to bookmark toolbar (before hackery folder)
-sed -i 's#^</DL><p>#    <DT><A HREF="https://127.0.0.1:8834/">Nessus</A>\n</DL><p>#' "${file}"                                    # Add Nessus UI bookmark toolbar
-[ "$openVAS" != "false" ] && sed -i 's#^</DL><p>#    <DT><A HREF="https://127.0.0.1:9392/">OpenVAS</A>\n</DL><p>#' "${file}"      # Add OpenVAS UI to bookmark toolbar
-#sed -i 's#^</DL><p>#    <DT><A HREF="https://127.0.0.1:3780/">Nexpose</A>\n</DL><p>#' "${file}"                                  # Add Nexpose UI to bookmark toolbar
-sed -i 's#^</DL><p>#    <DT><A HREF="https://127.0.0.1:3790/">MSF</A>\n</DL><p>#' "${file}"                                       # Add Metasploit UI to bookmark toolbar
-sed -i 's#^</DL><p>#    <DT><A HREF="http://127.0.0.1:3000/ui/panel">BeEF</A>\n</DL><p>#' "${file}"                               # Add BeEF UI to bookmark toolbar
-sed -i 's#^</DL><p>#    <DT><A HREF="http://127.0.0.1/rips/">RIPS</A>\n</DL><p>#' "${file}"                                       # Add RIPs to bookmark toolbar
-sed -i 's#^</DL><p>#    <DT><A HREF="https://paulschou.com/tools/xlate/">XLATE</A>\n</DL><p>#' "${file}"                          # Add XLATE to bookmark toolbar
-sed -i 's#^</DL><p>#    <DT><A HREF="https://hackvertor.co.uk/public">HackVertor</A>\n</DL><p>#' "${file}"                        # Add HackVertor to bookmark toolbar
-sed -i 's#^</DL><p>#    <DT><A HREF="http://www.irongeek.com/skiddypad.php">SkiddyPad</A>\n</DL><p>#' "${file}"                   # Add Skiddypad to bookmark toolbar
-sed -i 's#^</DL><p>#    <DT><A HREF="https://www.exploit-db.com/search/">Exploit-DB</A>\n</DL><p>#' "${file}"                     # Add Exploit-DB to bookmark toolbar
-sed -i 's#^</DL><p>#    <DT><A HREF="http://offset-db.com/">Offset-DB</A>\n</DL><p>#' "${file}"                                   # Add offset-db to bookmark toolbar
-#sed -i 's#^</DL><p>#    <DT><A HREF="http://shell-storm.org/shellcode/">Shelcodes</A>\n</DL><p>#' "${file}"                      # Add shellcode to bookmark toolbar
-#sed -i 's#^</DL><p>#    <DT><A HREF="http://ropshell.com/">ROP Shell</A>\n</DL><p>#' "${file}"                                   # Add ROP Shell to bookmark toolbar
-sed -i 's#^</DL><p>#    <DT><A HREF="https://ifconfig.io/">ifconfig</A>\n</DL><p>#' "${file}"                                     # Add ifconfig.io to bookmark toolbar
-sed -i 's#<HR>#<DT><H3 ADD_DATE="1303667175" LAST_MODIFIED="1303667175" PERSONAL_TOOLBAR_FOLDER="true">Bookmarks Toolbar</H3>\n<DD>Add bookmarks to this folder to see them displayed on the Bookmarks Toolbar#' "${file}"
+awk '!a[$0]++' /tmp/bookmarks_new.html | \egrep -v ">(Latest Headlines|Getting Started|Recently Bookmarked|Recent Tags|Mozilla Firefox|Help and Tutorials|Customize Firefox|Get Involved|About Us|Hacker Media|Bookmarks Toolbar|Most Visited)</" | \egrep -v "^    </DL><p>" | \egrep -v "^<DD>Add" > "$file"
+sed -i 's#^</DL><p>#        </DL><p>\n    </DL><p>\n</DL><p>#' "$file"                                                          # Fix import issues from pentest-bookmarks...
+sed -i 's#^    <DL><p>#    <DL><p>\n    <DT><A HREF="http://127.0.0.1/">localhost</A>#' "$file"                                 # Add localhost to bookmark toolbar (before hackery folder)
+sed -i 's#^</DL><p>#    <DT><A HREF="https://127.0.0.1:8834/">Nessus</A>\n</DL><p>#' "$file"                                    # Add Nessus UI bookmark toolbar
+[ "$openVAS" != "false" ] && sed -i 's#^</DL><p>#    <DT><A HREF="https://127.0.0.1:9392/">OpenVAS</A>\n</DL><p>#' "$file"      # Add OpenVAS UI to bookmark toolbar
+#sed -i 's#^</DL><p>#    <DT><A HREF="https://127.0.0.1:3780/">Nexpose</A>\n</DL><p>#' "$file"                                  # Add Nexpose UI to bookmark toolbar
+sed -i 's#^</DL><p>#    <DT><A HREF="https://127.0.0.1:3790/">MSF</A>\n</DL><p>#' "$file"                                       # Add Metasploit UI to bookmark toolbar
+sed -i 's#^</DL><p>#    <DT><A HREF="http://127.0.0.1:3000/ui/panel">BeEF</A>\n</DL><p>#' "$file"                               # Add BeEF UI to bookmark toolbar
+sed -i 's#^</DL><p>#    <DT><A HREF="http://127.0.0.1/rips/">RIPS</A>\n</DL><p>#' "$file"                                       # Add RIPs to bookmark toolbar
+sed -i 's#^</DL><p>#    <DT><A HREF="https://paulschou.com/tools/xlate/">XLATE</A>\n</DL><p>#' "$file"                          # Add XLATE to bookmark toolbar
+sed -i 's#^</DL><p>#    <DT><A HREF="https://hackvertor.co.uk/public">HackVertor</A>\n</DL><p>#' "$file"                        # Add HackVertor to bookmark toolbar
+sed -i 's#^</DL><p>#    <DT><A HREF="http://www.irongeek.com/skiddypad.php">SkiddyPad</A>\n</DL><p>#' "$file"                   # Add Skiddypad to bookmark toolbar
+sed -i 's#^</DL><p>#    <DT><A HREF="https://www.exploit-db.com/search/">Exploit-DB</A>\n</DL><p>#' "$file"                     # Add Exploit-DB to bookmark toolbar
+sed -i 's#^</DL><p>#    <DT><A HREF="http://offset-db.com/">Offset-DB</A>\n</DL><p>#' "$file"                                   # Add offset-db to bookmark toolbar
+#sed -i 's#^</DL><p>#    <DT><A HREF="http://shell-storm.org/shellcode/">Shelcodes</A>\n</DL><p>#' "$file"                      # Add shellcode to bookmark toolbar
+#sed -i 's#^</DL><p>#    <DT><A HREF="http://ropshell.com/">ROP Shell</A>\n</DL><p>#' "$file"                                   # Add ROP Shell to bookmark toolbar
+sed -i 's#^</DL><p>#    <DT><A HREF="https://ifconfig.io/">ifconfig</A>\n</DL><p>#' "$file"                                     # Add ifconfig.io to bookmark toolbar
+sed -i 's#<HR>#<DT><H3 ADD_DATE="1303667175" LAST_MODIFIED="1303667175" PERSONAL_TOOLBAR_FOLDER="true">Bookmarks Toolbar</H3>\n<DD>Add bookmarks to this folder to see them displayed on the Bookmarks Toolbar#' "$file"
 #--- Clear bookmark cache
 find /root/.mozilla/firefox/*.default*/ -maxdepth 1 -mindepth 1 -type f -name places.sqlite -delete
 find /root/.mozilla/firefox/*.default*/bookmarkbackups/ -type f -delete
@@ -1520,69 +1501,69 @@ find /root/.mozilla/firefox/*.default*/bookmarkbackups/ -type f -delete
 ffpath="$(find /root/.mozilla/firefox/*.default*/ -maxdepth 0 -mindepth 0 -type d -name '*.default*' -print -quit)/extensions"
 [ "$ffpath" == "/extensions" ] && echo -e ' '$RED'[!]'$RESET" Couldn't find Firefox/Iceweasel folder" 1>&2
 mkdir -p "$ffpath/"
-#curl --progress -k -L -f "https://github.com/mozmark/ringleader/blob/master/fx_pnh.xpi?raw=true"                                                                                             # plug-n-hack
-#curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/284030/addon-284030-latest.xpi?src=dp-btn-primary" -o "$ffpath/{6bdc61ae-7b80-44a3-9476-e1d121ec2238}.xpi"     # HTTPS Finder
-curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/5817/addon-5817-latest.xpi?src=dp-btn-primary" -o "$ffpath/SQLiteManager@mrinalkant.blogspot.com.xpi"           # SQLite Manager
-curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/1865/addon-1865-latest.xpi?src=dp-btn-primary" -o "$ffpath/{d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d}.xpi"          # Adblock Plus
-curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/92079/addon-92079-latest.xpi?src=dp-btn-primary" -o "$ffpath/{bb6bc1bb-f824-4702-90cd-35e2fb24f25d}.xpi"        # Cookies Manager+
-curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/1843/addon-1843-latest.xpi?src=dp-btn-primary" -o "$ffpath/firebug@software.joehewitt.com.xpi"                  # Firebug
-curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/15023/addon-15023-latest.xpi?src=dp-btn-primary" -o "$ffpath/foxyproxy-basic@eric.h.jung.xpi"                   # FoxyProxy Basic
-curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/429678/addon-429678-latest.xpi?src=dp-btn-primary" -o "$ffpath/useragentoverrider@qixinglu.com.xpi"             # User Agent Overrider
-curl --progress -k -L -f "https://www.eff.org/files/https-everywhere-latest.xpi" -o "$ffpath/https-everywhere@eff.org.xpi"                                                                    # HTTPS Everywhere
-curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/3829/addon-3829-latest.xpi?src=dp-btn-primary" -o "$ffpath/{8f8fe09b-0bd3-4470-bc1b-8cad42b8203a}.xpi"          # Live HTTP Headers
-curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/966/addon-966-latest.xpi?src=dp-btn-primary" -o "$ffpath/{9c51bd27-6ed8-4000-a2bf-36cb95c0c947}.xpi"            # Tamper Data
-curl --progress -k -L -f "https://addons.mozilla.org/firefox/downloads/latest/300254/addon-300254-latest.xpi?src=dp-btn-primary" -o "$ffpath/check-compatibility@dactyl.googlecode.com.xpi"   # Disable Add-on Compatibility Checks
+#curl --progress -k -L "https://github.com/mozmark/ringleader/blob/master/fx_pnh.xpi?raw=true"                                                                                             # plug-n-hack
+#curl --progress -k -L "https://addons.mozilla.org/firefox/downloads/latest/284030/addon-284030-latest.xpi?src=dp-btn-primary" -o "$ffpath/{6bdc61ae-7b80-44a3-9476-e1d121ec2238}.xpi"     # HTTPS Finder
+curl --progress -k -L "https://addons.mozilla.org/firefox/downloads/latest/5817/addon-5817-latest.xpi?src=dp-btn-primary" -o "$ffpath/SQLiteManager@mrinalkant.blogspot.com.xpi"           # SQLite Manager
+curl --progress -k -L "https://addons.mozilla.org/firefox/downloads/latest/1865/addon-1865-latest.xpi?src=dp-btn-primary" -o "$ffpath/{d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d}.xpi"          # Adblock Plus
+curl --progress -k -L "https://addons.mozilla.org/firefox/downloads/latest/92079/addon-92079-latest.xpi?src=dp-btn-primary" -o "$ffpath/{bb6bc1bb-f824-4702-90cd-35e2fb24f25d}.xpi"        # Cookies Manager+
+curl --progress -k -L "https://addons.mozilla.org/firefox/downloads/latest/1843/addon-1843-latest.xpi?src=dp-btn-primary" -o "$ffpath/firebug@software.joehewitt.com.xpi"                  # Firebug
+curl --progress -k -L "https://addons.mozilla.org/firefox/downloads/latest/15023/addon-15023-latest.xpi?src=dp-btn-primary" -o "$ffpath/foxyproxy-basic@eric.h.jung.xpi"                   # FoxyProxy Basic
+curl --progress -k -L "https://addons.mozilla.org/firefox/downloads/latest/429678/addon-429678-latest.xpi?src=dp-btn-primary" -o "$ffpath/useragentoverrider@qixinglu.com.xpi"             # User Agent Overrider
+curl --progress -k -L "https://www.eff.org/files/https-everywhere-latest.xpi" -o "$ffpath/https-everywhere@eff.org.xpi"                                                                    # HTTPS Everywhere
+curl --progress -k -L "https://addons.mozilla.org/firefox/downloads/latest/3829/addon-3829-latest.xpi?src=dp-btn-primary" -o "$ffpath/{8f8fe09b-0bd3-4470-bc1b-8cad42b8203a}.xpi"          # Live HTTP Headers
+curl --progress -k -L "https://addons.mozilla.org/firefox/downloads/latest/966/addon-966-latest.xpi?src=dp-btn-primary" -o "$ffpath/{9c51bd27-6ed8-4000-a2bf-36cb95c0c947}.xpi"            # Tamper Data
+curl --progress -k -L "https://addons.mozilla.org/firefox/downloads/latest/300254/addon-300254-latest.xpi?src=dp-btn-primary" -o "$ffpath/check-compatibility@dactyl.googlecode.com.xpi"   # Disable Add-on Compatibility Checks
 #--- Installing extensions
-for FILE in $(find "${ffpath}" -maxdepth 1 -type f -name '*.xpi'); do
-  d="$(basename "${FILE}" .xpi)"
-  mkdir -p "${ffpath}/${d}/"
-  unzip -q -o -d "${ffpath}/${d}/" "${FILE}"
-  rm -f "${FILE}"
+for FILE in $(find "$ffpath" -maxdepth 1 -type f -name '*.xpi'); do
+  d="$(basename "$FILE" .xpi)"
+  mkdir -p "$ffpath/$d/"
+  unzip -q -o -d "$ffpath/$d/" "$FILE"
+  rm -f "$FILE"
 done
 #--- Enable Iceweasel's addons/plugins/extensions
 timeout 15 iceweasel   #iceweasel & sleep 15; killall -q -w iceweasel >/dev/null
 sleep 3
-file=$(find /root/.mozilla/firefox/*.default*/ -maxdepth 1 -type f -name 'extensions.sqlite' -print -quit)   #&& [ -e "${file}" ] && cp -n $file{,.bkup}
-if [ ! -e "${file}" ] || [ -z "${file}" ]; then
+file=$(find /root/.mozilla/firefox/*.default*/ -maxdepth 1 -type f -name 'extensions.sqlite' -print -quit)   #&& [ -e "$file" ] && cp -n $file{,.bkup}
+if [ ! -e "$file" ] || [ -z "$file" ]; then
   #echo -e ' '$RED'[!]'$RESET" Something went wrong enabling Iceweasel's extensions via method #1. Trying method #2..." 1>&2
   false
 else
-  echo -e " ${YELLOW}[i]${RESET} Enabled ${YELLOW}Iceweasel's extensions${RESET} (via method #1!)"
+  echo -e " $YELLOW[i]$RESET Enabled Iceweasel's extensions (via method #1!)"
   apt-get install -y -qq sqlite3
   rm -f /tmp/iceweasel.sql; touch /tmp/iceweasel.sql
   echo "UPDATE 'main'.'addon' SET 'active' = 1, 'userDisabled' = 0;" > /tmp/iceweasel.sql    # Force them all!
-  sqlite3 "${file}" < /tmp/iceweasel.sql      #fuser extensions.sqlite
+  sqlite3 "$file" < /tmp/iceweasel.sql      #fuser extensions.sqlite
 fi
-file=$(find /root/.mozilla/firefox/*.default*/ -maxdepth 1 -type f -name 'extensions.json' -print -quit)   #&& [ -e "${file}" ] && cp -n $file{,.bkup}
-if [ ! -e "${file}" ] || [ -z "${file}" ]; then
+file=$(find /root/.mozilla/firefox/*.default*/ -maxdepth 1 -type f -name 'extensions.json' -print -quit)   #&& [ -e "$file" ] && cp -n $file{,.bkup}
+if [ ! -e "$file" ] || [ -z "$file" ]; then
   #echo -e ' '$RED'[!]'$RESET" Something went wrong enabling Iceweasel's extensions via method #2. Did method #1 also fail?" 1>&2
   false
 else
-  echo -e " ${YELLOW}[i]${RESET} Enabled ${YELLOW}Iceweasel's extensions${RESET} (via method #2!)"
-  sed -i 's/"active":false,/"active":true,/g' "${file}"                # Force them all!
-  sed -i 's/"userDisabled":true,/"userDisabled":false,/g' "${file}"    # Force them all!
+  echo -e " $YELLOW[i]$RESET Enabled Iceweasel's extensions (via method #2!)"
+  sed -i 's/"active":false,/"active":true,/g' "$file"                # Force them all!
+  sed -i 's/"userDisabled":true,/"userDisabled":false,/g' "$file"    # Force them all!
 fi
-file=$(find /root/.mozilla/firefox/*.default*/ -maxdepth 1 -type f -name 'prefs.js' -print -quit)   #&& [ -e "${file}" ] && cp -n $file{,.bkup}
-[ ! -z "${file}" ] && sed -i '/extensions.installCache/d' "${file}"
+file=$(find /root/.mozilla/firefox/*.default*/ -maxdepth 1 -type f -name 'prefs.js' -print -quit)   #&& [ -e "$file" ] && cp -n $file{,.bkup}
+[ ! -z "$file" ] && sed -i '/extensions.installCache/d' "$file"
 timeout 15 iceweasel >/dev/null   # For extensions that just work without restarting
 sleep 3
 timeout 15 iceweasel >/dev/null   # ...for (most) extensions, as they need iceweasel to restart
 sleep 3
 #--- Configure foxyproxy
-file=$(find /root/.mozilla/firefox/*.default*/ -maxdepth 1 -type f -name 'foxyproxy.xml' -print -quit)   #&& [ -e "${file}" ] && cp -n $file{,.bkup}
-if [ -z "${file}" ]; then
+file=$(find /root/.mozilla/firefox/*.default*/ -maxdepth 1 -type f -name 'foxyproxy.xml' -print -quit)   #&& [ -e "$file" ] && cp -n $file{,.bkup}
+if [ -z "$file" ]; then
   echo -e ' '$RED'[!]'$RESET' Something went wrong with the foxyproxy iceweasel extension (did any extensions install?). Skipping...' 1>&2
-elif [ -e "${file}" ]; then
-  grep -q 'localhost:8080' "${file}" 2>/dev/null || sed -i 's#<proxy name="Default"#<proxy name="localhost:8080" id="1145138293" notes="e.g. Burp, w3af" fromSubscription="false" enabled="true" mode="manual" selectedTabIndex="0" lastresort="false" animatedIcons="true" includeInCycle="false" color="\#07753E" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="true" clearCookiesBeforeUse="false" rejectCookies="false"><matches/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="127.0.0.1" port="8080" socksversion="5" isSocks="false" username="" password="" domain=""/></proxy><proxy name="Default"#' "${file}"          # localhost:8080
-  grep -q 'localhost:8081' "${file}" 2>/dev/null || sed -i 's#<proxy name="Default"#<proxy name="localhost:8081 (socket5)" id="212586674" notes="e.g. SSH" fromSubscription="false" enabled="true" mode="manual" selectedTabIndex="0" lastresort="false" animatedIcons="true" includeInCycle="false" color="\#917504" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="true" clearCookiesBeforeUse="false" rejectCookies="false"><matches/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="127.0.0.1" port="8081" socksversion="5" isSocks="true" username="" password="" domain=""/></proxy><proxy name="Default"#' "${file}"         # localhost:8081 (socket5)
-  grep -q '"No Caching"' "${file}" 2>/dev/null   || sed -i 's#<proxy name="Default"#<proxy name="No Caching" id="3884644610" notes="" fromSubscription="false" enabled="true" mode="system" selectedTabIndex="0" lastresort="false" animatedIcons="true" includeInCycle="false" color="\#990DA6" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="true" clearCookiesBeforeUse="false" rejectCookies="false"><matches/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="" port="" socksversion="5" isSocks="false" username="" password="" domain=""/></proxy><proxy name="Default"#' "${file}"                                          # No caching
+elif [ -e "$file" ]; then
+  grep -q 'localhost:8080' "$file" 2>/dev/null || sed -i 's#<proxy name="Default"#<proxy name="localhost:8080" id="1145138293" notes="e.g. Burp, w3af" fromSubscription="false" enabled="true" mode="manual" selectedTabIndex="0" lastresort="false" animatedIcons="true" includeInCycle="false" color="\#07753E" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="true" clearCookiesBeforeUse="false" rejectCookies="false"><matches/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="127.0.0.1" port="8080" socksversion="5" isSocks="false" username="" password="" domain=""/></proxy><proxy name="Default"#' "$file"          # localhost:8080
+  grep -q 'localhost:8081' "$file" 2>/dev/null || sed -i 's#<proxy name="Default"#<proxy name="localhost:8081 (socket5)" id="212586674" notes="e.g. SSH" fromSubscription="false" enabled="true" mode="manual" selectedTabIndex="0" lastresort="false" animatedIcons="true" includeInCycle="false" color="\#917504" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="true" clearCookiesBeforeUse="false" rejectCookies="false"><matches/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="127.0.0.1" port="8081" socksversion="5" isSocks="true" username="" password="" domain=""/></proxy><proxy name="Default"#' "$file"         # localhost:8081 (socket5)
+  grep -q '"No Caching"' "$file" 2>/dev/null   || sed -i 's#<proxy name="Default"#<proxy name="No Caching" id="3884644610" notes="" fromSubscription="false" enabled="true" mode="system" selectedTabIndex="0" lastresort="false" animatedIcons="true" includeInCycle="false" color="\#990DA6" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="true" clearCookiesBeforeUse="false" rejectCookies="false"><matches/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="" port="" socksversion="5" isSocks="false" username="" password="" domain=""/></proxy><proxy name="Default"#' "$file"                                          # No caching
 else
-  echo -ne '<?xml version="1.0" encoding="UTF-8"?>\n<foxyproxy mode="disabled" selectedTabIndex="0" toolbaricon="true" toolsMenu="true" contextMenu="true" advancedMenus="false" previousMode="disabled" resetIconColors="true" useStatusBarPrefix="true" excludePatternsFromCycling="false" excludeDisabledFromCycling="false" ignoreProxyScheme="false" apiDisabled="false" proxyForVersionCheck=""><random includeDirect="false" includeDisabled="false"/><statusbar icon="true" text="false" left="options" middle="cycle" right="contextmenu" width="0"/><toolbar left="options" middle="cycle" right="contextmenu"/><logg enabled="false" maxSize="500" noURLs="false" header="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;\n&lt;!DOCTYPE html PUBLIC &quot;-//W3C//DTD XHTML 1.0 Strict//EN&quot; &quot;http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd&quot;&gt;\n&lt;html xmlns=&quot;http://www.w3.org/1999/xhtml&quot;&gt;&lt;head&gt;&lt;title&gt;&lt;/title&gt;&lt;link rel=&quot;icon&quot; href=&quot;http://getfoxyproxy.org/favicon.ico&quot;/&gt;&lt;link rel=&quot;shortcut icon&quot; href=&quot;http://getfoxyproxy.org/favicon.ico&quot;/&gt;&lt;link rel=&quot;stylesheet&quot; href=&quot;http://getfoxyproxy.org/styles/log.css&quot; type=&quot;text/css&quot;/&gt;&lt;/head&gt;&lt;body&gt;&lt;table class=&quot;log-table&quot;&gt;&lt;thead&gt;&lt;tr&gt;&lt;td class=&quot;heading&quot;&gt;${timestamp-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${url-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${proxy-name-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${proxy-notes-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-name-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-case-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-type-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-color-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pac-result-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${error-msg-heading}&lt;/td&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tfoot&gt;&lt;tr&gt;&lt;td/&gt;&lt;/tr&gt;&lt;/tfoot&gt;&lt;tbody&gt;" row="&lt;tr&gt;&lt;td class=&quot;timestamp&quot;&gt;${timestamp}&lt;/td&gt;&lt;td class=&quot;url&quot;&gt;&lt;a href=&quot;${url}&quot;&gt;${url}&lt;/a&gt;&lt;/td&gt;&lt;td class=&quot;proxy-name&quot;&gt;${proxy-name}&lt;/td&gt;&lt;td class=&quot;proxy-notes&quot;&gt;${proxy-notes}&lt;/td&gt;&lt;td class=&quot;pattern-name&quot;&gt;${pattern-name}&lt;/td&gt;&lt;td class=&quot;pattern&quot;&gt;${pattern}&lt;/td&gt;&lt;td class=&quot;pattern-case&quot;&gt;${pattern-case}&lt;/td&gt;&lt;td class=&quot;pattern-type&quot;&gt;${pattern-type}&lt;/td&gt;&lt;td class=&quot;pattern-color&quot;&gt;${pattern-color}&lt;/td&gt;&lt;td class=&quot;pac-result&quot;&gt;${pac-result}&lt;/td&gt;&lt;td class=&quot;error-msg&quot;&gt;${error-msg}&lt;/td&gt;&lt;/tr&gt;" footer="&lt;/tbody&gt;&lt;/table&gt;&lt;/body&gt;&lt;/html&gt;"/><warnings/><autoadd enabled="false" temp="false" reload="true" notify="true" notifyWhenCanceled="true" prompt="true"><match enabled="true" name="Dynamic AutoAdd Pattern" pattern="*://${3}${6}/*" isRegEx="false" isBlackList="false" isMultiLine="false" caseSensitive="false" fromSubscription="false"/><match enabled="true" name="" pattern="*You are not authorized to view this page*" isRegEx="false" isBlackList="false" isMultiLine="true" caseSensitive="false" fromSubscription="false"/></autoadd><quickadd enabled="false" temp="false" reload="true" notify="true" notifyWhenCanceled="true" prompt="true"><match enabled="true" name="Dynamic QuickAdd Pattern" pattern="*://${3}${6}/*" isRegEx="false" isBlackList="false" isMultiLine="false" caseSensitive="false" fromSubscription="false"/></quickadd><defaultPrefs origPrefetch="null"/><proxies>' > "${file}"
-  echo -ne '<proxy name="localhost:8080" id="1145138293" notes="e.g. Burp, w3af" fromSubscription="false" enabled="true" mode="manual" selectedTabIndex="0" lastresort="false" animatedIcons="true" includeInCycle="false" color="#07753E" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="true" clearCookiesBeforeUse="false" rejectCookies="false"><matches/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="127.0.0.1" port="8080" socksversion="5" isSocks="false" username="" password="" domain=""/></proxy>' >> "${file}"
-  echo -ne '<proxy name="localhost:8081 (socket5)" id="212586674" notes="e.g. SSH" fromSubscription="false" enabled="true" mode="manual" selectedTabIndex="0" lastresort="false" animatedIcons="true" includeInCycle="false" color="#917504" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="true" clearCookiesBeforeUse="false" rejectCookies="false"><matches/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="127.0.0.1" port="8081" socksversion="5" isSocks="true" username="" password="" domain=""/></proxy>' >> "${file}"
-  echo -ne '<proxy name="No Caching" id="3884644610" notes="" fromSubscription="false" enabled="true" mode="system" selectedTabIndex="0" lastresort="false" animatedIcons="true" includeInCycle="false" color="#990DA6" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="true" clearCookiesBeforeUse="false" rejectCookies="false"><matches/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="" port="" socksversion="5" isSocks="false" username="" password="" domain=""/></proxy>' >> "${file}"
-  echo -ne '<proxy name="Default" id="3377581719" notes="" fromSubscription="false" enabled="true" mode="direct" selectedTabIndex="0" lastresort="true" animatedIcons="false" includeInCycle="true" color="#0055E5" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="false" disableCache="false" clearCookiesBeforeUse="false" rejectCookies="false"><matches><match enabled="true" name="All" pattern="*" isRegEx="false" isBlackList="false" isMultiLine="false" caseSensitive="false" fromSubscription="false"/></matches><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="" port="" socksversion="5" isSocks="false" username="" password=""/></proxy>' >> "${file}"
-  echo -e '</proxies></foxyproxy>' >> "${file}"
+  echo -ne '<?xml version="1.0" encoding="UTF-8"?>\n<foxyproxy mode="disabled" selectedTabIndex="0" toolbaricon="true" toolsMenu="true" contextMenu="true" advancedMenus="false" previousMode="disabled" resetIconColors="true" useStatusBarPrefix="true" excludePatternsFromCycling="false" excludeDisabledFromCycling="false" ignoreProxyScheme="false" apiDisabled="false" proxyForVersionCheck=""><random includeDirect="false" includeDisabled="false"/><statusbar icon="true" text="false" left="options" middle="cycle" right="contextmenu" width="0"/><toolbar left="options" middle="cycle" right="contextmenu"/><logg enabled="false" maxSize="500" noURLs="false" header="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;\n&lt;!DOCTYPE html PUBLIC &quot;-//W3C//DTD XHTML 1.0 Strict//EN&quot; &quot;http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd&quot;&gt;\n&lt;html xmlns=&quot;http://www.w3.org/1999/xhtml&quot;&gt;&lt;head&gt;&lt;title&gt;&lt;/title&gt;&lt;link rel=&quot;icon&quot; href=&quot;http://getfoxyproxy.org/favicon.ico&quot;/&gt;&lt;link rel=&quot;shortcut icon&quot; href=&quot;http://getfoxyproxy.org/favicon.ico&quot;/&gt;&lt;link rel=&quot;stylesheet&quot; href=&quot;http://getfoxyproxy.org/styles/log.css&quot; type=&quot;text/css&quot;/&gt;&lt;/head&gt;&lt;body&gt;&lt;table class=&quot;log-table&quot;&gt;&lt;thead&gt;&lt;tr&gt;&lt;td class=&quot;heading&quot;&gt;${timestamp-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${url-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${proxy-name-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${proxy-notes-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-name-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-case-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-type-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pattern-color-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${pac-result-heading}&lt;/td&gt;&lt;td class=&quot;heading&quot;&gt;${error-msg-heading}&lt;/td&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tfoot&gt;&lt;tr&gt;&lt;td/&gt;&lt;/tr&gt;&lt;/tfoot&gt;&lt;tbody&gt;" row="&lt;tr&gt;&lt;td class=&quot;timestamp&quot;&gt;${timestamp}&lt;/td&gt;&lt;td class=&quot;url&quot;&gt;&lt;a href=&quot;${url}&quot;&gt;${url}&lt;/a&gt;&lt;/td&gt;&lt;td class=&quot;proxy-name&quot;&gt;${proxy-name}&lt;/td&gt;&lt;td class=&quot;proxy-notes&quot;&gt;${proxy-notes}&lt;/td&gt;&lt;td class=&quot;pattern-name&quot;&gt;${pattern-name}&lt;/td&gt;&lt;td class=&quot;pattern&quot;&gt;${pattern}&lt;/td&gt;&lt;td class=&quot;pattern-case&quot;&gt;${pattern-case}&lt;/td&gt;&lt;td class=&quot;pattern-type&quot;&gt;${pattern-type}&lt;/td&gt;&lt;td class=&quot;pattern-color&quot;&gt;${pattern-color}&lt;/td&gt;&lt;td class=&quot;pac-result&quot;&gt;${pac-result}&lt;/td&gt;&lt;td class=&quot;error-msg&quot;&gt;${error-msg}&lt;/td&gt;&lt;/tr&gt;" footer="&lt;/tbody&gt;&lt;/table&gt;&lt;/body&gt;&lt;/html&gt;"/><warnings/><autoadd enabled="false" temp="false" reload="true" notify="true" notifyWhenCanceled="true" prompt="true"><match enabled="true" name="Dynamic AutoAdd Pattern" pattern="*://${3}${6}/*" isRegEx="false" isBlackList="false" isMultiLine="false" caseSensitive="false" fromSubscription="false"/><match enabled="true" name="" pattern="*You are not authorized to view this page*" isRegEx="false" isBlackList="false" isMultiLine="true" caseSensitive="false" fromSubscription="false"/></autoadd><quickadd enabled="false" temp="false" reload="true" notify="true" notifyWhenCanceled="true" prompt="true"><match enabled="true" name="Dynamic QuickAdd Pattern" pattern="*://${3}${6}/*" isRegEx="false" isBlackList="false" isMultiLine="false" caseSensitive="false" fromSubscription="false"/></quickadd><defaultPrefs origPrefetch="null"/><proxies>' > "$file"
+  echo -ne '<proxy name="localhost:8080" id="1145138293" notes="e.g. Burp, w3af" fromSubscription="false" enabled="true" mode="manual" selectedTabIndex="0" lastresort="false" animatedIcons="true" includeInCycle="false" color="#07753E" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="true" clearCookiesBeforeUse="false" rejectCookies="false"><matches/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="127.0.0.1" port="8080" socksversion="5" isSocks="false" username="" password="" domain=""/></proxy>' >> "$file"
+  echo -ne '<proxy name="localhost:8081 (socket5)" id="212586674" notes="e.g. SSH" fromSubscription="false" enabled="true" mode="manual" selectedTabIndex="0" lastresort="false" animatedIcons="true" includeInCycle="false" color="#917504" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="true" clearCookiesBeforeUse="false" rejectCookies="false"><matches/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="127.0.0.1" port="8081" socksversion="5" isSocks="true" username="" password="" domain=""/></proxy>' >> "$file"
+  echo -ne '<proxy name="No Caching" id="3884644610" notes="" fromSubscription="false" enabled="true" mode="system" selectedTabIndex="0" lastresort="false" animatedIcons="true" includeInCycle="false" color="#990DA6" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="true" disableCache="true" clearCookiesBeforeUse="false" rejectCookies="false"><matches/><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="" port="" socksversion="5" isSocks="false" username="" password="" domain=""/></proxy>' >> "$file"
+  echo -ne '<proxy name="Default" id="3377581719" notes="" fromSubscription="false" enabled="true" mode="direct" selectedTabIndex="0" lastresort="true" animatedIcons="false" includeInCycle="true" color="#0055E5" proxyDNS="true" noInternalIPs="false" autoconfMode="pac" clearCacheBeforeUse="false" disableCache="false" clearCookiesBeforeUse="false" rejectCookies="false"><matches><match enabled="true" name="All" pattern="*" isRegEx="false" isBlackList="false" isMultiLine="false" caseSensitive="false" fromSubscription="false"/></matches><autoconf url="" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><autoconf url="http://wpad/wpad.dat" loadNotification="true" errorNotification="true" autoReload="false" reloadFreqMins="60" disableOnBadPAC="true"/><manualconf host="" port="" socksversion="5" isSocks="false" username="" password=""/></proxy>' >> "$file"
+  echo -e '</proxies></foxyproxy>' >> "$file"
 fi
 #--- Wipe session (due to force close)
 find /root/.mozilla/firefox/*.default*/ -maxdepth 1 -type f -name 'sessionstore.*' -delete
@@ -1592,11 +1573,11 @@ rm -f /tmp/bookmarks_new.html
 
 
 ##### Installing conky
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}conky${RESET} ~ GUI desktop monitor"
+echo -e "\n $GREEN[+]$RESET Installing conky ~ GUI desktop monitor"
 apt-get -y -qq install conky
 #--- Configure conky
-file=/root/.conkyrc; [ -e "${file}" ] && cp -n $file{,.bkup}
-cat <<EOF > "${file}"
+file=/root/.conkyrc; [ -e "$file" ] && cp -n $file{,.bkup}
+cat <<EOF > "$file"
 ## Useful: http://forums.opensuse.org/english/get-technical-help-here/how-faq-forums/unreviewed-how-faq/464737-easy-configuring-conky-conkyconf.html
 background yes
 
@@ -1673,13 +1654,13 @@ TEXT
 \${color white}Downloaded\$color: \${totaldown eth0} \${alignr}\${color white}Uploaded\$color: \${totalup eth0}
 \${downspeedgraph eth0 25,120 000000 00ff00} \${alignr}\${upspeedgraph eth0 25,120 000000 ff0000}\$color
 EOF
-ifconfig eth1 &>/devnull && cat <<EOF >> "${file}"
+ifconfig eth1 &>/devnull && cat <<EOF >> "$file"
 \${color dodgerblue3}LAN eth1 (\${addr eth1}) \${hr 2}\$color
 \${color white}Down\$color:  \${downspeed eth1} KB/s\${alignr}\${color white}Up\$color: \${upspeed eth1} KB/s
 \${color white}Downloaded\$color: \${totaldown eth1} \${alignr}\${color white}Uploaded\$color: \${totalup eth1}
 \${downspeedgraph eth1 25,120 000000 00ff00} \${alignr}\${upspeedgraph eth1 25,120 000000 ff0000}\$color
 EOF
-cat <<EOF >> "${file}"
+cat <<EOF >> "$file"
 \${color dodgerblue3}Wi-Fi (\${addr wlan0}) \${hr 2}\$color
 \${color white}Down\$color:  \${downspeed wlan0} KB/s\${alignr}\${color white}Up\$color: \${upspeed wlan0} KB/s
 \${color white}Downloaded\$color: \${totaldown wlan0} \${alignr}\${color white}Uploaded\$color: \${totalup wlan0}
@@ -1697,12 +1678,12 @@ cat <<EOF >> "${file}"
 \$color \${tcp_portmon 32768 61000 rhost 2} \${alignr}\${tcp_portmon 32768 61000 rservice 2}
 EOF
 #--- Add to startup (each login)
-file=/usr/local/bin/conky.sh; [ -e "${file}" ] && cp -n $file{,.bkup}
-echo -e '#!/bin/bash\n\ntimeout 10 killall -q conky\nsleep 15\nconky &' > "${file}"
-chmod -f 0500 "${file}"
+file=/usr/local/bin/conky.sh; [ -e "$file" ] && cp -n $file{,.bkup}
+echo -e '#!/bin/bash\n\ntimeout 10 killall -q conky\nsleep 15\nconky &' > "$file"
+chmod -f 0500 "$file"
 mkdir -p /root/.config/autostart/
-file=/root/.config/autostart/conkyscript.desktop; [ -e "${file}" ] && cp -n $file{,.bkup}
-cat <<EOF > "${file}"
+file=/root/.config/autostart/conkyscript.desktop; [ -e "$file" ] && cp -n $file{,.bkup}
+cat <<EOF > "$file"
 [Desktop Entry]
 Type=Application
 Exec=/usr/local/bin/conky.sh
@@ -1718,33 +1699,32 @@ EOF
 #bash /usr/local/bin/conky.sh
 
 
-##### Installing metasploit ~ http://docs.kali.org/general-use/starting-metasploit-framework-in-kali
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}metasploit${RESET} ~ exploit framework"
-apt-get -y -qq install metasploit 2>/dev/null || echo -e "${RED}issue with apt${RESET}"   #metasploit = msf pro, metasploit-framework = free stuff
+##### Configuring metasploit ~ http://docs.kali.org/general-use/starting-metasploit-framework-in-kali
+echo -e "\n $GREEN[+]$RESET Configuring metasploit ~ exploit framework"
+apt-get -y -qq install metasploit 2>/dev/null   #metasploit = msf pro, metasploit-framework = free stuff
 #--- ASCII art
 export GOCOW=1   # Always a cow logo ;)   Others: THISISHALLOWEEN (Halloween), APRILFOOLSPONIES (My Little Pony)
-file=/root/.bashrc; [ -e "${file}" ] && cp -n $file{,.bkup}
-([[ -e "${file}" && "$(tail -c 1 $file)" != "" ]]) && echo >> "${file}"
-grep -q '^GOCOW' "${file}" 2>/dev/null || echo 'GOCOW=1' >> "${file}"
+file=/root/.bashrc; [ -e "$file" ] && cp -n $file{,.bkup}
+([[ -e "$file" && "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
+grep -q '^GOCOW' "$file" 2>/dev/null || echo 'GOCOW=1' >> "$file"
 #--- Start services
 service postgresql start   #service postgresql restart
-service metasploit start   #service metasploit restart ***kali2
-msfdb start && msfdb init  #***kali2 reinit if goes wrong
+service metasploit start   #service metasploit restart
 sleep 10
 #--- Metasploit 4.10.x+ database fix #1 ~ https://community.rapid7.com/community/metasploit/blog/2014/08/25/not-reinventing-the-wheel
 #mkdir -p /root/.msf4/
 #ln -sf /opt/metasploit/apps/pro/ui/config/database.yml /root/.msf4/database.yml   #cp -f   #find / -name database.yml -type f | grep metasploit | grep -v gems   # /usr/share/metasploit-framework/config/database.yml
 #--- Metasploit 4.10.x+ database fix #2 ~ Using method #1, so this isn't needed
-file=/root/.bash_aliases; [ -e "${file}" ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliasesa
-#grep -q '^alias msfconsole' "${file}" 2>/dev/null || echo -e '## Metasploit Framework\nalias msfconsole="msfconsole db_connect -y /opt/metasploit/apps/pro/ui/config/database.yml"\n' >> "${file}"
-grep -q '^## metasploit' "${file}" 2>/dev/null || echo -e '## metasploit\nalias msfc="service postgresql start; service metasploit start; msfconsole -q \"$@\""\n' >> "${file}"
+file=/root/.bash_aliases; [ -e "$file" ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliasesa
+#grep -q '^alias msfconsole' "$file" 2>/dev/null || echo -e '## Metasploit Framework\nalias msfconsole="msfconsole db_connect -y /opt/metasploit/apps/pro/ui/config/database.yml"\n' >> "$file"
+grep -q '^## metasploit' "$file" 2>/dev/null || echo -e '## metasploit\nalias msfc="service postgresql start; service metasploit start; msfconsole -q \"$@\""\n' >> "$file"
 #--- Apply new alias
-if [[ "$SHELL" == "/bin/zsh" ]]; then source ~/.zshrc else source "${file}"; fi
+if [[ "$SHELL" == "/bin/zsh" ]]; then source ~/.zshrc else source "$file"; fi
 #--- Autorun Metasploit commands each startup
 mkdir -p /root/.msf4/
-mkdir -p /root/.msf4/modules/
-file=/root/.msf4/msf_autorunscript.rc; [ -e "${file}" ] && cp -n $file{,.bkup}
-cat <<EOF > "${file}"
+
+file=/root/.msf4/msf_autorunscript.rc; [ -e "$file" ] && cp -n $file{,.bkup}
+cat <<EOF > "$file"
 #run post/windows/escalate/getsystem
 
 #run migrate -f -k
@@ -1753,12 +1733,12 @@ cat <<EOF > "${file}"
 #run post/windows/manage/smart_migrate
 #run post/windows/gather/smart_hashdump
 EOF
-file=/root/.msf4/msfconsole.rc; [ -e "${file}" ] && cp -n $file{,.bkup}
+file=/root/.msf4/msfconsole.rc; [ -e "$file" ] && cp -n $file{,.bkup}
 #load sounds verbose=true
 #load auto_add_route
 #load alias
 #alias dir/ls    del/rm  auto handler   https://github.com/rapid7/metasploit-framework/tree/master/plugins // https://github.com/rapid7/metasploit-framework/issues/5107
-cat <<EOF > "${file}"
+cat <<EOF > "$file"
 setg TimestampOutput true
 setg VERBOSE true
 
@@ -1795,25 +1775,25 @@ EOF
 #xdg-open "$URL"
 #mkdir -p /opt/oracle/
 #for FILE in $(find /root/Downloads/ -maxdepth 1 -type f -name 'instantclient*.zip'); do
-#  unzip -q -o -d /opt/oracle/ "${FILE}"
+#  unzip -q -o -d /opt/oracle/ "$FILE"
 #done
 #pushd /opt/oracle/instantclient_12_1/ >/dev/null
 #ln -sf /opt/oracle/instantclient_12_1/libclntsh.so.12.1 /opt/oracle/instantclient_12_1/libclntsh.so
-#file=/root/.bash_profile; [ -e "${file}" ] && cp -n $file{,.bkup}
+#file=/root/.bash_profile; [ -e "$file" ] && cp -n $file{,.bkup}
 #grep -q '/opt/oracle/instantclient' $file 2>/dev/null
 #if [ $? -ne 0 ]; then
-#  file=/root/.bash_profile; [ -e "${file}" ] && cp -n $file{,.bkup}
-#  echo 'export PATH=$PATH:/opt/oracle/instantclient_12_1' >> "${file}"
-#  echo "export SQLPATH=/opt/oracle/instantclient_12_1" >> "${file}"
-#  echo "export TNS_ADMIN=/opt/oracle/instantclient_12_1" >> "${file}"
-#  echo "export LD_LIBRARY_PATH=/opt/oracle/instantclient_12_1" >> "${file}"
-#  echo "export ORACLE_HOME=/opt/oracle/instantclient_12_1" >> "${file}"
+#  file=/root/.bash_profile; [ -e "$file" ] && cp -n $file{,.bkup}
+#  echo 'export PATH=$PATH:/opt/oracle/instantclient_12_1' >> "$file"
+#  echo "export SQLPATH=/opt/oracle/instantclient_12_1" >> "$file"
+#  echo "export TNS_ADMIN=/opt/oracle/instantclient_12_1" >> "$file"
+#  echo "export LD_LIBRARY_PATH=/opt/oracle/instantclient_12_1" >> "$file"
+#  echo "export ORACLE_HOME=/opt/oracle/instantclient_12_1" >> "$file"
 #fi
-##if [[ "$SHELL" == "/bin/zsh" ]]; then source ~/.zshrc else source "${file}"; fi
+##if [[ "$SHELL" == "/bin/zsh" ]]; then source ~/.zshrc else source "$file"; fi
 #apt-get -y -qq install ruby-dev libgmp-dev
 #wget -q -O ruby-oci8.zip https://codeload.github.com/kubo/ruby-oci8/zip/ruby-oci8-2.1.8 && unzip -q -o -d /opt/oracle/ ruby-oci8.zip && rm -f ruby-oci8.zip
 #pushd /opt/oracle/ruby-oci8-ruby-oci8-*/ >/dev/null
-#if [[ "$SHELL" == "/bin/zsh" ]]; then source ~/.zshrc else source "${file}"; fi    # Lose values due to pushd
+#if [[ "$SHELL" == "/bin/zsh" ]]; then source ~/.zshrc else source "$file"; fi    # Lose values due to pushd
 #export PATH=/opt/metasploit/ruby/bin:$PATH                                       # Lose values due source $file
 #make -s clean; make -s && make -s install
 #popd >/dev/null   # ruby-oci8-ruby-oci8
@@ -1824,36 +1804,36 @@ EOF
 rm -f /tmp/msf.rc
 
 
-###### Installing armitage
-#echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}armitage${RESET} ~ GUI Metasploit UI"
+###### Configuring armitage
+#echo -e "\n $GREEN[+]$RESET Configuring armitage ~ GUI Metasploit UI"
 #export MSF_DATABASE_CONFIG=/opt/metasploit/apps/pro/ui/config/database.yml
-#file=/root/.bash_aliases; [ -e "${file}" ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
-#([[ -e "${file}" && "$(tail -c 1 $file)" != "" ]]) && echo >> "${file}"
-#grep -q 'MSF_DATABASE_CONFIG' "${file}" 2>/dev/null || echo -e 'MSF_DATABASE_CONFIG=/opt/metasploit/apps/pro/ui/config/database.yml\n' >> "${file}"
+#file=/root/.bash_aliases; [ -e "$file" ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
+#([[ -e "$file" && "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
+#grep -q 'MSF_DATABASE_CONFIG' "$file" 2>/dev/null || echo -e 'MSF_DATABASE_CONFIG=/opt/metasploit/apps/pro/ui/config/database.yml\n' >> "$file"
 #chmod 0644 /opt/metasploit/apps/pro/ui/config/database.yml
 #msfrpcd -U msf -P test -f -S -a 127.0.0.1
 
 
-##### Installing MPC
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}MPC${RESET} ~ Msfvenom Payload Creator"
-curl --progress -k -L -f "https://raw.githubusercontent.com/g0tmi1k/mpc/master/mpc.sh" > /usr/bin/mpc
+##### Installing mpc
+echo -e "\n $GREEN[+]$RESET Installing mpc ~ Msfvenom Payload Creator"
+curl --progress -k -L "https://raw.githubusercontent.com/g0tmi1k/mpc/master/mpc.sh" > /usr/bin/mpc
 chmod +x /usr/bin/mpc
 
 
 ##### Installing avb
-#echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}abc${RESET} ~ simple anti-virus bypass"
-#curl --progress -k -L -f "https://raw.githubusercontent.com/g0tmi1k/avb/master/avb.sh" > /usr/bin/avb
+#echo -e "\n $GREEN[+]$RESET Installing abc ~ simple anti-virus bypass"
+#curl --progress -k -L "https://raw.githubusercontent.com/g0tmi1k/avb/master/avb.sh" > /usr/bin/avb
 #chmod +x /usr/bin/avb
 
 
 ##### Installing ifile
-#echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}ifile${RESET} ~ more informations about files"
-#curl --progress -k -L -f "https://raw.githubusercontent.com/g0tmi1k/ifile/master/ifile.sh" > /usr/bin/ifile
+#echo -e "\n $GREEN[+]$RESET Installing ifile ~ more informations about files"
+#curl --progress -k -L "https://raw.githubusercontent.com/g0tmi1k/ifile/master/ifile.sh" > /usr/bin/ifile
 #chmod +x /usr/bin/ifile
 
 
-##### Installing Geany
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}Geany${RESET} ~ GUI text editor"
+##### Installing geany
+echo -e "\n $GREEN[+]$RESET Installing geany ~ GUI text editor"
 apt-get -y -qq install geany
 #--- Add to panel
 dconf load /org/gnome/gnome-panel/layout/objects/geany/ << EOF
@@ -1871,24 +1851,23 @@ dconf write /org/gnome/gnome-panel/layout/object-id-list "$(dconf read /org/gnom
 export DISPLAY=:0.0   #[[ -z $SSH_CONNECTION ]] || export DISPLAY=:0.0
 timeout 15 geany   #geany & sleep 5; killall -q -w geany >/dev/null   # Start and kill. Files needed for first time run
 # Geany -> Edit -> Preferences. Editor -> Newline strips trailing spaces: Enable. -> Indentation -> Type: Spaces. -> Files -> Strip trailing spaces and tabs: Enable. Replace tabs by space: Enable. -> Apply -> Ok
-file=/root/.config/geany/geany.conf; [ -e "${file}" ] && cp -n $file{,.bkup}  #***kali2
-touch "${file}"
-sed -i 's/^.*indent_type.*/indent_type=0/' "${file}"     # Spaces over tabs
-sed -i 's/^.*pref_editor_newline_strip.*/pref_editor_newline_strip=true/' "${file}"
-sed -i 's/^.*pref_editor_replace_tabs.*/pref_editor_replace_tabs=true/' "${file}"
-sed -i 's/^.*pref_editor_trail_space.*/pref_editor_trail_space=true/' "${file}"
-sed -i 's/^check_detect_indent=.*/check_detect_indent=true/' "${file}"
-sed -i 's/^pref_editor_ensure_convert_line_endings=.*/pref_editor_ensure_convert_line_endings=true/' "${file}"
-sed -i 's/^pref_toolbar_show=.*/pref_toolbar_show=false/' "${file}"
-sed -i 's/^sidebar_visible=.*/sidebar_visible=false/' "${file}"
-sed -i 's/^msgwindow_visible=.*/msgwindow_visible=false/' "${file}"
-grep -q '^custom_commands=sort;' "${file}" || sed -i 's/\[geany\]/[geany]\ncustom_commands=sort;/' "${file}"
+file=/root/.config/geany/geany.conf; [ -e "$file" ] && cp -n $file{,.bkup}
+sed -i 's/^.*indent_type.*/indent_type=0/' "$file"     # Spaces over tabs
+sed -i 's/^.*pref_editor_newline_strip.*/pref_editor_newline_strip=true/' "$file"
+sed -i 's/^.*pref_editor_replace_tabs.*/pref_editor_replace_tabs=true/' "$file"
+sed -i 's/^.*pref_editor_trail_space.*/pref_editor_trail_space=true/' "$file"
+sed -i 's/^check_detect_indent=.*/check_detect_indent=true/' "$file"
+sed -i 's/^pref_editor_ensure_convert_line_endings=.*/pref_editor_ensure_convert_line_endings=true/' "$file"
+sed -i 's/^pref_toolbar_show=.*/pref_toolbar_show=false/' "$file"
+sed -i 's/^sidebar_visible=.*/sidebar_visible=false/' "$file"
+sed -i 's/^msgwindow_visible=.*/msgwindow_visible=false/' "$file"
+grep -q '^custom_commands=sort;' "$file" || sed -i 's/\[geany\]/[geany]\ncustom_commands=sort;/' "$file"
 # Geany -> Tools -> Plugin Manger -> Save Actions -> HTML Characters: Enabled. Split Windows: Enabled. Save Actions: Enabled. -> Preferences -> Backup Copy -> Enable -> Directory to save backup files in: /root/backups/geany/. Directory levels to include in the backup destination: 5 -> Apply -> Ok -> Ok
-sed -i 's#^.*active_plugins.*#active_plugins=/usr/lib/geany/htmlchars.so;/usr/lib/geany/saveactions.so;/usr/lib/geany/splitwindow.so;#' "${file}"
+sed -i 's#^.*active_plugins.*#active_plugins=/usr/lib/geany/htmlchars.so;/usr/lib/geany/saveactions.so;/usr/lib/geany/splitwindow.so;#' "$file"
 mkdir -p /root/backups/geany/
 mkdir -p /root/.config/geany/plugins/saveactions/
-file=/root/.config/geany/plugins/saveactions/saveactions.conf; [ -e "${file}" ] && cp -n $file{,.bkup}
-cat <<EOF > "${file}"
+file=/root/.config/geany/plugins/saveactions/saveactions.conf; [ -e "$file" ] && cp -n $file{,.bkup}
+cat <<EOF > "$file"
 [saveactions]
 enable_autosave=false
 enable_instantsave=false
@@ -1909,20 +1888,20 @@ backup_dir=/root/backups/geany
 EOF
 
 ###### Installing PyCharm (Community Edition)
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}PyCharm (Community Edition)${RESET} ~ Python IDE"
-curl --progress -k -L -f "https://download.jetbrains.com/python/pycharm-community-4.5.2.tar.gz" > /tmp/pycharms-community.tar.gz      #***!!! hardcoded version!
+echo -e "\n $GREEN[+]$RESET Installing PyCharm (Community Edition) ~ Python IDE"
+curl --progress -k -L "https://download.jetbrains.com/python/pycharm-community-4.5.2.tar.gz" > /tmp/pycharms-community.tar.gz      #***!!! hardcoded version!
 tar -xf /tmp/pycharms-community.tar.gz -C /tmp/
 mv /tmp/pycharm-community-*/ /usr/share/pycharms
 ln -sf /usr/share/pycharms/bin/pycharm.sh /usr/bin/pycharms
 
 
 ###### Fix gedit
-echo -e "\n ${GREEN}[+]${RESET} Fixes ${GREEN}gedit${RESET} ~ GUI text editor"
+echo -e "\n $GREEN[+]$RESET Fixes gedit ~ GUI text editor"
 apt-get -y -qq install gtk3-engines-unico
 
 
-##### Installing Meld
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}Meld${RESET} ~ GUI text compare"
+##### Installing meld
+echo -e "\n $GREEN[+]$RESET Installing meld ~ GUI text compare"
 apt-get -y -qq install meld
 #--- Configure meld
 gconftool-2 --type bool --set /apps/meld/show_line_numbers true
@@ -1932,7 +1911,7 @@ gconftool-2 --type int --set /apps/meld/edit_wrap_lines 2
 
 
 ###### Installing nessus    #*** Doesn't automate
-#echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}nessus${RESET} ~ vulnerability scanner"
+#echo -e "\n $GREEN[+]$RESET Installing nessus ~ vulnerability scanner"
 #--- Get download link
 #xdg-open http://www.tenable.com/products/nessus/select-your-operating-system    *** #wget -q "http://downloads.nessus.org/<file>" -O /usr/local/src/nessus.deb   #***!!! Hardcoded version value
 #dpkg -i /usr/local/src/Nessus-*-debian6_*.deb
@@ -1957,15 +1936,15 @@ gconftool-2 --type int --set /apps/meld/edit_wrap_lines 2
 
 ##### Installing OpenVAS
 if [ "$openVAS" != "false" ]; then
-  echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}OpenVAS${RESET} ~ vulnerability scanner"
+  echo -e "\n $GREEN[+]$RESET Installing OpenVAS ~ vulnerability scanner"
   apt-get -y -qq install openvas
   openvas-setup
   #--- Bug fix (target credentials creation)
   mkdir -p /var/lib/openvas/gnupg/
   #--- Bug fix (keys)
-  curl --progress -k -L -f "http://www.openvas.org/OpenVAS_TI.asc" | gpg --import -
+  curl --progress -k -L "http://www.openvas.org/OpenVAS_TI.asc" | gpg --import -
   #--- Bug fix (Timeout - https://bugs.kali.org/view.php?id=2340)
-  file=/etc/init.d/openvas-manager;   #[ -e "${file}" ] && cp -n $file{,.bkup}
+  file=/etc/init.d/openvas-manager;   #[ -e "$file" ] && cp -n $file{,.bkup}
   sed -i 's/^DODTIME=.*/DODTIME=25/' $file
   #--- Make sure all services are correct
   #openvas-start   #service openvas-manager restart; service openvas-scanner restart; service greenbone-security-assistant restart
@@ -1975,7 +1954,7 @@ if [ "$openVAS" != "false" ]; then
   (openvasmd --get-users | grep -q ^admin$) && echo -n 'admin user: ' && openvasmd --delete-user=admin
   (openvasmd --get-users | grep -q "^${username}$") || (echo -n "$username user: "; openvasmd --create-user="$username"; openvasmd --user="$username" --new-password="$password" >/dev/null)   # You will want to alter it to something (much) more secure!
   echo -e " $YELLOW[i]$RESET OpenVAS username: $username"
-  echo -e " $YELLOW[i]$RESET OpenVAS password: $password   *** ${BOLD}CHANGE THIS ASAP${RESET}.   Run: # openvasmd --user=root --new-password='<NEW_PASSWORD>'"
+  echo -e " $YELLOW[i]$RESET OpenVAS password: $password   *** CHANGE THIS ASAP.   Run: # openvasmd --user=root --new-password='<NEW_PASSWORD>'"
   #--- Check
   openvas-check-setup
   #--- Remove from start up
@@ -1983,25 +1962,25 @@ if [ "$openVAS" != "false" ]; then
   update-rc.d -f openvas-scanner remove
   update-rc.d -f greenbone-security-assistant remove
   #--- Setup alias
-  file=/root/.bash_aliases; [ -e "${file}" ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
-  grep -q '^## openvas' "${file}" 2>/dev/null || echo -e '## openvas\nalias openvas="service openvas-manager restart; service openvas-scanner restart; service greenbone-security-assistant restart; xdg-open https://127.0.0.1:9392/"\n' >> "${file}"
+  file=/root/.bash_aliases; [ -e "$file" ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
+  grep -q '^## openvas' "$file" 2>/dev/null || echo -e '## openvas\nalias openvas="service openvas-manager restart; service openvas-scanner restart; service greenbone-security-assistant restart; xdg-open https://127.0.0.1:9392/"\n' >> "$file"
 else
-  echo -e '\n '$RED'[!]'$RESET" ${RED}Skipping OpenVAS${RESET} (missing: '$0 --openvas')..." 1>&2
+  echo -e ' '$RED'[!]'$RESET' Skipping OpenVAS (missing --openvas)...' 1>&2
 fi
 
 
-###### Installing vFeed
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}vFeed${RESET} ~ vulnerability database"
+###### Installing vfeed
+echo -e "\n $GREEN[+]$RESET Installing vfeed ~ vulnerability database"
 apt-get -y -qq install vfeed
 
 
-##### Installing Burp Proxy
+##### Configuring Burp Proxy
 if [ "$burpFree" != "false" ]; then
-  echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}Burp Proxy${RESET} ~ web application proxy"
+  echo -e "\n $GREEN[+]$RESET Configuring Burp Proxy ~ web application proxy"
   apt-get -y -qq install burpsuite curl
   mkdir -p /root/.java/.userPrefs/burp/
-  file=/root/.java/.userPrefs/burp/prefs.xml;   #[ -e "${file}" ] && cp -n $file{,.bkup}
-  [ -e "${file}" ] || cat <<EOF > "${file}"
+  file=/root/.java/.userPrefs/burp/prefs.xml;   #[ -e "$file" ] && cp -n $file{,.bkup}
+  [ -e "$file" ] || cat <<EOF > "$file"
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE map SYSTEM "http://java.sun.com/dtd/preferences.dtd" >
 <map MAP_XML_VERSION="1.0">
@@ -2020,7 +1999,7 @@ EOF
   rm -f /tmp/burp.crt
   while test -d /proc/$PID; do
     sleep 1
-    curl --progress -k -L -f "http://burp/cert" -o /tmp/burp.crt 2>/dev/null
+    curl --progress -k -L "http://burp/cert" -o /tmp/burp.crt 2>/dev/null
     [ -f /tmp/burp.crt ] && break
   done
   timeout 5 kill $PID 2>/dev/null
@@ -2045,42 +2024,42 @@ EOF
   rm -f /tmp/burp.crt
   unset http_proxy
 else
-  echo -e '\n '$RED'[!]'$RESET" ${RED}Skipping Burp${RESET} (missing: '$0 --burp')..." 1>&2
+  echo -e ' '$RED'[!]'$RESET' Skipping Burp (missing --burp)...' 1>&2
 fi
 
 
 ##### Installing sparta: https://bugs.kali.org/view.php?id=2021
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}sparta${RESET} ~ GUI automatic wrapper"
+echo -e "\n $GREEN[+]$RESET Installing sparta ~ GUI automatic wrapper"
 apt-get -y -qq install git
-git clone git://github.com/secforce/sparta.git /opt/sparta-git/ || echo -e "${RED}issue with git clone${RESET}"
+git clone git://github.com/secforce/sparta.git /usr/share/sparta-git/
 pushd /usr/share/sparta-git/ >/dev/null
 git pull
 popd >/dev/null
 #--- Add to path
 file=/usr/local/bin/sparta-git
-cat <<EOF > "${file}"
+cat <<EOF > "$file"
 #!/bin/bash
 
-cd /opt/sparta-git/ && python sparta.py "\$@"
+cd /usr/share/sparta-git/ && python sparta.py "\$@"
 EOF
-chmod +x "${file}"
+chmod +x "$file"
 
 
-##### Installing wireshark
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}wireshark${RESET} ~ GUI network protocol analyzer"
+##### Configuring wireshark
+echo -e "\n $GREEN[+]$RESET Configuring wireshark ~ GUI network protocol analyzer"
 #--- Hide running as root warning
 mkdir -p /root/.wireshark/
-file=/root/.wireshark/recent_common;   #[ -e "${file}" ] && cp -n $file{,.bkup}
-[ -e "${file}" ] || echo "privs.warn_if_elevated: FALSE" > "${file}"
+file=/root/.wireshark/recent_common;   #[ -e "$file" ] && cp -n $file{,.bkup}
+[ -e "$file" ] || echo "privs.warn_if_elevated: FALSE" > "$file"
 #--- Hide 'Lua: Error during loading' warning
-file=/usr/share/wireshark/init.lua; [ -e "${file}" ] && cp -n $file{,.bkup}
-sed -i 's/^disable_lua = .*/disable_lua = true/' "${file}"
+file=/usr/share/wireshark/init.lua; [ -e "$file" ] && cp -n $file{,.bkup}
+sed -i 's/^disable_lua = .*/disable_lua = true/' "$file"
 
 
 ##### Installing silver searcher
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}silver searcher${RESET} ~ code searching"
+echo -e "\n $GREEN[+]$RESET Installing silver searcher ~ code searching"
 apt-get -y -qq install git automake pkg-config libpcre3-dev zlib1g-dev liblzma-dev --force-yes
-git clone git://github.com/ggreer/the_silver_searcher.git /usr/local/src/the_silver_searcher || echo -e "${RED}issue with git clone${RESET}"
+git clone git://github.com/ggreer/the_silver_searcher.git /usr/local/src/the_silver_searcher
 pushd /usr/local/src/the_silver_searcher/ >/dev/null
 git pull
 bash ./build.sh
@@ -2090,16 +2069,15 @@ popd >/dev/null
 
 
 ##### Installing rips
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}rips${RESET} ~ source code scanner"
+echo -e "\n $GREEN[+]$RESET Installing rips ~ source code scanner"
 apt-get -y -qq install apache2 php5 git
-git clone git://github.com/ripsscanner/rips.git /opt/rips-git/ || echo -e "${RED}issue with git clone${RESET}"
+git clone git://github.com/ripsscanner/rips.git /usr/share/rips-git/
 pushd /usr/share/rips-git/ >/dev/null
 git pull
 popd >/dev/null
 #--- Add to path
 file=/etc/apache2/conf.d/rips.conf
-file=/etc/apache2/conf-available/rips.conf #***kali2
-cat <<EOF > "${file}"
+cat <<EOF > "$file"
 Alias /rips /usr/share/rips-git
 
 <Directory /usr/share/rips-git/ >
@@ -2110,203 +2088,201 @@ Alias /rips /usr/share/rips-git
   Allow from 127.0.0.0/255.0.0.0 ::1/128
 </Directory>
 EOF
-ln -sf /etc/apache2/conf-available/rips.conf /etc/apache2/conf-enabled/rips.conf #***kali2
 service apache2 restart
 
 
 ##### Installing libreoffice
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}libreoffice${RESET} ~ GUI office suite"
+echo -e "\n $GREEN[+]$RESET Installing libreoffice ~ GUI office suite"
 apt-get -y -qq install libreoffice
 
 
 ###### Installing cherrytree
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}cherrytree${RESET} ~ GUI note taking"
+echo -e "\n $GREEN[+]$RESET Installing cherrytree ~ GUI note taking"
 apt-get -y -qq install cherrytree
 
 
 ###### Installing ipcalc & sipcalc
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}ipcalc & sipcalc${RESET} ~ CLI subnet calculators"
+echo -e "\n $GREEN[+]$RESET Installing ipcalc & sipcalc ~ CLI subnet calculators"
 apt-get -y -qq install ipcalc sipcalc
 
 
 ##### Installing recordmydesktop
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}recordmydesktop${RESET} ~ GUI video screen capture"
+echo -e "\n $GREEN[+]$RESET Installing recordmydesktop ~ GUI video screen capture"
 apt-get -y -qq install recordmydesktop
 #--- Installing GUI front end
 apt-get -y -qq install gtk-recordmydesktop
 
 
 ###### Installing asciinema
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}asciinema${RESET} ~ CLI terminal recorder"
+echo -e "\n $GREEN[+]$RESET Installing asciinema ~ CLI terminal recorder"
 curl -s -L https://asciinema.org/install | sh
 
 
 ###### Installing gimp
-#echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}gimp${RESET} ~ GUI image editing"
+#echo -e "\n $GREEN[+]$RESET Installing gimp ~ GUI image editing"
 #apt-get -y -qq install gimp
 
 
 ##### Installing shutter
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}shutter${RESET} ~ GUI static screen capture"
+echo -e "\n $GREEN[+]$RESET Installing shutter ~ GUI static screen capture"
 apt-get -y -qq install shutter
 
 
 ###### Installing gdebi
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}gdebi${RESET} ~ GUI package installer"
+echo -e "\n $GREEN[+]$RESET Installing gdebi ~ GUI package installer"
 apt-get -y -qq install gdebi
 
 
 ##### Installing psmisc ~ allows for 'killall command' to be used
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}psmisc${RESET} ~ suite to help with running processes"
+echo -e "\n $GREEN[+]$RESET Installing psmisc ~ suite to help with running processes"
 apt-get -y -qq install psmisc
 
 
 ###### Setting up pipe viewer
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}pipe viewer${RESET} ~ CLI progress bar"
+echo -e "\n $GREEN[+]$RESET Installing pipe viewer ~ CLI progress bar"
 apt-get install -y -qq pv
 
 
 ###### Setting up pwgen
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}pwgen${RESET} ~ password generator"
+echo -e "\n $GREEN[+]$RESET Installing pwgen ~ password generator"
 apt-get install -y -qq pwgen
 
 
 ###### Installing midnight commander
-#echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}midnight commander${RESET} ~ CLI file manager"
+#echo -e "\n $GREEN[+]$RESET Installing midnight commander ~ CLI file manager"
 #apt-get -y -qq install mc
 
 
 ##### Installing htop
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}htop${RESET} ~ CLI process viewer"
+echo -e "\n $GREEN[+]$RESET Installing htop ~ CLI process viewer"
 apt-get -y -qq install htop
 
 
 ##### Installing iotop
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}iotop${RESET} ~ CLI I/O usage"
+echo -e "\n $GREEN[+]$RESET Installing iotop ~ CLI I/O usage"
 apt-get -y -qq install iotop
 
 
 ###### Installing glance
-#echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}glance${RESET} ~ CLI process viewer"
+#echo -e "\n $GREEN[+]$RESET Installing glance ~ CLI process viewer"
 #apt-get -y -qq install glance
 
 
 ##### Installing ca-certificates
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}ca-certificates${RESET} ~ HTTPS/SSL/TLS"
+echo -e "\n $GREEN[+]$RESET Installing ca-certificates ~ HTTPS/SSL/TLS"
 apt-get -y -qq install ca-certificates
 
 
 ##### Installing axel
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}axel${RESET} ~ CLI download manager"
+echo -e "\n $GREEN[+]$RESET Installing axel ~ CLI download manager"
 apt-get -y -qq install axel
 #--- Setup alias
-file=/root/.bash_aliases; [ -e "${file}" ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
-([[ -e "${file}" && "$(tail -c 1 $file)" != "" ]]) && echo >> "${file}"
-grep -q '^alias axel' "${file}" 2>/dev/null || echo -e '## axel\nalias axel="axel -a"\n' >> "${file}"
+file=/root/.bash_aliases; [ -e "$file" ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
+([[ -e "$file" && "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
+grep -q '^alias axel' "$file" 2>/dev/null || echo -e '## axel\nalias axel="axel -a"\n' >> "$file"
 #--- Apply new aliases
-if [[ "$SHELL" == "/bin/zsh" ]]; then source ~/.zshrc else source "${file}"; fi
+if [[ "$SHELL" == "/bin/zsh" ]]; then source ~/.zshrc else source "$file"; fi
 
 
 ##### Installing gparted
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}gparted${RESET} ~ GUI partition manager"
+echo -e "\n $GREEN[+]$RESET Installing gparted ~ GUI partition manager"
 apt-get -y -qq install gparted
 
 
 ##### Installing daemonfs
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}daemonfs${RESET} ~ GUI file monitor"
+echo -e "\n $GREEN[+]$RESET Installing daemonfs ~ GUI file monitor"
 apt-get -y -qq install daemonfs
 
 
 ##### Installing filezilla
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}filezilla${RESET} ~ GUI file transfer"
+echo -e "\n $GREEN[+]$RESET Installing filezilla ~ GUI file transfer"
 apt-get -y -qq install filezilla
 #--- Configure filezilla
 export DISPLAY=:0.0   #[[ -z $SSH_CONNECTION ]] || export DISPLAY=:0.0
 timeout 15 filezilla   #filezilla & sleep 5; killall -q -w filezilla >/dev/null     # Start and kill. Files needed for first time run
-file=/root/.filezilla/filezilla.xml; [ -e "${file}" ] && cp -n $file{,.bkup} #***kali2
-touch "${file}"
-sed -i 's#^.*"Default editor".*#\t<Setting name="Default editor" type="string">2/usr/bin/geany</Setting>#' "${file}"
+file=/root/.filezilla/filezilla.xml; [ -e "$file" ] && cp -n $file{,.bkup}
+sed -i 's#^.*"Default editor".*#\t<Setting name="Default editor" type="string">2/usr/bin/geany</Setting>#' "$file"
 
 
 ###### Installing remmina
-#echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}remmina${RESET} ~ GUI remote desktop"
+#echo -e "\n $GREEN[+]$RESET Installing remmina ~ GUI remote desktop"
 #apt-get -y -qq install remmina remmina-plugin-xdmcp remmina-plugin-rdp remmina-plugin-vnc
 
 
 ###### Installing xrdp
-#echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}xrdp${RESET} ~ GUI remote desktop"
+#echo -e "\n $GREEN[+]$RESET Installing xrdp ~ GUI remote desktop"
 #apt-get -y -qq install xrdp
 
 
 ###### Installing x2go client
-#echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}x2go client${RESET} ~ GUI remote desktop"
+#echo -e "\n $GREEN[+]$RESET Installing x2go client ~ GUI remote desktop"
 #apt-get -y -qq install x2goclient
 
 
 ##### Installing lynx
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}lynx${RESET} ~ CLI web browser"
+echo -e "\n $GREEN[+]$RESET Installing lynx ~ CLI web browser"
 apt-get -y -qq install lynx
 
 
 ##### Installing p7zip
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}p7zip${RESET} ~ CLI file extractor"
+echo -e "\n $GREEN[+]$RESET Installing p7zip ~ CLI file extractor"
 apt-get -y -qq install p7zip-full
 
 
 ##### Installing zip & unzip
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}zip & unzip${RESET} ~ CLI file extractors"
-apt-get -y -qq install zip || echo -e "${RED}issue with apt${RESET}"     # Compress
-apt-get -y -qq install unzip || echo -e "${RED}issue with apt${RESET}"   # Decompress
+echo -e "\n $GREEN[+]$RESET Installing zip & unzip ~ CLI file extractors"
+apt-get -y -qq install zip      # Compress
+apt-get -y -qq install unzip    # Decompress
 
 
 ##### Installing file roller
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}file roller${RESET} ~ GUI file extractor"
-apt-get -y -qq install file-roller || echo -e "${RED}issue with apt${RESET}"                                            # GUI program
-apt-get -y -qq install unace unrar rar unzip zip p7zip p7zip-full p7zip-rar || echo -e "${RED}issue with apt${RESET}"   # Supported file compressions types
+echo -e "\n $GREEN[+]$RESET Installing file roller ~ GUI file extractor"
+apt-get -y -qq install file-roller                                            # GUI program
+apt-get -y -qq install unace unrar rar unzip zip p7zip p7zip-full p7zip-rar   # supported file compressions types
 
 
 ##### Installing PPTP VPN support
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}PPTP VPN${RESET} support"
+echo -e "\n $GREEN[+]$RESET Installing PPTP VPN support"
 apt-get -y -qq install network-manager-pptp-gnome network-manager-pptp
 #apt-get -y -qq install network-manager-openvpn network-manager-openvpn-gnome network-manager-pptp network-manager-pptp-gnome network-manager-strongswan network-manager-vpnc network-manager-vpnc-gnome network-manager-openconnect network-manager-openconnect-gnome network-manager-iodine network-manager-iodine-gnome
 
 
 ##### Installing flash
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}flash${RESET} ~ multimedia web plugin"
+echo -e "\n $GREEN[+]$RESET Installing flash ~ multimedia web plugin"
 apt-get -y -qq install flashplugin-nonfree
 update-flashplugin-nonfree --install
 
 
 ###### Installing java
-#echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}java${RESET} ~ web plugin"
+#echo -e "\n $GREEN[+]$RESET Installing java ~ web plugin"
 #*** Insert bash fu here for either open jdk vs oracle jdk
 #update-java-alternatives --jre -s java-1.7.0-openjdk-amd64
 
 
 ##### Installing hashid
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}hashid${RESET} ~ identify hash types"
+echo -e "\n $GREEN[+]$RESET Installing hashid ~ identify hash types"
 apt-get -y -qq install hashid
 
 
 ##### Installing hash identifier (TEMP - until hashid works: https://bugs.kali.org/view.php?id=2299)
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}hash-identifier${RESET} ~ identify hash types"
+echo -e "\n $GREEN[+]$RESET Installing hash-identifier ~ identify hash types"
 apt-get -y -qq install hash-identifier
 
 
 ##### Installing httprint
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}httprint${RESET} ~ GUI web server fingerprint"
+echo -e "\n $GREEN[+]$RESET Installing httprint ~ GUI web server fingerprint"
 apt-get -y -qq install httprint
 
 
 ##### Installing lbd
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}lbd${RESET} ~ load balancing detector"
+echo -e "\n $GREEN[+]$RESET Installing lbd ~ load balancing detector"
 apt-get -y -qq install lbd
 
 
 ##### Installing wafw00f
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}wafw00f${RESET} ~ WAF detector"
+echo -e "\n $GREEN[+]$RESET Installing wafw00f ~ WAF detector"
 apt-get -y -qq install git python python-pip
-git clone git://github.com/sandrogauci/wafw00f.git /opt/wafw00f-git/ || echo -e "${RED}issue with git clone${RESET}"
+git clone git://github.com/sandrogauci/wafw00f.git /usr/share/wafw00f-git/
 pushd /usr/share/wafw00f-git/ >/dev/null
 git pull
 python setup.py install
@@ -2314,44 +2290,44 @@ popd >/dev/null
 
 
 ###### Installing waffit
-#echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}waffit${RESET} ~ WAF detector"
+#echo -e "\n $GREEN[+]$RESET Installing waffit ~ WAF detector"
 #apt-get -y -qq install waffit
 
 
 ##### Installing aircrack-ng
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}aircrack-ng${RESET} ~ Wi-Fi cracking suite"
+echo -e "\n $GREEN[+]$RESET Installing aircrack-ng ~ Wi-Fi cracking suite"
 apt-get -y -qq install aircrack-ng curl
 #--- Setup hardware database
 mkdir -p /etc/aircrack-ng/
-airodump-ng-oui-update 2>/dev/null #|| curl --progress -k -L -f "http://standards.ieee.org/develop/regauth/oui/oui.txt" > /etc/aircrack-ng/oui.txt          #***!!! hardcoded path!
+airodump-ng-oui-update 2>/dev/null || curl --progress -k -L "http://standards.ieee.org/develop/regauth/oui/oui.txt" > /etc/aircrack-ng/oui.txt          #***!!! hardcoded path!
 [ -e /etc/aircrack-ng/oui.txt ] && (\grep "(hex)" /etc/aircrack-ng/oui.txt | sed 's/^[ \t]*//g;s/[ \t]*$//g' > /etc/aircrack-ng/airodump-ng-oui.txt)
 #--- Setup alias
-file=/root/.bash_aliases; [ -e "${file}" ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
-([[ -e "${file}" && "$(tail -c 1 $file)" != "" ]]) && echo >> "${file}"
-grep -q '^## aircrack-ng' "${file}" 2>/dev/null || echo -e '## aircrack-ng\nalias aircrack-ng="aircrack-ng -z"\n' >> "${file}"
-grep -q '^## airodump-ng' "${file}" 2>/dev/null || echo -e '## airodump-ng \nalias airodump-ng="airodump-ng --manufacturer --wps --uptime"\n' >> "${file}"    # aircrack-ng 1.2 rc2
+file=/root/.bash_aliases; [ -e "$file" ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
+([[ -e "$file" && "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
+grep -q '^## aircrack-ng' "$file" 2>/dev/null || echo -e '## aircrack-ng\nalias aircrack-ng="aircrack-ng -z"\n' >> "$file"
+grep -q '^## airodump-ng' "$file" 2>/dev/null || echo -e '## airodump-ng \nalias airodump-ng="airodump-ng --manufacturer --wps --uptime"\n' >> "$file"    # aircrack-ng 1.2 rc2
 
 
-##### Installing reaver (Community Fork)
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}reaver (Community Fork)${RESET} ~ WPS pin brute force + Pixie Attack"
+##### Installing reaver (community fork)
+echo -e "\n $GREEN[+]$RESET Installing reaver (community fork) ~ WPS pin brute force + Pixie Attack"
 apt-get -y -qq install reaver pixiewps
 
 
 ##### Installing bully
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}bully${RESET} ~ WPS pin brute force"
+echo -e "\n $GREEN[+]$RESET Installing bully ~ WPS pin brute force"
 apt-get -y -qq install bully
 
 
 ##### Installing wifite
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}wifite${RESET} ~ automated Wi-Fi tool"
+echo -e "\n $GREEN[+]$RESET Installing wifite ~ automated Wi-Fi tool"
 apt-get -y -qq install wifite
 
 
 ##### Installing vulscan script for nmap
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}vulscan script for nmap${RESET} ~ vulnerability scanner add-on"
+echo -e "\n $GREEN[+]$RESET Installing vulscan script for nmap ~ vulnerability scanner add-on"
 apt-get -y -qq install nmap curl
 mkdir -p /usr/share/nmap/scripts/vulscan/
-curl --progress -k -L -f "http://www.computec.ch/projekte/vulscan/download/nmap_nse_vulscan-2.0.tar.gz" > /tmp/nmap_nse_vulscan.tar.gz    #***!!! hardcoded version! Need to manually check for updates
+curl --progress -k -L "http://www.computec.ch/projekte/vulscan/download/nmap_nse_vulscan-2.0.tar.gz" > /tmp/nmap_nse_vulscan.tar.gz    #***!!! hardcoded version! Need to manually check for updates
 gunzip /tmp/nmap_nse_vulscan.tar.gz
 tar -xf /tmp/nmap_nse_vulscan.tar -C /usr/share/nmap/scripts/
 #--- Fix permissions (by default its 0777)
@@ -2361,69 +2337,69 @@ rm -f /tmp/nmap_nse_vulscan.tar*
 
 
 ##### Installing unicornscan
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}unicornscan${RESET} ~ fast port scanner"
+echo -e "\n $GREEN[+]$RESET Installing unicornscan ~ fast port scanner"
 apt-get -y -qq install unicornscan
 
 
 ##### Installing onetwopunch
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}onetwopunch${RESET} ~ unicornscan & nmap wrapper"
+echo -e "\n $GREEN[+]$RESET Installing onetwopunch ~ unicornscan & nmap wrapper"
 apt-get -y -qq install git nmap unicornscan
-git clone git://github.com/superkojiman/onetwopunch.git /opt/onetwopunch-git/ || echo -e "${RED}issue with git clone${RESET}"
+git clone git://github.com/superkojiman/onetwopunch.git /usr/share/onetwopunch-git/
 pushd /usr/share/onetwopunch-git/ >/dev/null
 git pull
 popd >/dev/null
 #--- Add to path
 file=/usr/local/bin/onetwopunch-git
-cat <<EOF > "${file}"
+cat <<EOF > "$file"
 #!/bin/bash
 
-cd /opt/onetwopunch-git/ && bash onetwopunch.sh "\$@"
+cd /usr/share/onetwopunch-git/ && bash onetwopunch.sh "\$@"
 EOF
-chmod +x "${file}"
+chmod +x "$file"
 
 
 ##### Installing udp-proto-scanner
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}udp-proto-scanner${RESET} ~ common UDP port scanner"
+echo -e "\n $GREEN[+]$RESET Installing udp-proto-scanner ~ common UDP port scanner"
 apt-get -y -qq install curl
 #mkdir -p /usr/share/udp-proto-scanner/
-curl --progress -k -L -f "https://labs.portcullis.co.uk/download/udp-proto-scanner-1.1.tar.gz" -o /tmp/udp-proto-scanner.tar.gz
+curl --progress -k -L "https://labs.portcullis.co.uk/download/udp-proto-scanner-1.1.tar.gz" -o /tmp/udp-proto-scanner.tar.gz
 gunzip /tmp/udp-proto-scanner.tar.gz
 tar -xf /tmp/udp-proto-scanner.tar -C /usr/share/
 mv -f /usr/share/udp-proto-scanner{-1.1,}
 file=/usr/local/bin/udp-proto-scanner
-cat <<EOF > "${file}"
+cat <<EOF > "$file"
 #!/bin/bash
 
-cd /opt/udp-proto-scanner/ && perl udp-proto-scanner.pl "\$@"
+cd /usr/share/udp-proto-scanner/ && perl udp-proto-scanner.pl "\$@"
 EOF
-chmod +x "${file}"
+chmod +x "$file"
 #--- Remove old temp files
 rm -f /tmp/udp-proto-scanner.tar*
 
 
 ##### Installing clusterd
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}clusterd${RESET} ~ clustered attack toolkit (jboss, coldfusion, weblogic, tomcat etc)"
+echo -e "\n $GREEN[+]$RESET Installing clusterd ~ clustered attack toolkit (jboss, coldfusion, weblogic, tomcat etc)"
 apt-get -y -qq install clusterd
 
 
 ##### Installing webhandler
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}webhandler${RESET} ~ shell TTY handler"
+echo -e "\n $GREEN[+]$RESET Installing webhandler ~ shell TTY handler"
 apt-get -y -qq install webhandler
 
 
 ##### Installing azazel
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}azazel${RESET} ~ linux userland rootkit"
+echo -e "\n $GREEN[+]$RESET Installing azazel ~ linux userland rootkit"
 apt-get -y -qq install git
-git clone git://github.com/chokepoint/azazel.git /opt/azazel-git/ || echo -e "${RED}issue with git clone${RESET}"
+git clone git://github.com/chokepoint/azazel.git /usr/share/azazel-git/
 pushd /usr/share/azazel-git/ >/dev/null
 git pull
 popd >/dev/null
 
 
 ##### Installing b374k (https://bugs.kali.org/view.php?id=1097)
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}b374k${RESET} ~ (PHP) web shell"
+echo -e "\n $GREEN[+]$RESET Installing b374k ~ (PHP) web shell"
 apt-get -y -qq install git php5-cli
-git clone git://github.com/b374k/b374k.git /opt/b374k-git/ || echo -e "${RED}issue with git clone${RESET}"
+git clone git://github.com/b374k/b374k.git /usr/share/b374k-git/
 pushd /usr/share/b374k-git/ >/dev/null
 git pull
 php index.php -o b374k.php -s
@@ -2434,9 +2410,9 @@ ln -sf /usr/share/b374k-git /usr/share/webshells/php/b374k
 
 
 ###### Installing DAws
-#echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}DAws${RESET} ~ (PHP) web shell"
+#echo -e "\n $GREEN[+]$RESET Installing DAws ~ (PHP) web shell"
 #apt-get -y -qq install git
-#git clone git://github.com/dotcppfile/DAws.git /opt/daws-git/
+#git clone git://github.com/dotcppfile/DAws.git /usr/share/daws-git/
 #pushd /usr/share/daws-git/ >/dev/null
 #git pull
 #popd >/dev/null
@@ -2453,9 +2429,9 @@ ln -sf /usr/share/b374k-git /usr/share/webshells/php/b374k
 
 
 ##### Installing cmdsql
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}cmdsql${RESET} ~ (ASPX) web shell"
+echo -e "\n $GREEN[+]$RESET Installing cmdsql ~ (ASPX) web shell"
 apt-get -y -qq install git
-git clone git://github.com/NetSPI/cmdsql.git /opt/cmdsql-git/ || echo -e "${RED}issue with git clone${RESET}"
+git clone git://github.com/NetSPI/cmdsql.git /usr/share/cmdsql-git/
 pushd /usr/share/b374k-git/ >/dev/null
 git pull
 popd >/dev/null
@@ -2465,10 +2441,10 @@ ln -sf /usr/share/cmdsql-git /usr/share/webshells/aspx/cmdsql
 
 
 ##### Installing JSP file browser
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}jsp file browser${RESET} ~ (JSP) web shell"
+echo -e "\n $GREEN[+]$RESET Installing jsp file browser ~ (JSP) web shell"
 apt-get -y -qq install curl
 mkdir -p /usr/share/jsp-filebrowser/
-curl --progress -k -L -f "http://www.vonloesch.de/files/browser.zip" > /tmp/jsp.zip && unzip -q -o -d /usr/share/jsp-filebrowser/ /tmp/jsp.zip        #***!!! hardcoded path!
+curl --progress -k -L "http://www.vonloesch.de/files/browser.zip" > /tmp/jsp.zip && unzip -q -o -d /usr/share/jsp-filebrowser/ /tmp/jsp.zip        #***!!! hardcoded path!
 #--- Link to others
 apt-get -y -qq install webshells
 ln -sf /usr/share/jsp-filebrowser /usr/share/webshells/jsp/jsp-filebrowser
@@ -2477,7 +2453,7 @@ rm -f /tmp/jsp.zip
 
 
 ##### Installing htshells
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}htshells${RESET} ~ (htdocs/apache) web shells"
+echo -e "\n $GREEN[+]$RESET Installing htshells ~ (htdocs/apache) web shells"
 apt-get -y -qq install htshells
 #--- Link to others
 apt-get -y -qq install webshells
@@ -2485,71 +2461,65 @@ ln -sf /usr/share/htshells /usr/share/webshells/htshells
 
 
 ###### Installing python-pty-shells
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}python-pty-shells${RESET} ~ PTY shells"
+echo -e "\n $GREEN[+]$RESET Installing python-pty-shells ~ PTY shells"
 apt-get -y -qq install git
-git clone git://github.com/infodox/python-pty-shells.git /opt/python-pty-shells-git/ || echo -e "${RED}issue with git clone${RESET}"
+git clone git://github.com/infodox/python-pty-shells.git /usr/share/python-pty-shells-git/
 pushd /usr/share/python-pty-shells-git/ >/dev/null
 git pull
 popd >/dev/null
 
 
 ##### Installing bridge-utils
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}bridge-utils${RESET} ~ bridge network interfaces"
+echo -e "\n $GREEN[+]$RESET Installing bridge-utils ~ bridge network interfaces"
 apt-get -y -qq install bridge-utils
 
 
-##### Installing FruityWifi
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}FruityWifi${RESET} ~ wireless network auditing tool"
-apt-get -o Dpkg::Options::="--force-confnew" -y -qq install fruitywifi
-# URL: https://localhost:8443
-
-
 ##### Installing WPA2-HalfHandshake-Crack
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}WPA2-HalfHandshake-Crack${RESET} ~ rogue AP todo WPA2 handshakes without AP"
+echo -e "\n $GREEN[+]$RESET Installing WPA2-HalfHandshake-Crack ~ rogue AP todo WPA2 handshakes without AP"
 apt-get -y -qq install git
-git clone git://github.com/dxa4481/WPA2-HalfHandshake-Crack.git /opt/wpa2-halfhandshake-crack-git/ || echo -e "${RED}issue with git clone${RESET}"
+git clone git://github.com/dxa4481/WPA2-HalfHandshake-Crack.git /usr/share/wpa2-halfhandshake-crack-git/
 pushd /usr/share/wpa2-halfhandshake-crack-git/ >/dev/null
 git pull
 popd >/dev/null
 
 
 ##### Installing mana toolkit
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}mana toolkit${RESET} ~ rogue AP todo MITM Wi-Fi"
-apt-get -o Dpkg::Options::="--force-confnew" -y -qq install mana-toolkit
+echo -e "\n $GREEN[+]$RESET Installing mana toolkit ~ rogue AP todo MITM Wi-Fi"
+apt-get -y -qq install mana-toolkit
 #--- BUG FIX: https://bugs.kali.org/view.php?id=1839
 mkdir -p /usr/share/mana-toolkit/www/facebook/
 
 
 ##### Installing wifiphisher
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}wifiphisher${RESET} ~ automated Wi-Fi phishing"
+echo -e "\n $GREEN[+]$RESET Installing wifiphisher ~ automated Wi-Fi phishing"
 apt-get -y -qq install git
-git clone git://github.com/sophron/wifiphisher.git /opt/wifiphisher-git/ || echo -e "${RED}issue with git clone${RESET}"
+git clone git://github.com/sophron/wifiphisher.git /usr/share/wifiphisher-git/
 pushd /usr/share/wifiphisher-git/ >/dev/null
 git pull
 popd >/dev/null
 #--- Add to path
 file=/usr/local/bin/wifiphisher-git
-cat <<EOF > "${file}"
+cat <<EOF > "$file"
 #!/bin/bash
 
-cd /opt/wifiphisher-git/ && python wifiphisher.py "\$@"
+cd /usr/share/wifiphisher-git/ && python wifiphisher.py "\$@"
 EOF
-chmod +x "${file}"
+chmod +x "$file"
 
 
 ##### Installing hostapd-wpe-extended
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}hostapd-wpe-extended${RESET} ~ rogue AP for WPA-Enterprise"
+echo -e "\n $GREEN[+]$RESET Installing hostapd-wpe-extended ~ rogue AP for WPA-Enterprise"
 apt-get -y -qq install git
-git clone git://github.com/NerdyProjects/hostapd-wpe-extended.git /opt/hostapd-wpe-extended-git/ || echo -e "${RED}issue with git clone${RESET}"
+git clone git://github.com/NerdyProjects/hostapd-wpe-extended.git /usr/share/hostapd-wpe-extended-git/
 pushd /usr/share/hostapd-wpe-extended-git/ >/dev/null
 git pull
 popd >/dev/null
 
 
 ##### Installing proxychains-ng (https://bugs.kali.org/view.php?id=2037)
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}proxychains-ng${RESET} ~ proxifier to connect through a proxy"
+echo -e "\n $GREEN[+]$RESET Installing proxychains-ng ~ proxifier to connect through a proxy"
 apt-get -y -qq install git gcc
-git clone git://github.com/rofl0r/proxychains-ng.git /opt/proxychains-ng-git/ || echo -e "${RED}issue with git clone${RESET}"
+git clone git://github.com/rofl0r/proxychains-ng.git /usr/share/proxychains-ng-git/
 pushd /usr/share/proxychains-ng-git/ >/dev/null
 git pull
 ./configure --prefix=/usr --sysconfdir=/etc
@@ -2561,19 +2531,19 @@ ln -sf /usr/bin/proxychains4 /usr/bin/proxychains-ng
 
 
 ##### Installing httptunnel
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}httptunnel${RESET} ~ tunnels data streams in HTTP requests"
+echo -e "\n $GREEN[+]$RESET Installing httptunnel ~ tunnels data streams in HTTP requests"
 apt-get -y -qq install http-tunnel
 
 
 ##### Installing sshuttle
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}sshuttle${RESET} ~ VPN over SSH"
+echo -e "\n $GREEN[+]$RESET Installing sshuttle ~ VPN over SSH"
 apt-get -y -qq install sshuttle
 #--- Example
 #sshuttle --dns --remote root@123.9.9.9 0/0 -vv
 
 
 ##### Installing iodine
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}iodine${RESET} ~ DNS tunneling (IP over DNS)"
+echo -e "\n $GREEN[+]$RESET Installing iodine ~ DNS tunneling (IP over DNS)"
 apt-get -y -qq install iodine
 #--- Example
 #iodined -f -P password1 10.0.0.1 dns.mydomain.com
@@ -2581,14 +2551,14 @@ apt-get -y -qq install iodine
 
 
 ##### Installing dns2tcp
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}dns2tcp${RESET} ~ DNS tunneling (TCP over DNS)"
+echo -e "\n $GREEN[+]$RESET Installing dns2tcp ~ DNS tunneling (TCP over DNS)"
 apt-get -y -qq install dns2tcp
-#file=/etc/dns2tcpd.conf; [ -e "${file}" ] && cp -n $file{,.bkup}; echo -e "listen = 0.0.0.0\nport = 53\nuser = nobody\nchroot = /tmp\ndomain = dnstunnel.mydomain.com\nkey = password1\nressources = ssh:127.0.0.1:22" > "${file}"; dns2tcpd -F -d 1 -f /etc/dns2tcpd.conf
-#file=/etc/dns2tcpc.conf; [ -e "${file}" ] && cp -n $file{,.bkup}; echo -e "domain = dnstunnel.mydomain.com\nkey = password1\nresources = ssh\nlocal_port = 8000\ndebug_level=1" > "${file}"; dns2tcpc -f /etc/dns2tcpc.conf 178.62.206.227; ssh -C -D 8081 -p 8000 root@127.0.0.1
+#file=/etc/dns2tcpd.conf; [ -e "$file" ] && cp -n $file{,.bkup}; echo -e "listen = 0.0.0.0\nport = 53\nuser = nobody\nchroot = /tmp\ndomain = dnstunnel.mydomain.com\nkey = password1\nressources = ssh:127.0.0.1:22" > "$file"; dns2tcpd -F -d 1 -f /etc/dns2tcpd.conf
+#file=/etc/dns2tcpc.conf; [ -e "$file" ] && cp -n $file{,.bkup}; echo -e "domain = dnstunnel.mydomain.com\nkey = password1\nresources = ssh\nlocal_port = 8000\ndebug_level=1" > "$file"; dns2tcpc -f /etc/dns2tcpc.conf 178.62.206.227; ssh -C -D 8081 -p 8000 root@127.0.0.1
 
 
 ##### Installing ptunnel
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}ptunnel${RESET} ~ IMCP tunneling"
+echo -e "\n $GREEN[+]$RESET Installing ptunnel ~ IMCP tunneling"
 apt-get -y -qq install ptunnel
 #--- Example
 #ptunnel -x password1
@@ -2596,14 +2566,14 @@ apt-get -y -qq install ptunnel
 
 
 ##### Installing stunnel
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}stunnel${RESET} ~ SSL wrapper"
+echo -e "\n $GREEN[+]$RESET Installing stunnel ~ SSL wrapper"
 apt-get -y -qq install stunnel
 #--- Remove from start up
 update-rc.d -f stunnel4 remove
 
 
 ##### Installing zerofree
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}zerofree${RESET} ~ CLI nulls free blocks on a HDD"
+echo -e "\n $GREEN[+]$RESET Installing zerofree ~ CLI nulls free blocks on a HDD"
 apt-get -y -qq install zerofree
 #--- Example
 #fdisk -l
@@ -2611,87 +2581,82 @@ apt-get -y -qq install zerofree
 
 
 ##### Installing gcc & multilib
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}gcc & multilibc${RESET} ~ compiling libraries"
+echo -e "\n $GREEN[+]$RESET Installing gcc & multilibc ~ compiling libraries"
 #*** I know its messy...
 for FILE in cc gcc g++ gcc-multilib make automake libc6 libc6-dev libc6-amd64 libc6-dev-amd64 libc6-i386 libc6-dev-i386 libc6-i686 libc6-dev-i686 build-essential dpkg-dev; do
-  apt-get -y -qq install "${FILE}" 2>/dev/null
+  apt-get -y -qq install "$FILE" 2>/dev/null
 done
 
 
 ##### Installing MinGW ~ cross compiling suite
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}mingw${RESET} ~ cross compiling suite"
+echo -e "\n $GREEN[+]$RESET Installing mingw ~ cross compiling suite"
 apt-get -y -qq install mingw-w64 binutils-mingw-w64 gcc-mingw-w64 cmake
 apt-get -y -qq install mingw-w64-dev mingw-w64-tools
 apt-get -y -qq install gcc-mingw-w64-i686 gcc-mingw-w64-x86-64
 apt-get -y -qq install mingw32
 
 
-##### Installing WINE  ***kali2
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}WINE${RESET} ~ run Windows programs on *nix"
+##### Installing WINE
+echo -e "\n $GREEN[+]$RESET Installing WINE ~ run Windows programs on *nix"
 apt-get -y -qq install wine winetricks
 #--- Using x64?
 if [[ "$(uname -m)" == 'x86_64' ]]; then
-  echo -e " ${GREEN}[+]${RESET} Configuring ${GREEN}WINE for x64${RESET}"
+  echo -e " $GREEN[+]$RESET Configuring WINE for x64"
   dpkg --add-architecture i386
   apt-get -qq update
   apt-get -y -qq install wine-bin:i386
-  #apt-get -y -qq remove wine64     #kali2
-  apt-get -y -qq install wine32    #kali2
 fi
-#--- Mono
-curl --progress -k -L -f "http://winezeug.googlecode.com/svn/trunk/install-addons.sh" | bash -    # kali2
-apt-get -y -qq install mono-vbnc  #mono-complete || echo -e "${RED}issue with apt${RESET}"   # kali2
 #--- Run WINE for the first time
 [ -e /usr/share/windows-binaries/whoami.exe ] && wine /usr/share/windows-binaries/whoami.exe &>/dev/null
 #--- Winetricks: Disable 'axel' support - BUG too many redirects.
-file=/usr/bin/winetricks; #[ -e "${file}" ] && cp -n $file{,.bkup}
-sed -i 's/which axel /which axel_disabled /' "${file}"
+file=/usr/bin/winetricks; #[ -e "$file" ] && cp -n $file{,.bkup}
+sed -i 's/which axel /which axel_disabled /' "$file"
 #--- Setup default file association for .exe
-file=/root/.local/share/applications/mimeapps.list; [ -e "${file}" ] && cp -n $file{,.bkup}
-([[ -e "${file}" && "$(tail -c 1 $file)" != "" ]]) && echo >> "${file}"
-echo -e 'application/x-ms-dos-executable=wine.desktop' >> "${file}"
+file=/root/.local/share/applications/mimeapps.list; [ -e "$file" ] && cp -n $file{,.bkup}
+([[ -e "$file" && "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
+echo -e 'application/x-ms-dos-executable=wine.desktop' >> "$file"
 
 
 ##### Installing MinGW (Windows) ~ cross compiling suite
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}mingw (Windows)${RESET} ~ cross compiling suite"
-#curl --progress -k -L -f "http://sourceforge.net/projects/mingw/files/Installer/mingw-get-setup.exe/download" > /tmp/mingw-get-setup.exe                                                                     #***!!! hardcoded path!
-curl --progress -k -L -f "http://sourceforge.net/projects/mingw/files/Installer/mingw-get/mingw-get-0.6.2-beta-20131004-1/mingw-get-0.6.2-mingw32-beta-20131004-1-bin.zip/download" > /tmp/mingw-get.zip      #***!!! hardcoded path!
+echo -e "\n $GREEN[+]$RESET Installing mingw (Windows) ~ cross compiling suite"
+#curl --progress -k -L "http://sourceforge.net/projects/mingw/files/Installer/mingw-get-setup.exe/download" > /tmp/mingw-get-setup.exe                                                                     #***!!! hardcoded path!
+curl --progress -k -L "http://sourceforge.net/projects/mingw/files/Installer/mingw-get/mingw-get-0.6.2-beta-20131004-1/mingw-get-0.6.2-mingw32-beta-20131004-1-bin.zip/download" > /tmp/mingw-get.zip      #***!!! hardcoded path!
 mkdir -p ~/.wine/drive_c/MinGW/bin/
 unzip -q -o -d ~/.wine/drive_c/MinGW/ /tmp/mingw-get.zip
 pushd ~/.wine/drive_c/MinGW/ >/dev/null
-for FILE in mingw32-base mingw32-gcc-g++ mingw32-gcc-objc; do   #msys-base
-  wine ./bin/mingw-get.exe install "${FILE}"
+for file in mingw32-base mingw32-gcc-g++ mingw32-gcc-objc; do   #msys-base
+  wine ./bin/mingw-get.exe install $file
 done
 popd >/dev/null
-grep '^"PATH"=.*C:\\\\MinGW\\\\bin' /root/.wine/system.reg || sed -i '/^"PATH"=/ s_"$_;C:\\\\MinGW\\\\bin"_' /root/.wine/system.reg    #***kali2
+grep -R '^"PATH"=.*C:\\\\MinGW\\\\bin' /root/.wine/system.reg || sed -i '/^"PATH"=/ s_"$_;C:\\\\MinGW\\\\bin"_' /root/.wine/system.reg
 #wine cmd /c "set path=\"%path%;C:\MinGW\bin\" && reg ADD \"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Session Manager\Environment\" /v Path /t REG_EXPAND_SZ /d %path% /f"
 
 
 ##### Downloading AccessChk.exe
-echo -e "\n ${GREEN}[+]${RESET} Downloading ${GREEN}AccessChk.exe${RESET} ~ Windows environment tester"
+echo -e "\n $GREEN[+]$RESET Downloading AccessChk.exe ~ Windows environment tester"
 apt-get -y -qq install curl
-curl --progress -k -L -f "https://download.sysinternals.com/files/AccessChk.zip" > /usr/share/windows-binaries/AccessChk.zip         #***!!! hardcoded path!
+curl --progress -k -L "https://download.sysinternals.com/files/AccessChk.zip" > /usr/share/windows-binaries/AccessChk.zip         #***!!! hardcoded path!
 unzip -q -o -d /usr/share/windows-binaries/ /usr/share/windows-binaries/AccessChk.zip
 rm -f /usr/share/windows-binaries/{AccessChk.zip,Eula.txt}
 
 
 ###### Installing Python (Windows via WINE) *** WINE is too dated =(  (try again with debian 8 / kali 2.0)
-#echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}Python${RESET} ~ python on Windows"
-#curl --progress -k -L -f "https://www.python.org/ftp/python/2.3/Python-2.3.exe" > /tmp/python.exe                                                         #***!!! hardcoded path!
+#echo -e "\n $GREEN[+]$RESET Installing Python ~ python on Windows"
+#curl --progress -k -L "https://www.python.org/ftp/python/2.3/Python-2.3.exe" > /tmp/python.exe                                                         #***!!! hardcoded path!
 #wine /tmp/python.exe /s
-#curl --progress -k -L -f "http://sourceforge.net/projects/pywin32/files/pywin32/Build%20218/pywin32-218.win32-py2.3.exe/download" > /tmp/pywin32.exe      #***!!! hardcoded path!
+#curl --progress -k -L "http://sourceforge.net/projects/pywin32/files/pywin32/Build%20218/pywin32-218.win32-py2.3.exe/download" > /tmp/pywin32.exe      #***!!! hardcoded path!
 #wine /tmp/pywin32.exe
 #
 #winetricks python26
 #
-#curl --progress -k -L -f "https://www.python.org/ftp/python/2.7.9/python-2.7.9.msi" > /tmp/python.msi                                                     #***!!! hardcoded path!
+#curl --progress -k -L "https://www.python.org/ftp/python/2.7.9/python-2.7.9.msi" > /tmp/python.msi                                                     #***!!! hardcoded path!
 #wine msiexec /i /tmp/python.msi /qb
-#curl --progress -k -L -f "http://sourceforge.net/projects/pywin32/files/pywin32/Build%20219/pywin32-219.win32-py2.7.exe/download" > /tmp/pywin32.exe      #***!!! hardcoded path!
+#curl --progress -k -L "http://sourceforge.net/projects/pywin32/files/pywin32/Build%20219/pywin32-219.win32-py2.7.exe/download" > /tmp/pywin32.exe      #***!!! hardcoded path!
 #wine /tmp/pywin32.exe /s
 
 
-##### Installing veil framework ****kali2
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}veil framework${RESET} ~ bypasses anti-virus"
+##### Installing veil framework
+echo -e "\n $GREEN[+]$RESET Installing veil framework ~ bypasses anti-virus"
 apt-get -y -qq install veil
 pip install symmetricjsonrpc
 touch /etc/veil/settings.py
@@ -2700,26 +2665,24 @@ touch /etc/veil/settings.py
 
 
 ##### Installing OP packers
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}OP packers${RESET} ~ bypasses anti-virus"
-apt-get -y -qq install upx-ucl curl || echo -e "${RED}issue with apt${RESET}"   #wget -q "http://upx.sourceforge.net/download/upx309w.zip" -P /usr/share/packers/ && unzip -q -o -d /usr/share/packers/ /usr/share/packers/upx309w.zip; rm -f /usr/share/packers/upx309w.zip
+echo -e "\n $GREEN[+]$RESET Installing OP packers ~ bypasses anti-virus"
+apt-get -y -qq install upx-ucl curl   #wget -q "http://upx.sourceforge.net/download/upx309w.zip" -P /usr/share/packers/ && unzip -q -o -d /usr/share/packers/ /usr/share/packers/upx309w.zip; rm -f /usr/share/packers/upx309w.zip
 mkdir -p /usr/share/packers/
-curl --progress -k -L -f "http://www.eskimo.com/~scottlu/win/cexe.exe" > /usr/share/packers/cexe.exe                                                                                                      #***!!! hardcoded path!                                                                                                             #***!!! hardcoded version! Need to manually check for updates
-curl --progress -k -L -f "http://www.farbrausch.de/~fg/kkrunchy/kkrunchy_023a2.zip" > /usr/share/packers/kkrunchy.zip && unzip -q -o -d /usr/share/packers/ /usr/share/packers/kkrunchy.zip               #***!!! hardcoded version! Need to manually check for updates
-curl --progress -k -L -f "https://pescrambler.googlecode.com/files/PEScrambler_v0_1.zip" > /usr/share/packers/PEScrambler.zip && unzip -q -o -d /usr/share/packers/ /usr/share/packers/PEScrambler.zip    #***!!! hardcoded version! Need to manually check for updates
+curl --progress -k -L "http://www.eskimo.com/~scottlu/win/cexe.exe" > /usr/share/packers/cexe.exe                                                                                                       #***!!! hardcoded path!                                                                                                             #***!!! hardcoded version! Need to manually check for updates
+curl --progress -k -L "http://www.farbrausch.de/~fg/kkrunchy/kkrunchy_023a2.zip" > /usr/share/packers/kkrunchy_023a2.zip && unzip -q -o -d /usr/share/packers/ /usr/share/packers/kkrunchy_023a2.zip    #***!!! hardcoded version! Need to manually check for updates
 #*** Need to make a bash script like hyperion...
 #--- Remove old temp files
-rm -f /usr/share/packers/kkrunchy*.zip
-rm -f /usr/share/packers/PEScrambler*.zip
+rm -f /usr/share/packers/kkrunchy_*.zip
 
 
 ##### Installing hyperion
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}hyperion${RESET} ~ bypasses anti-virus"
+echo -e "\n $GREEN[+]$RESET Installing hyperion ~ bypasses anti-virus"
 unzip -q -o -d /usr/share/windows-binaries/ /usr/share/windows-binaries/Hyperion-1.0.zip                                                                                                    #***!!! hardcoded path!
 #rm -f /usr/share/windows-binaries/Hyperion-1.0.zip
 i686-w64-mingw32-g++ -static-libgcc -static-libstdc++ /usr/share/windows-binaries/Hyperion-1.0/Src/Crypter/*.cpp -o /usr/share/windows-binaries/Hyperion-1.0/Src/Crypter/bin/crypter.exe    #***!!! hardcoded path!   #wine /root/.wine/drive_c/MinGW/bin/g++.exe ./Src/Crypter/*.cpp -o crypter.exe #i586-mingw32msvc-g++ ./Src/Crypter/*.cpp -o crypter-w00t1.exe
 ln -sf /usr/share/windows-binaries/Hyperion-1.0/Src/Crypter/bin/crypter.exe /usr/share/windows-binaries/Hyperion-1.0/crypter.exe                                                            #***!!! hardcoded path!
 file=/usr/local/bin/hyperion
-cat <<EOF > "${file}"
+cat <<EOF > "$file"
 #!/bin/bash
 
 ## Note: This is far from perfect...
@@ -2737,7 +2700,7 @@ BWD="?"
 [[ "\${BWD}" == "?" ]] && echo -e ' '$RED'[!]'$RESET' Cant find \$1. Quitting...' && exit
 
 ## The magic!
-cd /opt/windows-binaries/Hyperion-1.0/
+cd /usr/share/windows-binaries/Hyperion-1.0/
 $(which wine) ./Src/Crypter/bin/crypter.exe \${BWD}\${1} output.exe
 
 ## Restore our path
@@ -2752,44 +2715,33 @@ for FILE in \${1} \${2}; do
   echo "[i] \$(md5sum \${FILE})"
 done
 EOF
-chmod +x "${file}"
+chmod +x "$file"
 
 
 ###### Installing shellter
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}shellter${RESET} ~ dynamic shellcode injector"
+echo -e "\n $GREEN[+]$RESET Installing shellter ~ dynamic shellcode injector"
 apt-get -y -qq install shellter
 
 
 ###### Installing the backdoor factory
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}backdoor factory${RESET} ~ bypasses anti-virus"
+echo -e "\n $GREEN[+]$RESET Installing backdoor factory ~ bypasses anti-virus"
 apt-get -y -qq install backdoor-factory
 
 
 ###### Installing the Backdoor Factory Proxy (BDFProxy)
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}backdoor factory (BDFProxy)${RESET} ~ patches binaries files during a MITM"
+echo -e "\n $GREEN[+]$RESET Installing backdoor factory ~ patches binaries files during a MITM"
 apt-get -y -qq install git
-git clone git://github.com/secretsquirrel/BDFProxy.git /opt/bdfproxy-git/ || echo -e "${RED}issue with git clone${RESET}"
+git clone git://github.com/secretsquirrel/BDFProxy.git /usr/share/bdfproxy-git/
 pushd /usr/share/bdfproxy-git/ >/dev/null
 git pull
 popd >/dev/null
 
 
-###### Installing the BetterCap
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}BetterCap${RESET} ~ MITM framework"
-apt-get -y -qq install git ruby-dev libpcap-dev
-git clone git://github.com/evilsocket/bettercap.git /opt/bettercap-git/ || echo -e "${RED}issue with git clone${RESET}"
-pushd /usr/share/bettercap-git/ >/dev/null
-git pull
-gem build bettercap.gemspec
-gem install bettercap*.gem
-popd >/dev/null
-
-
 ####### Installing the MITMf (GIT)
-#echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}MITMf${RESET} (GIT) ~ framework for MITM attacks"
+#echo -e "\n $GREEN[+]$RESET Installing MITMf (GTI) ~ framework for MITM attacks"
 ##apt-get -y -qq install mitmf    # repo version. stable, but dated
 #apt-get -y -qq install git       #  git version. bleeding edge
-#git clone git://github.com/byt3bl33d3r/MITMf.git /opt/mitmf-git/
+#git clone git://github.com/byt3bl33d3r/MITMf.git /usr/share/mitmf-git/
 #pushd /usr/share/mitmf-git/ >/dev/null
 #git pull
 #bash kali_setup.sh
@@ -2797,17 +2749,17 @@ popd >/dev/null
 
 
 ##### Installing FuzzDB
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}FuzzDB${RESET} ~ multiple types of (word)lists (and similar things)"
+echo -e "\n $GREEN[+]$RESET Installing FuzzDB ~ multiple types of (word)lists (and similar things)"
 svn -q checkout "http://fuzzdb.googlecode.com/svn/trunk/" /usr/share/fuzzdb-svn/
 
 
 ##### Installing seclist
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}seclist${RESET} ~ multiple types of (word)lists (and similar things)"
+echo -e "\n $GREEN[+]$RESET Installing seclist ~ multiple types of (word)lists (and similar things)"
 apt-get -y -qq install seclists
 
 
 ##### Updating wordlists
-echo -e "\n ${GREEN}[+]${RESET} Updating wordlists ~ collection of wordlists"
+echo -e "\n $GREEN[+]$RESET Updating wordlists ~ collection of wordlists"
 apt-get -y -qq install curl
 #--- Extract rockyou wordlist
 [ -e /usr/share/wordlists/rockyou.txt.gz ] && gzip -dc < /usr/share/wordlists/rockyou.txt.gz > /usr/share/wordlists/rockyou.txt   #gunzip rockyou.txt.gz
@@ -2816,7 +2768,7 @@ apt-get -y -qq install curl
 #unzip -o -d /usr/share/sqlmap/txt/ /usr/share/sqlmap/txt/wordlist.zip
 #--- Add 10,000 Top/Worst/Common Passwords
 mkdir -p /usr/share/wordlists/
-(curl --progress -k -L -f "http://xato.net/files/10k most common.zip" > /tmp/10kcommon.zip && unzip -q -o -d /usr/share/wordlists/ /tmp/10kcommon.zip 2>/dev/null) || (curl --progress -k -L -f "http://download.g0tmi1k.com/wordlists/common-10k_most_common.zip" > /tmp/10kcommon.zip && unzip -q -o -d /usr/share/wordlists/ /tmp/10kcommon.zip)   #***!!! hardcoded version! Need to manually check for updates
+(curl --progress -k -L "http://xato.net/files/10k most common.zip" > /tmp/10kcommon.zip && unzip -q -o -d /usr/share/wordlists/ /tmp/10kcommon.zip 2>/dev/null) || (curl --progress -k -L "http://download.g0tmi1k.com/wordlists/common-10k_most_common.zip" > /tmp/10kcommon.zip && unzip -q -o -d /usr/share/wordlists/ /tmp/10kcommon.zip)   #***!!! hardcoded version! Need to manually check for updates
 mv -f /usr/share/wordlists/10k{\ most\ ,_most_}common.txt
 #--- Linking to more - folders
 [ -e /usr/share/dirb/wordlists ] && ln -sf /usr/share/dirb/wordlists /usr/share/wordlists/dirb
@@ -2830,67 +2782,67 @@ rm -f /tmp/10kcommon.zip
 
 
 ##### Installing apt-file
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}apt-file${RESET} ~ which package includes a specific file"
+echo -e "\n $GREEN[+]$RESET Installing apt-file ~ which package includes a specific file"
 apt-get -y -qq install apt-file
 apt-file update
 
 
 ##### Installing apt-show-versions
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}apt-show-versions${RESET} ~ which package version in repo"
+echo -e "\n $GREEN[+]$RESET Installing apt-show-versions ~ which package version in repo"
 apt-get -y -qq install apt-show-versions
 
 
 ###### Installing Debian weak SSH keys
-#echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}Debian weak SSH keys${RESET} ~ OpenSSL predictable PRNG"
+#echo -e "\n $GREEN[+]$RESET Installing Debian weak SSH keys ~ OpenSSL predictable PRNG"
 #dpkg --remove --force-depends openssh-blacklist
 #grep -q '^PermitBlacklistedKeys yes' /etc/ssh/sshd_config || echo PermitBlacklistedKeys yes >> /etc/ssh/sshd_config
 #apt-get -y -qq install git
-#git clone git://github.com/g0tmi1k/debian-ssh.git /opt/exploit-debianssh-git/
+#git clone git://github.com/g0tmi1k/debian-ssh.git /usr/share/exploit-debianssh-git/
 #pushd /usr/share/exploit-debianssh/ >/dev/null
 #git pull
 #popd >/dev/null
 
 
 ###### Installing Exploit-DB binaries
-#echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}Installing Exploit-DB binaries${RESET} ~ pre-compiled exploits"
+#echo -e "\n $GREEN[+]$RESET Installing Installing Exploit-DB binaries ~ pre-compiled exploits"
 #apt-get -y -qq install git
-#git clone git://github.com/offensive-security/exploit-database-bin-sploits.git /opt/exploitdb-bin-git/
+#git clone git://github.com/offensive-security/exploit-database-bin-sploits.git /usr/share/exploitdb-bin-git/
 #pushd /usr/share/exploitdb-bin/ >/dev/null
 #git pull
 #popd >/dev/null
 
 
 ###### Installing Babel scripts
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}Babel scripts${RESET} ~ post exploitation scripts"
+echo -e "\n $GREEN[+]$RESET Installing Babel scripts ~ post exploitation scripts"
 apt-get -y -qq install git
-git clone git://github.com/attackdebris/babel-sf.git /opt/babel-sf-git/ || echo -e "${RED}issue with git clone${RESET}"
+git clone git://github.com/attackdebris/babel-sf.git /usr/share/babel-sf-git/
 pushd /usr/share/babel-sf-git/ >/dev/null
 git pull
 popd >/dev/null
 
 
 ###### Installing pwntools (https://bugs.kali.org/view.php?id=1236)
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}pwntools${RESET} ~ handy CTF tools"
+echo -e "\n $GREEN[+]$RESET Installing pwntools ~ handy CTF tools"
 apt-get -y -qq install git
-git clone git://github.com/Gallopsled/pwntools.git /opt/pwntools-git/ || echo -e "${RED}issue with git clone${RESET}"
+git clone git://github.com/Gallopsled/pwntools.git /usr/share/pwntools-git/
 pushd /usr/share/pwntools-git/ >/dev/null
 git pull
 popd >/dev/null
 
 
 ###### Installing nullsecurity tool suite
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}nullsecurity tool suite${RESET} ~ collection of tools"
+echo -e "\n $GREEN[+]$RESET Installing nullsecurity tool suite ~ collection of tools"
 apt-get -y -qq install git
-git clone git://github.com/nullsecuritynet/tools.git /opt/nullsecuritynet-git/ || echo -e "${RED}issue with git clone${RESET}"
+git clone git://github.com/nullsecuritynet/tools.git /usr/share/nullsecuritynet-git/
 pushd /usr/share/nullsecuritynet-git/ >/dev/null
 git pull
 popd >/dev/null
 
 
 ###### Installing gdb-peda (https://bugs.kali.org/view.php?id=2327)
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}gdb-peda${RESET} ~ GDB exploit development assistance"
+echo -e "\n $GREEN[+]$RESET Installing gdb-peda ~ GDB exploit development assistance"
 apt-get -y -qq install git gdb
-git clone git://github.com/longld/peda.git /opt/gdb-peda-git/ || echo -e "${RED}issue with git clone${RESET}"
+git clone git://github.com/longld/peda.git /usr/share/gdb-peda-git/
 pushd /usr/share/gdb-peda-git/ >/dev/null
 git pull
 popd >/dev/null
@@ -2898,9 +2850,9 @@ echo "source ~/peda/peda.py" >> ~/.gdbinit
 
 
 ###### Installing radare2 (https://bugs.kali.org/view.php?id=2169)
-#echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}radare2${RESET} ~ reverse engineering framework"
+#echo -e "\n $GREEN[+]$RESET Installing radare2 ~ reverse engineering framework"
 #apt-get -y -qq install git gdb
-#git clone git://github.com/radare/radare2.git /opt/radare2-git/
+#git clone git://github.com/radare/radare2.git /usr/share/radare2-git/
 #pushd /usr/share/radare2-git/ >/dev/null
 #git pull
 #bash sys/install.sh
@@ -2908,9 +2860,9 @@ echo "source ~/peda/peda.py" >> ~/.gdbinit
 
 
 ###### Installing ropeme (https://bugs.kali.org/view.php?id=2328)
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}ropeme${RESET} ~ generate ROP gadgets and payload"
+echo -e "\n $GREEN[+]$RESET Installing ropeme ~ generate ROP gadgets and payload"
 apt-get -y -qq install git python-distorm3 libdistorm64-1 libdistorm64-dev binutils
-git clone git://github.com/packz/ropeme.git /opt/ropeme-git/ || echo -e "${RED}issue with git clone${RESET}"
+git clone git://github.com/packz/ropeme.git /usr/share/ropeme-git/
 pushd /usr/share/ropeme-git/ >/dev/null
 git reset --hard HEAD
 git pull
@@ -2918,18 +2870,18 @@ sed -i 's/distorm/distorm3/g' ropeme/gadgets.py
 popd >/dev/null
 #--- Add to path
 file=/usr/local/bin/ropeme-git
-cat <<EOF > "${file}"
+cat <<EOF > "$file"
 #!/bin/bash
 
-cd /opt/ropeme-git/ && python ropeme/ropshell.py "\$@"
+cd /usr/share/ropeme-git/ && python ropeme/ropshell.py "\$@"
 EOF
-chmod +x "${file}"
+chmod +x "$file"
 
 
 ###### Installing ropper (https://bugs.kali.org/view.php?id=2329)
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}ropper${RESET} ~ generate ROP gadgets and payload"
+echo -e "\n $GREEN[+]$RESET Installing ropper ~ generate ROP gadgets and payload"
 apt-get -y -qq install git python-capstone
-git clone git://github.com/sashs/Ropper.git /opt/ropper-git/ || echo -e "${RED}issue with git clone${RESET}"
+git clone git://github.com/sashs/Ropper.git /usr/share/ropper-git/
 pushd /usr/share/ropper-git/ >/dev/null
 git pull
 python setup.py install
@@ -2937,59 +2889,59 @@ popd >/dev/null
 
 
 ###### Installing dissy
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}dissy${RESET} ~ GUI objdump"
+echo -e "\n $GREEN[+]$RESET Installing dissy ~ GUI objdump"
 apt-get -y -qq install dissy binutils
 
 
 ###### Installing shellnoob
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}shellnoob${RESET} ~ shellcode writing toolkit"
+echo -e "\n $GREEN[+]$RESET Installing shellnoob ~ shellcode writing toolkit"
 apt-get -y -qq install shellnoob
 
 
 ##### Installing checksec
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}checksec${RESET} ~ check *nix OS for security features"
+echo -e "\n $GREEN[+]$RESET Installing checksec ~ check *nix OS for security features"
 apt-get -y -qq install curl
 mkdir -p /usr/share/checksec/
 file=/usr/share/checksec/checksec.sh
-curl --progress -k -L -f "http://www.trapkit.de/tools/checksec.sh" > "${file}"     #***!!! hardcoded patch
-chmod +x "${file}"
+curl --progress -k -L "http://www.trapkit.de/tools/checksec.sh" > "$file"     #***!!! hardcoded patch
+chmod +x "$file"
 
 
 ##### Installing shellconv
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}shellconv${RESET} ~ shellcode disassembler"
+echo -e "\n $GREEN[+]$RESET Installing shellconv ~ shellcode disassembler"
 apt-get -y -qq install git
-git clone git://github.com/hasherezade/shellconv.git /opt/shellconv-git/ || echo -e "${RED}issue with git clone${RESET}"
+git clone git://github.com/hasherezade/shellconv.git /usr/share/shellconv-git/
 pushd /usr/share/shellconv-git/ >/dev/null
 git pull
 popd >/dev/null
 #--- Add to path
 file=/usr/local/bin/shellconv-git
-cat <<EOF > "${file}"
+cat <<EOF > "$file"
 #!/bin/bash
 
-cd /opt/shellconv-git/ && python shellconv.py "\$@"
+cd /usr/share/shellconv-git/ && python shellconv.py "\$@"
 EOF
-chmod +x "${file}"
+chmod +x "$file"
 
 
 ##### Installing bless
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}bless${RESET} ~ GUI hex editor"
+echo -e "\n $GREEN[+]$RESET Installing bless ~ GUI hex editor"
 apt-get -y -qq install bless
 
 
 ##### Installing dhex
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}dhex${RESET} ~ CLI hex compare"
+echo -e "\n $GREEN[+]$RESET Installing dhex ~ CLI hex compare"
 apt-get -y -qq install dhex
 
 
 ##### Installing firmware-mod-kit
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}firmware-mod-kit${RESET} ~ customize firmware"
+echo -e "\n $GREEN[+]$RESET Installing firmware-mod-kit ~ customize firmware"
 apt-get -y -qq install firmware-mod-kit
 
 
 if [[ "$(uname -m)" == "x86_64" ]]; then
   ##### Installing lnav
-  echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}lnav (x64)${RESET} ~ CLI log veiwer"
+  echo -e "\n $GREEN[+]$RESET Installing lnav (x64) ~ CLI log veiwer"
 # apt-get -y -qq install git ncurses-dev libsqlite3-dev libgpm-dev
 # git clone git://github.com/tstack/lnav.git /usr/local/src/tstack-git/
 # pushd /usr/local/src/tstack >/dev/null
@@ -2998,7 +2950,7 @@ if [[ "$(uname -m)" == "x86_64" ]]; then
 # make
 # make install
 # popd >/dev/null
-  curl --progress -k -L -f "https://github.com/tstack/lnav/releases/download/v0.7.3/lnav-0.7.3-linux-64bit.zip" > /tmp/lnav.zip   #***!!! hardcoded version! Need to manually check for updates
+  curl --progress -k -L "https://github.com/tstack/lnav/releases/download/v0.7.3/lnav-0.7.3-linux-64bit.zip" > /tmp/lnav.zip   #***!!! hardcoded version! Need to manually check for updates
   unzip -q -o -d /tmp/ /tmp/lnav.zip
   #--- Add to path
   mv -f /tmp/lnav-*/lnav /usr/bin/
@@ -3006,87 +2958,87 @@ fi
 
 
 ##### Installing sqlmap (GIT)
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}sqlmap${RESET} (GIT) ~ automatic SQL injection"
+echo -e "\n $GREEN[+]$RESET Installing sqlmap (GIT) ~ automatic SQL injection"
 apt-get -y -qq install git
-git clone git://github.com/sqlmapproject/sqlmap.git /opt/sqlmap-git/ || echo -e "${RED}issue with git clone${RESET}"
+git clone git://github.com/sqlmapproject/sqlmap.git /usr/share/sqlmap-git/
 pushd /usr/share/sqlmap-git/ >/dev/null
 git pull
 popd >/dev/null
 #--- Add to path
 file=/usr/local/bin/sqlmap-git
-cat <<EOF > "${file}"
+cat <<EOF > "$file"
 #!/bin/bash
 
-cd /opt/sqlmap-git/ && python sqlmap.py "\$@"
+cd /usr/share/sqlmap-git/ && python sqlmap.py "\$@"
 EOF
-chmod +x "${file}"
+chmod +x "$file"
 
 
 ##### Installing commix (https://bugs.kali.org/view.php?id=2201)
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}commix${RESET} ~ automatic command injection"
+echo -e "\n $GREEN[+]$RESET Installing commix ~ automatic command injection"
 apt-get -y -qq install git
-git clone git://github.com/stasinopoulos/commix.git /opt/commix-git/ || echo -e "${RED}issue with git clone${RESET}"
+git clone git://github.com/stasinopoulos/commix.git /usr/share/commix-git/
 pushd /usr/share/commix-git/ >/dev/null
 git pull
 popd >/dev/null
 #--- Add to path
 file=/usr/local/bin/commix-git
-cat <<EOF > "${file}"
+cat <<EOF > "$file"
 #!/bin/bash
 
-cd /opt/commix-git/ && python commix.py "\$@"
+cd /usr/share/commix-git/ && python commix.py "\$@"
 EOF
-chmod +x "${file}"
+chmod +x "$file"
 
 
 ##### Installing fimap
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}fimap${RESET} ~ automatic LFI/RFI tool"
+echo -e "\n $GREEN[+]$RESET Installing fimap ~ automatic LFI/RFI tool"
 apt-get -y -qq install fimap
 
 
 ##### Installing smbmap
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}smbmap${RESET} ~ SMB enumeration tool"
+echo -e "\n $GREEN[+]$RESET Installing smbmap ~ SMB enumeration tool"
 apt-get -y -qq install smbmap
 
 
 ##### Installing wig (https://bugs.kali.org/view.php?id=1932)
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}wig${RESET} ~ web application detection"
+echo -e "\n $GREEN[+]$RESET Installing wig ~ web application detection"
 apt-get -y -qq install git
-git clone git://github.com/jekyc/wig.git /opt/wig-git/ || echo -e "${RED}issue with git clone${RESET}"
+git clone git://github.com/jekyc/wig.git /usr/share/wig-git/
 pushd /usr/share/wig-git/ >/dev/null
 git pull
 popd >/dev/null
 #--- Add to path
 file=/usr/local/bin/wig-git
-cat <<EOF > "${file}"
+cat <<EOF > "$file"
 #!/bin/bash
 
-cd /opt/wig-git/ && python wig.py "\$@"
+cd /usr/share/wig-git/ && python wig.py "\$@"
 EOF
-chmod +x "${file}"
+chmod +x "$file"
 
 
 ##### Installing CMSmap
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}CMSmap${RESET} ~ CMS detection"
+echo -e "\n $GREEN[+]$RESET Installing CMSmap ~ CMS detection"
 apt-get -y -qq install git
-git clone git://github.com/Dionach/CMSmap.git /opt/cmsmap-git/ || echo -e "${RED}issue with git clone${RESET}"
+git clone git://github.com/Dionach/CMSmap.git /usr/share/cmsmap-git/
 pushd /usr/share/cmsmap-git/ >/dev/null
 git pull
 popd >/dev/null
 #--- Add to path
 file=/usr/local/bin/cmsmap-git
-cat <<EOF > "${file}"
+cat <<EOF > "$file"
 #!/bin/bash
 
-cd /opt/cmsmap-git/ && python cmsmap.py "\$@"
+cd /usr/share/cmsmap-git/ && python cmsmap.py "\$@"
 EOF
-chmod +x "${file}"
+chmod +x "$file"
 
 
 ###### Installing CMSScanner
-#echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}CMSScanner${RESET} ~ CMS detection"
+#echo -e "\n $GREEN[+]$RESET Installing CMSScanner ~ CMS detection"
 #apt-get -y -qq install git
-#git clone git://github.com/wpscanteam/CMSScanner.git /opt/cmsscanner-git/
+#git clone git://github.com/wpscanteam/CMSScanner.git /usr/share/cmsscanner-git/
 #pushd /usr/share/cmsscanner-git/ >/dev/null
 #git pull
 #bundle install
@@ -3094,130 +3046,102 @@ chmod +x "${file}"
 
 
 ##### Installing droopescan
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}droopescan${RESET} ~ Drupal vulnerability scanner"
+echo -e "\n $GREEN[+]$RESET Installing droopescan ~ Drupal vulnerability scanner"
 apt-get -y -qq install git
-git clone git://github.com/droope/droopescan.git /opt/droopescan-git/ || echo -e "${RED}issue with git clone${RESET}"
+git clone git://github.com/droope/droopescan.git /usr/share/droopescan-git/
 pushd /usr/share/droopescan-git/ >/dev/null
 git pull
 popd >/dev/null
 #--- Add to path
 file=/usr/local/bin/droopescan-git
-cat <<EOF > "${file}"
+cat <<EOF > "$file"
 #!/bin/bash
 
-cd /opt/droopescan-git/ && python droopescan "\$@"
+cd /usr/share/droopescan-git/ && python droopescan "\$@"
 EOF
-chmod +x "${file}"
+chmod +x "$file"
 
 
 ##### Installing wpscan (GIT)
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}wpscan${RESET} (GIT) ~ WordPress vulnerability scanner"
+echo -e "\n $GREEN[+]$RESET Installing wpscan (GIT) ~ WordPress vulnerability scanner"
 apt-get -y -qq install git
-git clone git://github.com/wpscanteam/wpscan.git /opt/wpscan-git/ || echo -e "${RED}issue with git clone${RESET}"
+git clone git://github.com/wpscanteam/wpscan.git /usr/share/wpscan-git/
 pushd /usr/share/wpscan-git/ >/dev/null
 git pull
 popd >/dev/null
 #--- Add to path
 file=/usr/local/bin/wpscan-git
-cat <<EOF > "${file}"
+cat <<EOF > "$file"
 #!/bin/bash
 
-cd /opt/wpscan-git/ && ruby wpscan.rb "\$@"
+cd /usr/share/wpscan-git/ && ruby wpscan.rb "\$@"
 EOF
-chmod +x "${file}"
+chmod +x "$file"
 
 
 ##### Installing BeEF XSS
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}BeEF XSS${RESET} ~ XSS framework"
+echo -e "\n $GREEN[+]$RESET Installing BeEF XSS ~ XSS framework"
 apt-get -y -qq install beef-xss
 #--- Configure beef
-file=/usr/share/beef-xss/config.yaml; [ -e "${file}" ] && cp -n $file{,.bkup}
+file=/usr/share/beef-xss/config.yaml; [ -e "$file" ] && cp -n $file{,.bkup}
 username="root"
 password="toor"
-sed -i 's/user:.*".*"/user:   "'${username}'"/' "${file}"
-sed -i 's/passwd:.*".*"/passwd:  "'${password}'"/'  "${file}"
-echo -e " $YELLOW[i]$RESET BeEF username: ${username}"
-echo -e " $YELLOW[i]$RESET BeEF password: ${password}   *** ${BOLD}CHANGE THIS ASAP${RESET}.   Edit: /usr/share/beef-xss/config.yaml"
+sed -i 's/user:.*".*"/user:   "'$username'"/' $file
+sed -i 's/passwd:.*".*"/passwd:  "'$password'"/'  $file
+echo -e " $YELLOW[i]$RESET BeEF username: $username"
+echo -e " $YELLOW[i]$RESET BeEF password: $password   *** CHANGE THIS ASAP.   Edit: /usr/share/beef-xss/config.yaml"
 #--- Example hook
 #<script src="http://192.168.155.175:3000/hook.js" type="text/javascript"></script>
 
 
 ##### Installing patator (GIT)
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}patator${RESET} (GIT) ~ brute force"
+echo -e "\n $GREEN[+]$RESET Installing patator (GIT)~ brute force"
 apt-get -y -qq install git
-git clone git://github.com/lanjelot/patator.git /opt/patator-git/ || echo -e "${RED}issue with git clone${RESET}"
+git clone git://github.com/lanjelot/patator.git /usr/share/patator-git/
 pushd /usr/share/patator-git/ >/dev/null
 git pull
 popd >/dev/null
 #--- Add to path
 file=/usr/local/bin/patator-git
-cat <<EOF > "${file}"
+cat <<EOF > "$file"
 #!/bin/bash
 
-cd /opt/patator-git/ && python patator.py "\$@"
+cd /usr/share/patator-git/ && python patator.py "\$@"
 EOF
-chmod +x "${file}"
+chmod +x "$file"
 
 
 ##### Installing crowbar
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}crowbar${RESET} ~ brute force"
+echo -e "\n $GREEN[+]$RESET Installing crowbar ~ brute force"
 apt-get -y -qq install git
-git clone git://github.com/galkan/crowbar.git /opt/crowbar-git/ || echo -e "${RED}issue with git clone${RESET}"
+git clone git://github.com/galkan/crowbar.git /usr/share/crowbar-git/
 pushd /usr/share/crowbar-git/ >/dev/null
 git pull
 popd >/dev/null
 #--- Add to path
 file=/usr/local/bin/crowbar-git
-cat <<EOF > "${file}"
+cat <<EOF > "$file"
 #!/bin/bash
 
-cd /opt/crowbar-git/ && python crowbar.py "\$@"
+cd /usr/share/crowbar-git/ && python crowbar.py "\$@"
 EOF
-chmod +x "${file}"
-
-
-##### Installing xprobe
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}xprobe{RESET} ~ os fingerprinting"
-apt-get install -y -qq xprobe
-
-
-##### Installing p0f
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}p0f${RESET} ~ os fingerprinting"
-apt-get install -y -qq p0f
-#p0f -i eth0 -p & curl 192.168.0.1
-
-
-##### Installing nbtscan ~ http://unixwiz.net/tools/nbtscan.html vs http://inetcat.org/software/nbtscan.html (see http://sectools.org/tool/nbtscan/)
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}nbtscan (unixwiz)${RESET} ~ netbios scanner"
-#--- inetcat - 1.5.x
-apt-get install -y -qq nbtscan
-#nbtscan -r 192.168.0.1/24
-#nbtscan -r 192.168.0.1/24 -v
-#--- unixwiz - 1.0.x
-mkdir -p /usr/local/src/nbtscan-unixwiz/
-curl --progress -k -L -f "http://unixwiz.net/tools/nbtscan-source-1.0.35.tgz" > /usr/local/src/nbtscan-unixwiz/nbtscan.tgz    #***!!! hardcoded version! Need to manually check for updates
-tar -zxf /usr/local/src/nbtscan-unixwiz/nbtscan.tgz -C /usr/local/src/nbtscan-unixwiz/
-pushd /usr/local/src/nbtscan-unixwiz/ >/dev/null
-make -s
-popd >/dev/null
-ln -sf /usr/local/src/nbtscan-unixwiz/nbtscan /usr/bin/nbtscan-uw
-#nbtscan-uw -f 192.168.0.1/24
+chmod +x "$file"
 
 
 ##### Setting up tftp client & server
-echo -e "\n ${GREEN}[+]${RESET} Setting up ${GREEN}tftp client & server${RESET} ~ file transfer methods"
-apt-get -y -qq install tftp || echo -e "${RED}issue with apt${RESET}"   # tftp client
-apt-get -y -qq install atftpd || echo -e "${RED}issue with apt${RESET}"   # tftp server
+echo -e "\n $GREEN[+]$RESET Setting up tftp client & server ~ file transfer methods"
+apt-get -y -qq install tftp      # tftp client
+apt-get -y -qq install atftpd    # tftp server
 #--- Configure atftpd
-file=/etc/default/atftpd; [ -e "${file}" ] && cp -n $file{,.bkup}
-echo -e 'USE_INETD=false\nOPTIONS="--tftpd-timeout 300 --retry-timeout 5 --maxthread 100 --verbose=5 --daemon --port 69 /var/tftp"' > "${file}"
+file=/etc/default/atftpd; [ -e "$file" ] && cp -n $file{,.bkup}
+echo -e 'USE_INETD=false\nOPTIONS="--tftpd-timeout 300 --retry-timeout 5 --maxthread 100 --verbose=5 --daemon --port 69 /var/tftp"' > "$file"
 mkdir -p /var/tftp/
 chown -R nobody\:root /var/tftp/
 chmod -R 0755 /var/tftp/
 #--- Setup alias
-file=/root/.bash_aliases; [ -e "${file}" ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
-([[ -e "${file}" && "$(tail -c 1 $file)" != "" ]]) && echo >> "${file}"
-grep -q '^## tftp' "${file}" 2>/dev/null || echo -e '## tftp\nalias tftproot="cd /var/tftp/"\n' >> "${file}"                                        # service atftpd start
+file=/root/.bash_aliases; [ -e "$file" ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
+([[ -e "$file" && "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
+grep -q '^## tftp' "$file" 2>/dev/null || echo -e '## tftp\nalias tftproot="cd /var/tftp/"\n' >> "$file"                                        # service atftpd start
 #--- Remove from start up
 update-rc.d -f atftpd remove
 #--- Disabling IPv6 can help
@@ -3226,7 +3150,7 @@ update-rc.d -f atftpd remove
 
 
 ##### Installing pure-ftpd
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}pure-ftpd${RESET} ~ FTP server/file transfer method"
+echo -e "\n $GREEN[+]$RESET Installing pure-ftpd ~ FTP server/file transfer method"
 apt-get -y -qq install pure-ftpd
 #--- Setup pure-ftpd
 mkdir -p /var/ftp/
@@ -3249,10 +3173,6 @@ echo "no" > /etc/pure-ftpd/conf/AnonymousCantUpload
 echo "30768 31768" > /etc/pure-ftpd/conf/PassivePortRange             #cat /proc/sys/net/ipv4/ip_local_port_range
 echo "/etc/pure-ftpd/welcome.msg" > /etc/pure-ftpd/conf/FortunesFile  #/etc/motd
 echo "FTP" > /etc/pure-ftpd/welcome.msg
-#--- 'Better' MOTD
-apt-get install -y -qq cowsay
-echo "Moo" | /usr/games/cowsay > /etc/pure-ftpd/welcome.msg
-#--- SSL
 #mkdir -p /etc/ssl/private/
 #openssl req -x509 -nodes -newkey rsa:4096 -keyout /etc/ssl/private/pure-ftpd.pem -out /etc/ssl/private/pure-ftpd.pem
 #chmod -f 0600 /etc/ssl/private/*.pem
@@ -3260,27 +3180,26 @@ ln -sf /etc/pure-ftpd/conf/PureDB /etc/pure-ftpd/auth/50pure
 #--- Apply settings
 #service pure-ftpd restart
 #--- Setup alias
-file=/root/.bash_aliases; [ -e "${file}" ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
-([[ -e "${file}" && "$(tail -c 1 $file)" != "" ]]) && echo >> "${file}"
-grep -q '^## ftp' "${file}" 2>/dev/null || echo -e '## ftp\nalias ftproot="cd /var/ftp/"\n' >> "${file}"                                            # service pure-ftpd start
+file=/root/.bash_aliases; [ -e "$file" ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
+([[ -e "$file" && "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
+grep -q '^## ftp' "$file" 2>/dev/null || echo -e '## ftp\nalias ftproot="cd /var/ftp/"\n' >> "$file"                                            # service pure-ftpd start
 #--- Remove from start up
 update-rc.d -f pure-ftpd remove
 
 
-##### Installing samba
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}samba${RESET} ~ file transfer method"
+##### Configuring samba
+echo -e "\n $GREEN[+]$RESET Configuring samba ~ file transfer method"
 #--- Installing samba
 apt-get -y -qq install samba
-apt-get -y -qq install cifs-utils
 #--- Create samba user
 groupdel smbgroup 2>/dev/null; groupadd smbgroup
 userdel samba 2>/dev/null; useradd -r -M -d /nonexistent -s /bin/false -c "Samba user" -g smbgroup samba
 #--- Use the samba user
-file=/etc/samba/smb.conf; [ -e "${file}" ] && cp -n $file{,.bkup}
-sed -i 's/guest account = .*/guest account = samba/' "${file}" 2>/dev/null
-grep -q 'guest account' "${file}" 2>/dev/null || sed -i 's#\[global\]#\[global\]\n   guest account = samba#' "${file}"
+file=/etc/samba/smb.conf; [ -e "$file" ] && cp -n $file{,.bkup}
+sed -i 's/guest account = .*/guest account = samba/' "$file" 2>/dev/null
+grep -q 'guest account' "$file" 2>/dev/null || sed -i 's#\[global\]#\[global\]\n   guest account = samba#' "$file"
 #--- Setup samba paths
-grep -q '^\[shared\]' "${file}" 2>/dev/null || cat <<EOF >> "${file}"
+grep -q '^\[shared\]' "$file" 2>/dev/null || cat <<EOF >> "$file"
 
 [shared]
   comment = Shared
@@ -3302,48 +3221,47 @@ touch /etc/printcap
 #--- Check result
 #service samba restart
 #smbclient -L \\127.0.0.1 -N
-#mount -t cifs -o guest //192.168.1.2/share /mnt/smb     mkdir -p /mnt/smb
 #--- Disable samba at startup
 service samba stop
 update-rc.d -f samba remove
 #--- Setup alias
-file=/root/.bash_aliases; [ -e "${file}" ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
-([[ -e "${file}" && "$(tail -c 1 $file)" != "" ]]) && echo >> "${file}"
-grep -q '^## smb' "${file}" 2>/dev/null || echo -e '## smb\nalias sambaroot="cd /var/samba/"\n#alias smbroot="cd /var/samba/"\n' >> "${file}"
+file=/root/.bash_aliases; [ -e "$file" ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
+([[ -e "$file" && "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
+grep -q '^## smb' "$file" 2>/dev/null || echo -e '## smb\nalias sambaroot="cd /var/samba/"\n#alias smbroot="cd /var/samba/"\n' >> "$file"
 
 
-##### Installing apache2
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}apache2${RESET} ~ web server"
+##### Configuring apache2
+echo -e "\n $GREEN[+]$RESET Configuring apache2 ~ web server"
 touch /var/www/favicon.ico
 #--- Setup alias
-file=/root/.bash_aliases; [ -e "${file}" ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
-([[ -e "${file}" && "$(tail -c 1 $file)" != "" ]]) && echo >> "${file}"
-grep -q '^## www' "${file}" 2>/dev/null || echo -e '## www\nalias wwwroot="cd /var/www/"\n' >> "${file}"                                            # service apache2 start
+file=/root/.bash_aliases; [ -e "$file" ] && cp -n $file{,.bkup}   #/etc/bash.bash_aliases
+([[ -e "$file" && "$(tail -c 1 $file)" != "" ]]) && echo >> "$file"
+grep -q '^## www' "$file" 2>/dev/null || echo -e '## www\nalias wwwroot="cd /var/www/"\n' >> "$file"                                            # service apache2 start
 
 
 ###### Installing rsh-client
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}rsh-client${RESET} ~ remote shell connections"
+echo -e "\n $GREEN[+]$RESET Installing rsh-client ~ remote shell connections"
 apt-get -y -qq install rsh-client
 
 
 ##### Installing sshpass
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}sshpass${RESET} ~ automating SSH connections"
+echo -e "\n $GREEN[+]$RESET Installing sshpass ~ automating SSH connections"
 apt-get -y -qq install sshpass
 
 
 ##### Installing DBeaver
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}DBeaver${RESET} ~ GUI DB manager"
+echo -e "\n $GREEN[+]$RESET Installing DBeaver ~ GUI DB manager"
 apt-get -y -qq install curl
 arch="i386"
 [[ "$(uname -m)" == "x86_64" ]] && arch="amd64"
-curl --progress -k -L -f "http://dbeaver.jkiss.org/files/dbeaver_3.4.1_$arch.deb" > /tmp/dbeaver.deb   #***!!! hardcoded version! Need to manually check for updates
+curl --progress -k -L "http://dbeaver.jkiss.org/files/dbeaver_3.4.1_$arch.deb" > /tmp/dbeaver.deb   #***!!! hardcoded version! Need to manually check for updates
 dpkg -i /tmp/dbeaver.deb
 #--- Add to path
 ln -sf /usr/share/dbeaver/dbeaver /usr/bin/dbeaver
 
 
 ##### Setting up a jail ~ http://allanfeid.com/content/creating-chroot-jail-ssh-access
-echo -e "\n ${GREEN}[+]${RESET} Setting up a ${GREEN}jail${RESET} ~ testing environment"
+echo -e "\n $GREEN[+]$RESET Setting up a jail ~ testing environment"
 apt-get -y -qq install debootstrap curl
 #mkdir -p /var/jail/
 #debootstrap wheezy /var/jail/
@@ -3357,16 +3275,16 @@ apt-get -y -qq install debootstrap curl
 #cp -f /etc/ld.so.cache /etc/ld.so.cache /etc/ld.so.conf /etc/nsswitch.conf /etc/hosts /var/jail/etc/
 #cp -f /bin/ls /bin/bash /var/jail/bin/
 ##ldd /bin/ls
-#curl --progress -k -L -f "http://www.cyberciti.biz/files/lighttpd/l2chroot.txt" > /usr/sbin/l2chroot        #***!!! hardcoded path!
+#curl --progress -k -L "http://www.cyberciti.biz/files/lighttpd/l2chroot.txt" > /usr/sbin/l2chroot        #***!!! hardcoded path!
 #sed -i 's#^BASE=".*"#BASE="/var/jail"#' /usr/sbin/l2chroot
 #chmod +x /usr/sbin/l2chroot
 
 
 ##### Configuring pythcon console - all users
-echo -e "\n ${GREEN}[+]${RESET} Configuring ${GREEN}pythcon console${RESET} ~ tab complete & history support"
+echo -e "\n $GREEN[+]$RESET Configuring pythcon console ~ tab complete & history support"
 export PYTHONSTARTUP=$HOME/.pythonstartup
-file=/etc/bash.bashrc; [ -e "${file}" ] && cp -n $file{,.bkup}    #/root/.bashrc
-grep -q PYTHONSTARTUP $file || echo 'export PYTHONSTARTUP=$HOME/.pythonstartup' >> "${file}"
+file=/etc/bash.bashrc; [ -e "$file" ] && cp -n $file{,.bkup}    #/root/.bashrc
+grep -q PYTHONSTARTUP $file || echo 'export PYTHONSTARTUP=$HOME/.pythonstartup' >> "$file"
 #--- Python start up file
 cat <<EOF > /root/.pythonstartup
 import readline
@@ -3389,31 +3307,31 @@ atexit.register(readline.write_history_file, histfile)
 ## Quit
 del os, histfile, readline, rlcompleter
 EOF
-if [[ "$SHELL" == "/bin/zsh" ]]; then source ~/.zshrc else source "${file}"; fi
+if [[ "$SHELL" == "/bin/zsh" ]]; then source ~/.zshrc else source "$file"; fi
 
 
 ###### Installing virtualenvwrapper
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}virtualenvwrapper${RESET} ~ virtual environment wrapper"
+echo -e "\n $GREEN[+]$RESET Installing virtualenvwrapper ~ virtual environment wrapper"
 apt-get -y -qq install virtualenvwrapper
 
 
 ###### Installing go
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}go${RESET} ~ programming language"
+echo -e "\n $GREEN[+]$RESET Installing go ~ programming language"
 apt-get -y -qq install golang
 
 
 ###### Installing giggle
-#echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}giggle${RESET} ~ GUI git client"
+#echo -e "\n $GREEN[+]$RESET Installing giggle ~ GUI git client"
 #apt-get -y -qq install giggle
 
 
 ###### Installing gitg
-echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}gitg${RESET} ~ GUI git client"
+echo -e "\n $GREEN[+]$RESET Installing gitg ~ GUI git client"
 apt-get -y -qq install gitg
 
 
 ##### Setting up SSH
-echo -e "\n ${GREEN}[+]${RESET} Setting up ${GREEN}SSH${RESET}"
+echo -e "\n $GREEN[+]$RESET Setting up SSH"
 apt-get -y -qq install openssh-server
 #--- Wipe current keys
 rm -f /etc/ssh/ssh_host_*
@@ -3428,23 +3346,22 @@ ssh-keygen -b 4096 -t rsa -f /root/.ssh/id_rsa -P ""
 #--- Change MOTD
 apt-get install -y -qq cowsay
 echo "Kali Linux" | /usr/games/cowsay > /etc/motd
-#--- Change SSH settings
-file=/etc/ssh/sshd_config; [ -e "${file}" ] && cp -n $file{,.bkup}
-sed -i 's/^PermitRootLogin .*/PermitRootLogin yes/g' "${file}"
-#sed -i 's/^Port .*/Port 2222/g' "${file}"
+#--- Change SSH port
+#file=/etc/ssh/sshd_config; [ -e "$file" ] && cp -n $file{,.bkup}
+#sed -i 's/^Port .*/Port 2222/g' "$file"
 #--- Enable ssh at startup
 #update-rc.d -f ssh enable
 
 
 ###### Setting up G/UFW
-#echo -e "\n ${GREEN}[+]${RESET} Installing ${GREEN}G/UFW${RESET} ~ firewall rule generator"
+#echo -e "\n $GREEN[+]$RESET Installing G/UFW ~ firewall rule generator"
 #apt-get -y -qq install ufw gufw
 
 
 ##### Cleaning the system
-echo -e "\n ${GREEN}[+]${RESET} ${GREEN}Cleaning${RESET} the system"
+echo -e "\n $GREEN[+]$RESET Cleaning the system"
 #--- Clean package manager
-for FILE in clean autoremove; do apt-get -y -qq "${FILE}"; done         # Clean up - clean remove autoremove autoclean
+for FILE in clean autoremove; do apt-get -y -qq "$FILE"; done         # Clean up - clean remove autoremove autoclean
 apt-get -y -qq purge $(dpkg -l | tail -n +6 | egrep -v '^(h|i)i' | awk '{print $2}')   # Purged packages
 #--- Update slocate database
 updatedb
@@ -3457,8 +3374,8 @@ for i in $(cut -d: -f6 /etc/passwd | sort -u); do
 done
 
 if [ "$freezeDEB" != "false" ]; then
-  ##### Don't ever update these packages (during this install!)
-  echo -e "\n ${GREEN}[+]${RESET} ${GREEN}Don't update${RESET} these packages:"
+  ##### Don't ever update these packages
+  echo -e "\n $GREEN[+]$RESET Don't ever update these packages:"
   for x in metasploit metasploit-framework metasploit-common; do
     echo -e " $YELLOW[i]$RESET   + $x"
     echo "$x install" | dpkg --set-selections
@@ -3468,31 +3385,23 @@ fi
 
 ##### Time taken
 finish_time=$(date +%s)
-echo -e "\n ${YELLOW}[i]${RESET} Time (roughly) taken: ${YELLOW}$(( $(( finish_time - start_time )) / 60 ))${RESET} minutes"
+echo -e "\n $YELLOW[i]$RESET Time (roughly) taken: $(( $(( finish_time - start_time )) / 60 )) minutes"
 
 
 #-Done-----------------------------------------------------------------#
 
 
 ##### Done!
-echo -e "\n ${YELLOW}[i]${RESET} Don't forget to:"
-echo -e " ${YELLOW}[i]${RESET}   + Check the above output (Did everything installed? No errors?)"
-#echo -e " ${YELLOW}[i]${RESET}   + Check that Iceweasel's extensions are enabled (as well as FoxyProxy profiles)"
-echo -e " ${YELLOW}[i]${RESET}   + Manually install: Nessus, Nexpose and/or Metasploit Community"
-echo -e " ${YELLOW}[i]${RESET}   + Agree/Accept to: Maltego, OWASP ZAP, w3af etc"
-echo -e " ${YELLOW}[i]${RESET}   + ${YELLOW}Change time zone & keyboard layout${RESET} (...if not ${YELLOW}${timezone} & ${keyboardlayout}${RESET})"
-echo -e " ${YELLOW}[i]${RESET}   + ${YELLOW}Change default passwords${RESET}: PostgreSQL/MSF, MySQL, OpenVAS, BeEF XSS etc"
-echo -e " ${YELLOW}[i]${RESET}   + ${YELLOW}Reboot${RESET}"
-(dmidecode | grep -iq virtual) && echo -e " ${YELLOW}[i]${RESET}   + Take a snapshot"
+echo -e "\n $YELLOW[i]$RESET Don't forget to:"
+echo -e " $YELLOW[i]$RESET   + Check the above output (Did everything installed? No errors?)"
+#echo -e " $YELLOW[i]$RESET   + Check that Iceweasel's extensions are enabled (as well as FoxyProxy profiles)"
+echo -e " $YELLOW[i]$RESET   + Manually install: Nessus, Nexpose and/or Metasploit Community"
+echo -e " $YELLOW[i]$RESET   + Agree/Accept to: Maltego, OWASP ZAP, w3af etc"
+echo -e " $YELLOW[i]$RESET   + Change time zone & keyboard layout (...if not $timezone & $keyboardlayout)"
+echo -e " $YELLOW[i]$RESET   + Change default passwords: PostgreSQL/MSF, MySQL, OpenVAS, BeEF XSS etc"
+echo -e " $YELLOW[i]$RESET   + Reboot"
+(dmidecode | grep -iq virtual) && echo -e " $YELLOW[i]$RESET   + Take a snapshot"
 
-echo -e '\n'${BLUE}'[*]'${RESET}' Done!\n\a'
+echo -e '\n'$BLUE'[*]'$RESET' Done!\n\a'
 #reboot
 exit 0
-
-
-
-
-
-
-
-alias wordlist="cd /usr/share/wordlist/"
