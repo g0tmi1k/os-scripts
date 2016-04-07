@@ -1,4 +1,4 @@
-# OS-Scripts #
+# OS-Scripts
 
 Personal collection of Operating System (OS) scripts _(and related things)_.
 
@@ -6,7 +6,7 @@ Personal collection of Operating System (OS) scripts _(and related things)_.
 
 ## Kali Rolling
 
-**NOT YET RELEASED**
+Kali Rolling (2016.1) _(Debian Rolling)_
 
 - - -
 
