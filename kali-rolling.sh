@@ -1,6 +1,6 @@
 #!/bin/bash
 #-Metadata----------------------------------------------------#
-#  Filename: kali-rolling.sh             (Update: 2016-04-07) #
+#  Filename: kali-rolling.sh             (Update: 2016-04-08) #
 #-Info--------------------------------------------------------#
 #  Personal post-install script for Kali Linux Rolling        #
 #-Author(s)---------------------------------------------------#
@@ -306,9 +306,13 @@ fi
 
 ##### Update location information - set either value to "" to skip.
 (( STAGE++ )); echo -e "\n\n ${GREEN}[+]${RESET} (${STAGE}/${TOTAL}) Updating ${GREEN}location information${RESET}"
-[ "${keyboardApple}" != "false" ]  && \
+#--- Configure keyboard layout (Apple)
+if [ "${keyboardApple}" != "false" ]; then
   ( (( STAGE++ )); echo -e "\n\n ${GREEN}[+]${RESET} (${STAGE}/${TOTAL}) Applying ${GREEN}Apple hardware${RESET} profile" )
-#--- Configure keyboard layout
+  file=/etc/default/keyboard; #[ -e "${file}" ] && cp -n $file{,.bkup}
+  sed -i 's/XKBVARIANT=".*"/XKBVARIANT="mac"/' "${file}"
+fi
+#--- Configure keyboard layout (location)
 if [[ -n "${keyboardLayout}" ]]; then
   (( STAGE++ )); echo -e "\n\n ${GREEN}[+]${RESET} (${STAGE}/${TOTAL}) Updating ${GREEN}location information${RESET} ~ keyboard layout (${BOLD}${keyboardLayout}${RESET})"
   geoip_keyboard=$(curl -s http://ifconfig.io/country_code | tr '[:upper:]' '[:lower:]')
@@ -316,8 +320,6 @@ if [[ -n "${keyboardLayout}" ]]; then
     && echo -e " ${YELLOW}[i]${RESET} Keyboard layout (${BOLD}${keyboardLayout}${RESET}) doesn't match what's been detected via GeoIP (${BOLD}${geoip_keyboard}${RESET})"
   file=/etc/default/keyboard; #[ -e "${file}" ] && cp -n $file{,.bkup}
   sed -i 's/XKBLAYOUT=".*"/XKBLAYOUT="'${keyboardLayout}'"/' "${file}"
-  [ "${keyboardApple}" != "false" ] \
-    && sed -i 's/XKBVARIANT=".*"/XKBVARIANT="mac"/' "${file}"
 else
   echo -e "\n\n ${YELLOW}[i]${RESET} ${YELLOW}Skipping keyboard layout${RESET} (missing: '$0 ${BOLD}--keyboard <value>${RESET}')..." 1>&2
 fi
@@ -360,7 +362,7 @@ if [[ "${_TMP}" -gt 1 ]]; then
   if [[ -z "${TMP}" ]]; then
     echo -e '\n '${RED}'[!]'${RESET}' You are '${RED}'not using the latest kernel'${RESET} 1>&2
     echo -e " ${YELLOW}[i]${RESET} You have it ${YELLOW}downloaded${RESET} & installed, just ${YELLOW}not USING IT${RESET}"
-    echo -e "\n ${YELLOW}[i]${RESET} You ${YELLOW}NEED to REBOOT${RESET}, before re-running this script"
+    #echo -e "\n ${YELLOW}[i]${RESET} You ${YELLOW}NEED to REBOOT${RESET}, before re-running this script"
     #exit 1
     sleep 30s
   else
@@ -612,8 +614,8 @@ xfconf-query -n -c xfce4-panel -p /plugins/plugin-15/show-frame -t bool -s false
 #--- actions
 xfconf-query -n -c xfce4-panel -p /plugins/plugin-16/appearance -t int -s 1
 xfconf-query -n -c xfce4-panel -p /plugins/plugin-16/items \
-  -t string -s "+logout-dialog" -t string -s "-switch-user" -t string -s "-separator" \
-  -t string -s "-logout" -t string -s "+lock-screen" -t string -s "+hibernate" -t string -s "+suspend" -t string -s "+restart" -t string -s "+shutdown" -a
+  -t string -s "+logout-dialog"  -t string -s "-switch-user"  -t string -s "-separator" \
+  -t string -s "-logout"  -t string -s "+lock-screen"  -t string -s "+hibernate"  -t string -s "+suspend"  -t string -s "+restart"  -t string -s "+shutdown"  -a
 #--- clock
 xfconf-query -n -c xfce4-panel -p /plugins/plugin-17/show-frame -t bool -s false
 xfconf-query -n -c xfce4-panel -p /plugins/plugin-17/mode -t int -s 2
@@ -757,6 +759,7 @@ wallpaper="\$(shuf -n1 -e \$(find /usr/share/wallpapers/ -maxdepth 1 -name 'kali
 /usr/bin/xfdesktop --reload 2>/dev/null &
 EOF
 chmod -f 0500 "${file}"
+#--- Run now
 bash "${file}"
 #--- Add to startup
 mkdir -p ~/.config/autostart/
@@ -1167,7 +1170,7 @@ bind r source-file /etc/tmux.conf
 
 EOF
 [ -e /bin/zsh ] \
-  && echo -e '## Use ZSH as default shell\nset-option -g default-shell /bin/zsh\n' >> "${file}"      # Need to have ZSH installed before running this command/line
+  && echo -e '## Use ZSH as default shell\nset-option -g default-shell /bin/zsh\n' >> "${file}"
 cat <<EOF >> "${file}"
 ## Show tmux messages for longer
 set -g display-time 3000
@@ -3533,7 +3536,7 @@ fi
 
 
 ##### Install ashttp
-(( STAGE++ )); echo -e "\n\n ${GREEN}[+]${RESET} (${STAGE}/${TOTAL}) Installing ${GREEN}ashttp${RESET} ~ Share your terminal via the web"
+(( STAGE++ )); echo -e "\n\n ${GREEN}[+]${RESET} (${STAGE}/${TOTAL}) Installing ${GREEN}ashttp${RESET} ~ terminal via the web"
 apt -y -qq install git \
   || echo -e ' '${RED}'[!] Issue with apt install'${RESET} 1>&2
 git clone -q -b master https://github.com/JulienPalard/ashttp.git /opt/ashttp-git/ \
@@ -3544,7 +3547,7 @@ popd >/dev/null
 
 
 ##### Install gotty
-(( STAGE++ )); echo -e "\n\n ${GREEN}[+]${RESET} (${STAGE}/${TOTAL}) Installing ${GREEN}gotty${RESET} ~ Share your terminal via the web"
+(( STAGE++ )); echo -e "\n\n ${GREEN}[+]${RESET} (${STAGE}/${TOTAL}) Installing ${GREEN}gotty${RESET} ~ terminal via the web"
 apt -y -qq install git \
   || echo -e ' '${RED}'[!] Issue with apt install'${RESET} 1>&2
 git clone -q -b master https://github.com/yudai/gotty.git /opt/gotty-git/ \
@@ -3631,7 +3634,7 @@ echo -e " ${YELLOW}[i]${RESET} + Setup git:   ${YELLOW}git config --global user.
 echo -e " ${YELLOW}[i]${RESET} + ${BOLD}Change default passwords${RESET}: PostgreSQL/MSF, MySQL, OpenVAS, BeEF XSS, etc"
 echo -e " ${YELLOW}[i]${RESET} + ${YELLOW}Reboot${RESET}"
 (dmidecode | grep -iq virtual) \
-  && echo -e " ${YELLOW}[i]${RESET} +  Take a snapshot   (Virtual machine detected)"
+  && echo -e " ${YELLOW}[i]${RESET} + Take a snapshot   (Virtual machine detected)"
 
 echo -e '\n'${BLUE}'[*]'${RESET}' '${BOLD}'Done!'${RESET}'\n\a'
 exit 0
