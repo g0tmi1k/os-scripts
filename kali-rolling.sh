@@ -459,7 +459,6 @@ apt -y -qq install xfce4 xfce4-mount-plugin xfce4-notifyd xfce4-places-plugin \
   || (apt -y -qq install xfce4-battery-plugin \
     || echo -e ' '${RED}'[!] Issue with apt install'${RESET} 1>&2)
 #--- Configuring XFCE
-mkdir -p ~/.config/xfce4/{desktop,menu,panel,xfconf,xfwm4}/
 mkdir -p ~/.config/xfce4/panel/launcher-{2,4,5,6,7,8,9}/
 mkdir -p ~/.config/xfce4/xfconf/xfce-perchannel-xml/
 cat <<EOF > ~/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortcuts.xml \
@@ -546,35 +545,35 @@ cat <<EOF > ~/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortcuts.
 </channel>
 EOF
 #--- Desktop files
-ln -sf /usr/share/applications/exo-terminal-emulator.desktop  ~/.config/xfce4/panel/launcher-2/exo-terminal-emulator.desktop
-ln -sf /usr/share/applications/kali-wireshark.desktop         ~/.config/xfce4/panel/launcher-4/kali-wireshark.desktop
-ln -sf /usr/share/applications/firefox-esr.desktop            ~/.config/xfce4/panel/launcher-5/firefox-esr.desktop
-ln -sf /usr/share/applications/kali-burpsuite.desktop         ~/.config/xfce4/panel/launcher-6/kali-burpsuite.desktop
-ln -sf /usr/share/applications/kali-msfconsole.desktop        ~/.config/xfce4/panel/launcher-7/kali-msfconsole.desktop
-ln -sf /usr/share/applications/org.gnome.gedit.desktop        ~/.config/xfce4/panel/launcher-8/textedit.desktop
-ln -sf /usr/share/applications/xfce4-appfinder.desktop        ~/.config/xfce4/panel/launcher-9/xfce4-appfinder.desktop
+ln -sf /usr/share/applications/exo-terminal-emulator.desktop ~/.config/xfce4/panel/launcher-2/exo-terminal-emulator.desktop
+ln -sf /usr/share/applications/kali-wireshark.desktop        ~/.config/xfce4/panel/launcher-4/kali-wireshark.desktop
+ln -sf /usr/share/applications/firefox-esr.desktop           ~/.config/xfce4/panel/launcher-5/firefox-esr.desktop
+ln -sf /usr/share/applications/kali-burpsuite.desktop        ~/.config/xfce4/panel/launcher-6/kali-burpsuite.desktop
+ln -sf /usr/share/applications/kali-msfconsole.desktop       ~/.config/xfce4/panel/launcher-7/kali-msfconsole.desktop
+ln -sf /usr/share/applications/org.gnome.gedit.desktop       ~/.config/xfce4/panel/launcher-8/textedit.desktop
+ln -sf /usr/share/applications/xfce4-appfinder.desktop       ~/.config/xfce4/panel/launcher-9/xfce4-appfinder.desktop
 #--- XFCE settings
 _TMP=""
 [ "${burpFree}" != "false" ] \
   && _TMP="-t int -s 6"
 xfconf-query -n -a -c xfce4-panel -p /panels -t int -s 0
 xfconf-query --create --channel xfce4-panel --property /panels/panel-0/plugin-ids \
-  -t int -s 1   -t int -s 2   -t int -s 3   -t int -s 4   -t int -s 5  "${_TMP}"      -t int -s 7   -t int -s 8  -t int -s 9 \
+  -t int -s 1   -t int -s 2   -t int -s 3   -t int -s 4   -t int -s 5  ${_TMP}        -t int -s 7   -t int -s 8  -t int -s 9 \
   -t int -s 10  -t int -s 11  -t int -s 13  -t int -s 15  -t int -s 16  -t int -s 17  -t int -s 19  -t int -s 20
 xfconf-query -n -c xfce4-panel -p /panels/panel-0/length -t int -s 100
 xfconf-query -n -c xfce4-panel -p /panels/panel-0/size -t int -s 30
 xfconf-query -n -c xfce4-panel -p /panels/panel-0/position -t string -s "p=6;x=0;y=0"
 xfconf-query -n -c xfce4-panel -p /panels/panel-0/position-locked -t bool -s true
-xfconf-query -n -c xfce4-panel -p /plugins/plugin-1 -t string -s applicationsmenu                           # application menu
-xfconf-query -n -c xfce4-panel -p /plugins/plugin-2 -t string -s launcher                                   # terminal   ID: exo-terminal-emulator
-xfconf-query -n -c xfce4-panel -p /plugins/plugin-3 -t string -s places                                     # places
-xfconf-query -n -c xfce4-panel -p /plugins/plugin-4 -t string -s launcher                                   # wireshark  ID: kali-wireshark
-xfconf-query -n -c xfce4-panel -p /plugins/plugin-5 -t string -s launcher                                   # firefox    ID: firefox-esr
+xfconf-query -n -c xfce4-panel -p /plugins/plugin-1 -t string -s applicationsmenu     # application menu
+xfconf-query -n -c xfce4-panel -p /plugins/plugin-2 -t string -s launcher             # terminal   ID: exo-terminal-emulator
+xfconf-query -n -c xfce4-panel -p /plugins/plugin-3 -t string -s places               # places
+xfconf-query -n -c xfce4-panel -p /plugins/plugin-4 -t string -s launcher             # wireshark  ID: kali-wireshark
+xfconf-query -n -c xfce4-panel -p /plugins/plugin-5 -t string -s launcher             # firefox    ID: firefox-esr
 [ "${burpFree}" != "false" ] \
-  && xfconf-query -n -c xfce4-panel -p /plugins/plugin-6 -t string -s launcher                              # burpsuite  ID: kali-burpsuite
-xfconf-query -n -c xfce4-panel -p /plugins/plugin-7 -t string -s launcher                                   # msf        ID: kali-msfconsole
-xfconf-query -n -c xfce4-panel -p /plugins/plugin-8 -t string -s launcher                                   # gedit      ID: org.gnome.gedit.desktop
-xfconf-query -n -c xfce4-panel -p /plugins/plugin-9 -t string -s launcher                                   # search     ID: xfce4-appfinder
+  && xfconf-query -n -c xfce4-panel -p /plugins/plugin-6 -t string -s launcher        # burpsuite  ID: kali-burpsuite
+xfconf-query -n -c xfce4-panel -p /plugins/plugin-7 -t string -s launcher             # msf        ID: kali-msfconsole
+xfconf-query -n -c xfce4-panel -p /plugins/plugin-8 -t string -s launcher             # gedit      ID: org.gnome.gedit.desktop
+xfconf-query -n -c xfce4-panel -p /plugins/plugin-9 -t string -s launcher             # search     ID: xfce4-appfinder
 xfconf-query -n -c xfce4-panel -p /plugins/plugin-10 -t string -s tasklist
 xfconf-query -n -c xfce4-panel -p /plugins/plugin-11 -t string -s separator
 xfconf-query -n -c xfce4-panel -p /plugins/plugin-13 -t string -s mixer   # audio
@@ -599,7 +598,7 @@ xfconf-query -n -c xfce4-panel -p /plugins/plugin-5/items -t string -s "firefox-
   && xfconf-query -n -c xfce4-panel -p /plugins/plugin-6/items -t string -s "kali-burpsuite.desktop" -a
 #--- metasploit
 xfconf-query -n -c xfce4-panel -p /plugins/plugin-7/items -t string -s "kali-msfconsole.desktop" -a
-#--- gedit
+#--- gedit/atom
 xfconf-query -n -c xfce4-panel -p /plugins/plugin-8/items -t string -s "textedit.desktop" -a
 #--- search
 xfconf-query -n -c xfce4-panel -p /plugins/plugin-9/items -t string -s "xfce4-appfinder.desktop" -a
@@ -651,7 +650,7 @@ xfconf-query -n -c xfce4-appfinder -p /last/window-width -t int -s 648
 #--- Enable compositing
 xfconf-query -n -c xfwm4 -p /general/use_compositing -t bool -s true
 xfconf-query -n -c xfwm4 -p /general/frame_opacity -t int -s 85
-#--- Remove Mail Reader from menu
+#--- Remove "Mail Reader" from menu
 file=/usr/share/applications/exo-mail-reader.desktop   #; [ -e "${file}" ] && cp -n $file{,.bkup}
 sed -i 's/^NotShowIn=*/NotShowIn=XFCE;/; s/^OnlyShowIn=XFCE;/OnlyShowIn=/' "${file}"
 grep -q "NotShowIn=XFCE" "${file}" \
@@ -688,12 +687,6 @@ find ~/ -maxdepth 1 -mindepth 1 -type d \
 apt -y -qq install xdg-user-dirs \
   || echo -e ' '${RED}'[!] Issue with apt install'${RESET} 1>&2
 xdg-user-dirs-update
-#--- Configure file browser - Thunar (need to re-login for effect)
-mkdir -p ~/.config/Thunar/
-file=~/.config/Thunar/thunarrc; [ -e "${file}" ] && cp -n $file{,.bkup}
-([[ -e "${file}" && "$(tail -c 1 ${file})" != "" ]]) && echo >> "${file}"
-sed -i 's/LastShowHidden=.*/LastShowHidden=TRUE/' "${file}" 2>/dev/null \
-  || echo -e "[Configuration]\nLastShowHidden=TRUE" > "${file}"
 #--- Remove any old sessions
 rm -f ~/.cache/sessions/*
 #--- Set XFCE as default desktop manager
@@ -825,6 +818,12 @@ grep -q '^file:///var/tftp ' "${file}" 2>/dev/null \
   || echo 'file:///var/tftp TFTP' >> "${file}"
 grep -q '^file:///var/www/html ' "${file}" 2>/dev/null \
   || echo 'file:///var/www/html WWW' >> "${file}"
+#--- Configure file browser - Thunar (need to re-login for effect)
+mkdir -p ~/.config/Thunar/
+file=~/.config/Thunar/thunarrc; [ -e "${file}" ] && cp -n $file{,.bkup}
+([[ -e "${file}" && "$(tail -c 1 ${file})" != "" ]]) && echo >> "${file}"
+sed -i 's/LastShowHidden=.*/LastShowHidden=TRUE/' "${file}" 2>/dev/null \
+  || echo -e "[Configuration]\nLastShowHidden=TRUE" > "${file}"
 
 
 ##### Configure GNOME terminal   Note: need to restart xserver for effect
@@ -973,6 +972,7 @@ grep -q '^## Directory navigation aliases' "${file}" 2>/dev/null \
 grep -q '^## Extract file' "${file}" 2>/dev/null \
   || cat <<EOF >> "${file}" \
     || echo -e ' '${RED}'[!] Issue with writing file'${RESET} 1>&2
+
 ## Extract file, example. "ex package.tar.bz2"
 ex() {
   if [[ -f \$1 ]]; then
@@ -1029,13 +1029,13 @@ grep -q '^## rdesktop' "${file}" 2>/dev/null \
   || echo -e '## rdesktop\nalias rdesktop="rdesktop -z -P -g 100% -r disk:local=\"/tmp/\""\n' >> "${file}"
 #--- Add in folders
 grep -q '^## www' "${file}" 2>/dev/null \
-  || echo -e '## www\nalias wwwroot="cd /var/www/html/"\n#alias www="cd /var/www/html/"\n' >> "${file}"       # systemctl start apache2
+  || echo -e '## www\nalias wwwroot="cd /var/www/html/"\n#alias www="cd /var/www/html/"\n' >> "${file}"
 grep -q '^## ftp' "${file}" 2>/dev/null \
-  || echo -e '## ftp\nalias ftproot="cd /var/ftp/"\n' >> "${file}"                                            # systemctl start pure-ftpd
+  || echo -e '## ftp\nalias ftproot="cd /var/ftp/"\n' >> "${file}"
 grep -q '^## tftp' "${file}" 2>/dev/null \
-  || echo -e '## tftp\nalias tftproot="cd /var/tftp/"\n' >> "${file}"                                         # systemctl start atftpd
+  || echo -e '## tftp\nalias tftproot="cd /var/tftp/"\n' >> "${file}"
 grep -q '^## smb' "${file}" 2>/dev/null \
-  || echo -e '## smb\nalias smb="cd /var/samba/"\n#alias smbroot="cd /var/samba/"\n' >> "${file}"             # systemctl start samba
+  || echo -e '## smb\nalias smb="cd /var/samba/"\n#alias smbroot="cd /var/samba/"\n' >> "${file}"
 (dmidecode | grep -iq vmware) \
   && (grep -q '^## vmware' "${file}" 2>/dev/null \
     || echo -e '## vmware\nalias vmroot="cd /mnt/hgfs/"\n' >> "${file}")
