@@ -155,7 +155,7 @@ export TERM=xterm
 if [[ $(which gnome-shell) ]]; then
   ##### RAM check
   if [[ "$(free -m | grep -i Mem | awk '{print $2}')" < 2048 ]]; then
-    echo -e '\n '${RED}'[!]'${RESET}" ${RED}You have less than 2GB of RAM and using GNOME${RESET}(?)" 1>&2
+    echo -e '\n '${RED}'[!]'${RESET}" ${RED}You have 2GB or less of RAM and using GNOME${RESET}" 1>&2
     echo -e " ${YELLOW}[i]${RESET} ${YELLOW}Might want to use XFCE instead${RESET}..."
     sleep 15s
   fi
@@ -193,6 +193,8 @@ if [[ "$?" -ne 0 ]]; then
     && route delete default gw 192.168.155.1 2>/dev/null
   #--- Request a new IP
   dhclient
+  dhclient eth0 2>/dev/null
+  dhclient wlan0 2>/dev/null
   #--- Wait and see what happens
   sleep 15s
   _TMP="true"
@@ -1583,7 +1585,7 @@ conky.text = [[
 \${downspeedgraph eth0 25,120 000000 00ff00} \${alignr}\${upspeedgraph eth0 25,120 000000 ff0000}\$color
 
 EOF
-ip addr show eth1 &>/devnull \
+ip addr show eth1 &>/dev/null \
   && cat <<EOF >> "${file}"
 \${color dodgerblue3}LAN eth1 (\${addr eth1}) \${hr 2}\$color
 \${color white}Down\$color:  \${downspeed eth1} KB/s\${alignr}\${color white}Up\$color: \${upspeed eth1} KB/s
@@ -1651,7 +1653,7 @@ fi
 (( STAGE++ )); echo -e "\n\n ${GREEN}[+]${RESET} (${STAGE}/${TOTAL}) Installing ${GREEN}metasploit${RESET} ~ exploit framework"
 apt -y -qq install metasploit-framework \
   || echo -e ' '${RED}'[!] Issue with apt install'${RESET} 1>&2
-mkdir -p ~/.msf5/modules/{auxiliary,exploits,payloads,post}/
+mkdir -p ~/.msf4/modules/{auxiliary,exploits,payloads,post}/
 #--- ASCII art
 #export GOCOW=1   # Always a cow logo ;)   Others: THISISHALLOWEEN (Halloween), APRILFOOLSPONIES (My Little Pony)
 #file=~/.bashrc; [ -e "${file}" ] && cp -n $file{,.bkup}
@@ -1669,8 +1671,7 @@ systemctl start postgresql
 msfdb reinit
 sleep 5s
 #--- Autorun Metasploit commands each startup
-mkdir -p ~/.msf5/modules/
-file=~/.msf5/msf_autorunscript.rc; [ -e "${file}" ] && cp -n $file{,.bkup}
+file=~/.msf4/msf_autorunscript.rc; [ -e "${file}" ] && cp -n $file{,.bkup}
 if [[ -f "${file}" ]]; then
   echo -e ' '${RED}'[!]'${RESET}" ${file} detected. Skipping..." 1>&2
 else
@@ -1684,7 +1685,7 @@ else
 #run post/windows/gather/smart_hashdump
 EOF
 fi
-file=~/.msf5/msfconsole.rc; [ -e "${file}" ] && cp -n $file{,.bkup}
+file=~/.msf4/msfconsole.rc; [ -e "${file}" ] && cp -n $file{,.bkup}
 if [[ -f "${file}" ]]; then
   echo -e ' '${RED}'[!]'${RESET}" ${file} detected. Skipping..." 1>&2
 else
@@ -1692,13 +1693,13 @@ else
 load auto_add_route
 
 load alias
-alias dir ls
 alias del rm
 alias handler use exploit/multi/handler
 
+load sounds
+
 setg TimestampOutput true
 setg VERBOSE true
-load sounds
 
 setg ExitOnSession false
 setg EnableStageEncoding true
@@ -1706,7 +1707,7 @@ setg LHOST 0.0.0.0
 setg LPORT 443
 EOF
 #use exploit/multi/handler
-#setg AutoRunScript 'multi_console_command -rc "~/.msf5/msf_autorunscript.rc"'
+#setg AutoRunScript 'multi_console_command -rc "~/.msf4/msf_autorunscript.rc"'
 #set PAYLOAD windows/meterpreter/reverse_https
 fi
 #--- Aliases time
@@ -1719,38 +1720,38 @@ grep -q '^alias msfconsole=' "${file}" 2>/dev/null \
   || echo -e 'alias msfconsole="systemctl start postgresql; msfdb start; msfconsole \"\$@\""\n' >> "${file}"
 #--- Aliases to speed up msfvenom (create static output)
 grep -q "^alias msfvenom-list-all" "${file}" 2>/dev/null \
-  || echo "alias msfvenom-list-all='cat ~/.msf5/msfvenom/all'" >> "${file}"
+  || echo "alias msfvenom-list-all='cat ~/.msf4/msfvenom/all'" >> "${file}"
 grep -q "^alias msfvenom-list-nops" "${file}" 2>/dev/null \
-  || echo "alias msfvenom-list-nops='cat ~/.msf5/msfvenom/nops'" >> "${file}"
+  || echo "alias msfvenom-list-nops='cat ~/.msf4/msfvenom/nops'" >> "${file}"
 grep -q "^alias msfvenom-list-payloads" "${file}" 2>/dev/null \
-  || echo "alias msfvenom-list-payloads='cat ~/.msf5/msfvenom/payloads'" >> "${file}"
+  || echo "alias msfvenom-list-payloads='cat ~/.msf4/msfvenom/payloads'" >> "${file}"
 grep -q "^alias msfvenom-list-encoders" "${file}" 2>/dev/null \
-  || echo "alias msfvenom-list-encoders='cat ~/.msf5/msfvenom/encoders'" >> "${file}"
+  || echo "alias msfvenom-list-encoders='cat ~/.msf4/msfvenom/encoders'" >> "${file}"
 grep -q "^alias msfvenom-list-formats" "${file}" 2>/dev/null \
-  || echo "alias msfvenom-list-formats='cat ~/.msf5/msfvenom/formats'" >> "${file}"
+  || echo "alias msfvenom-list-formats='cat ~/.msf4/msfvenom/formats'" >> "${file}"
 grep -q "^alias msfvenom-list-generate" "${file}" 2>/dev/null \
   || echo "alias msfvenom-list-generate='_msfvenom-list-generate'" >> "${file}"
 grep -q "^function _msfvenom-list-generate" "${file}" 2>/dev/null \
   || cat <<EOF >> "${file}" \
     || echo -e ' '${RED}'[!] Issue with writing file'${RESET} 1>&2
 function _msfvenom-list-generate {
-  mkdir -p ~/.msf5/msfvenom/
-  msfvenom --list > ~/.msf5/msfvenom/all
-  msfvenom --list nops > ~/.msf5/msfvenom/nops
-  msfvenom --list payloads > ~/.msf5/msfvenom/payloads
-  msfvenom --list encoders > ~/.msf5/msfvenom/encoders
-  msfvenom --help-formats 2> ~/.msf5/msfvenom/formats
+  mkdir -p ~/.msf4/msfvenom/
+  msfvenom --list > ~/.msf4/msfvenom/all
+  msfvenom --list nops > ~/.msf4/msfvenom/nops
+  msfvenom --list payloads > ~/.msf4/msfvenom/payloads
+  msfvenom --list encoders > ~/.msf4/msfvenom/encoders
+  msfvenom --help-formats 2> ~/.msf4/msfvenom/formats
 }
 EOF
 #--- Apply new aliases
 source "${file}" || source ~/.zshrc
 #--- Generate (Can't call alias)
-mkdir -p ~/.msf5/msfvenom/
-msfvenom --list > ~/.msf5/msfvenom/all
-msfvenom --list nops > ~/.msf5/msfvenom/nops
-msfvenom --list payloads > ~/.msf5/msfvenom/payloads
-msfvenom --list encoders > ~/.msf5/msfvenom/encoders
-msfvenom --help-formats 2> ~/.msf5/msfvenom/formats
+mkdir -p ~/.msf4/msfvenom/
+msfvenom --list > ~/.msf4/msfvenom/all
+msfvenom --list nops > ~/.msf4/msfvenom/nops
+msfvenom --list payloads > ~/.msf4/msfvenom/payloads
+msfvenom --list encoders > ~/.msf4/msfvenom/encoders
+msfvenom --help-formats 2> ~/.msf4/msfvenom/formats
 #--- First time run with Metasploit
 (( STAGE++ )); echo -e " ${GREEN}[+]${RESET} (${STAGE}/${TOTAL}) ${GREEN}Starting Metasploit for the first time${RESET} ~ this ${BOLD}will take a ~350 seconds${RESET} (~6 mintues)"
 echo "Started at: $(date)"
