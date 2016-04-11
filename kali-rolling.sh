@@ -1,6 +1,6 @@
 #!/bin/bash
 #-Metadata----------------------------------------------------#
-#  Filename: kali-rolling.sh             (Update: 2016-04-08) #
+#  Filename: kali-rolling.sh             (Update: 2016-04-11) #
 #-Info--------------------------------------------------------#
 #  Personal post-install script for Kali Linux Rolling        #
 #-Author(s)---------------------------------------------------#
@@ -694,8 +694,7 @@ xdg-user-dirs-update
 #--- Remove any old sessions
 rm -f ~/.cache/sessions/*
 #--- Set XFCE as default desktop manager
-file=~/.xsession; [ -e "${file}" ] && cp -n $file{,.bkup}
-echo "xfce4-session" > "${file}"
+update-alternatives --set x-session-manager /usr/bin/xfce4-session   #update-alternatives --config x-window-manager   #echo "xfce4-session" > ~/.xsession
 
 
 ##### Cosmetics (themes & wallpapers)
@@ -1031,7 +1030,7 @@ grep -q '^## ssh' "${file}" 2>/dev/null \
 grep -q '^## samba' "${file}" 2>/dev/null \
   || echo -e '## samba\nalias smb-start="systemctl restart smbd nmbd"\nalias smb-stop="systemctl stop smbd nmbd"\n' >> "${file}"
 grep -q '^## rdesktop' "${file}" 2>/dev/null \
-  || echo -e '## rdesktop\nalias rdesktop="rdesktop -z -P -g 100% -r disk:local=\"/tmp/\""\n' >> "${file}"
+  || echo -e '## rdesktop\nalias rdesktop="rdesktop -z -P -g 90% -r disk:local=\"/tmp/\""\n' >> "${file}"
 #--- Add in folders
 grep -q '^## www' "${file}" 2>/dev/null \
   || echo -e '## www\nalias wwwroot="cd /var/www/html/"\n#alias www="cd /var/www/html/"\n' >> "${file}"
