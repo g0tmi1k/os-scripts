@@ -1138,7 +1138,7 @@ grep -q '/usr/bin/tmux' "${file}" 2>/dev/null \
 #--- Configure zsh (themes) ~ https://github.com/robbyrussell/oh-my-zsh/wiki/Themes
 sed -i 's/ZSH_THEME=.*/ZSH_THEME="mh"/' "${file}"   # Other themes: mh, jreese,   alanpeabody,   candy,   terminalparty, kardan,   nicoulaj, sunaku
 #--- Configure oh-my-zsh
-sed -i 's/plugins=(.*)/plugins=(git git-extras tmux last-working-dir dirhistory python pip)/' "${file}"
+sed -i 's/plugins=(.*)/plugins=(git git-extras tmux dirhistory python pip)/' "${file}"
 #--- Set zsh as default shell (current user)
 chsh -s "$(which zsh)"
 
