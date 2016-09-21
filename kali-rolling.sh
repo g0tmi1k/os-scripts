@@ -2319,7 +2319,7 @@ apt -y -qq install aircrack-ng curl \
 #--- Setup hardware database
 mkdir -p /etc/aircrack-ng/
 (timeout 600 airodump-ng-oui-update 2>/dev/null) \
-  || timeout 600 curl --progress -k -L -f "http://standards.ieee.org/develop/regauth/oui/oui.txt" > /etc/aircrack-ng/oui.txt
+  || timeout 600 curl --progress -k -L -f "http://standards-oui.ieee.org/oui/oui.txt" > /etc/aircrack-ng/oui.txt
 [ -e /etc/aircrack-ng/oui.txt ] \
   && (\grep "(hex)" /etc/aircrack-ng/oui.txt | sed 's/^[ \t]*//g;s/[ \t]*$//g' > /etc/aircrack-ng/airodump-ng-oui.txt)
 [[ ! -f /etc/aircrack-ng/airodump-ng-oui.txt ]] \
