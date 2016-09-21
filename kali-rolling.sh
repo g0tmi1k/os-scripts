@@ -761,6 +761,7 @@ for FILE in $(echo ${_TMP}); do rm -f "${FILE}"; done
 [ -e "/usr/share/images/desktop-base/kali-wallpaper_1920x1080.png" ] \
   && ln -sf /usr/share/images/desktop-base/kali-wallpaper_1920x1080.png /usr/share/wallpapers/kali_default2.0-1920x1080.jpg
 #--- New wallpaper & add to startup (so its random each login)
+mkdir -p /usr/local/bin/
 file=/usr/local/bin/rand-wallpaper; [ -e "${file}" ] && cp -n $file{,.bkup}
 cat <<EOF > "${file}" \
   || echo -e ' '${RED}'[!] Issue with writing file'${RESET} 1>&2
@@ -1634,6 +1635,7 @@ cat <<EOF >> "${file}"
 EOF
 fi
 #--- Create start script
+mkdir -p /usr/local/bin/
 file=/usr/local/bin/start-conky; [ -e "${file}" ] && cp -n $file{,.bkup}
 cat <<EOF > "${file}" \
   || echo -e ' '${RED}'[!] Issue with writing file'${RESET} 1>&2
@@ -1837,6 +1839,7 @@ if [ -e /tmp/pycharms-community.tar.gz ]; then
   tar -xf /tmp/pycharms-community.tar.gz -C /tmp/
   rm -rf /opt/pycharms/
   mv -f /tmp/pycharm-community-*/ /opt/pycharms
+  mkdir -p /usr/local/bin/
   ln -sf /opt/pycharms/bin/pycharm.sh /usr/local/bin/pycharms
 fi
 
@@ -2083,6 +2086,7 @@ pushd /opt/graudit-git/ >/dev/null
 git pull -q
 popd >/dev/null
 #--- Add to path
+mkdir -p /usr/local/bin/
 file=/usr/local/bin/graudit-git
 cat <<EOF > "${file}" \
   || echo -e ' '${RED}'[!] Issue with writing file'${RESET} 1>&2
@@ -2378,6 +2382,7 @@ pushd /opt/onetwopunch-git/ >/dev/null
 git pull -q
 popd >/dev/null
 #--- Add to path
+mkdir -p /usr/local/bin/
 file=/usr/local/bin/onetwopunch-git
 cat <<EOF > "${file}" \
   || echo -e ' '${RED}'[!] Issue with writing file'${RESET} 1>&2
@@ -2399,6 +2404,7 @@ git pull -q
 popd >/dev/null
 #--- Add to path
 chmod +x /opt/gnmap-parser-git/gnmap-parser.sh
+mkdir -p /usr/local/bin/
 ln -sf /opt/gnmap-parser-git/gnmap-parser.sh /usr/local/bin/gnmap-parser-git
 
 
@@ -2412,6 +2418,7 @@ gunzip /tmp/udp-proto-scanner.tar.gz
 tar -xf /tmp/udp-proto-scanner.tar -C /opt/
 mv -f /opt/udp-proto-scanner{-1.1,}
 #--- Add to path
+mkdir -p /usr/local/bin/
 file=/usr/local/bin/udp-proto-scanner
 cat <<EOF > "${file}" \
   || echo -e ' '${RED}'[!] Issue with writing file'${RESET} 1>&2
@@ -2433,6 +2440,7 @@ apt -y -qq install clusterd \
 apt -y -qq install webhandler \
   || echo -e ' '${RED}'[!] Issue with apt install'${RESET} 1>&2
 #--- Add to path
+mkdir -p /usr/local/bin/
 ln -sf /usr/bin/webhandler /usr/local/bin/wh
 
 
@@ -2649,6 +2657,7 @@ pushd /opt/wifiphisher-git/ >/dev/null
 git pull -q
 popd >/dev/null
 #--- Add to path
+mkdir -p /usr/local/bin/
 file=/usr/local/bin/wifiphisher-git
 cat <<EOF > "${file}" \
   || echo -e ' '${RED}'[!] Issue with writing file'${RESET} 1>&2
@@ -2683,6 +2692,7 @@ make -s clean
 make -s 2>/dev/null && make -s install   # bad, but it gives errors which might be confusing (still builds)
 popd >/dev/null
 #--- Add to path (with a 'better' name)
+mkdir -p /usr/local/bin/
 ln -sf /usr/bin/proxychains4 /usr/local/bin/proxychains-ng
 
 
@@ -2934,6 +2944,7 @@ wine ~/.wine/drive_c/MinGW/bin/g++.exe /usr/share/windows-binaries/Hyperion-1.0/
   -o /usr/share/windows-binaries/hyperion.exe 2>&1 \
   | grep -v 'If something goes wrong, please rerun with\|for more detailed debugging output'
 #--- Add to path
+mkdir -p /usr/local/bin/
 file=/usr/local/bin/hyperion
 cat <<EOF > "${file}" \
   || echo -e ' '${RED}'[!] Issue with writing file'${RESET} 1>&2
@@ -3098,6 +3109,7 @@ pushd /opt/shellconv-git/ >/dev/null
 git pull -q
 popd >/dev/null
 #--- Add to path
+mkdir -p /usr/local/bin/
 file=/usr/local/bin/shellconv-git
 cat <<EOF > "${file}" \
   || echo -e ' '${RED}'[!] Issue with writing file'${RESET} 1>&2
@@ -3204,6 +3216,7 @@ pushd /opt/wig-git/ >/dev/null
 git pull -q
 popd >/dev/null
 #--- Add to path
+mkdir -p /usr/local/bin/
 file=/usr/local/bin/wig-git
 cat <<EOF > "${file}" \
   || echo -e ' '${RED}'[!] Issue with writing file'${RESET} 1>&2
@@ -3224,6 +3237,7 @@ pushd /opt/cmsmap-git/ >/dev/null
 git pull -q
 popd >/dev/null
 #--- Add to path
+mkdir -p /usr/local/bin/
 file=/usr/local/bin/cmsmap-git
 cat <<EOF > "${file}" \
   || echo -e ' '${RED}'[!] Issue with writing file'${RESET} 1>&2
@@ -3244,6 +3258,7 @@ pushd /opt/droopescan-git/ >/dev/null
 git pull -q
 popd >/dev/null
 #--- Add to path
+mkdir -p /usr/local/bin/
 file=/usr/local/bin/droopescan-git
 cat <<EOF > "${file}" \
   || echo -e ' '${RED}'[!] Issue with writing file'${RESET} 1>&2
@@ -3281,6 +3296,7 @@ pushd /opt/patator-git/ >/dev/null
 git pull -q
 popd >/dev/null
 #--- Add to path
+mkdir -p /usr/local/bin/
 file=/usr/local/bin/patator-git
 cat <<EOF > "${file}" \
   || echo -e ' '${RED}'[!] Issue with writing file'${RESET} 1>&2
@@ -3301,6 +3317,7 @@ pushd /opt/crowbar-git/ >/dev/null
 git pull -q
 popd >/dev/null
 #--- Add to path
+mkdir -p /usr/local/bin/
 file=/usr/local/bin/crowbar-git
 cat <<EOF > "${file}" \
   || echo -e ' '${RED}'[!] Issue with writing file'${RESET} 1>&2
@@ -3342,6 +3359,7 @@ make -s clean;
 make -s 2>/dev/null    # bad, I know
 popd >/dev/null
 #--- Add to path
+mkdir -p /usr/local/bin/
 ln -sf /usr/local/src/nbtscan-unixwiz/nbtscan /usr/local/bin/nbtscan-uw
 #--- Examples
 #nbtscan-uw -f 192.168.0.1/24
@@ -3531,6 +3549,7 @@ timeout 300 curl --progress -k -L -f "http://dbeaver.jkiss.org/files/dbeaver-ce_
 if [ -e /tmp/dbeaver.deb ]; then
   dpkg -i /tmp/dbeaver.deb
   #--- Add to path
+  mkdir -p /usr/local/bin/
   ln -sf /usr/share/dbeaver/dbeaver /usr/local/bin/dbeaver
 fi
 
