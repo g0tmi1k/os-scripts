@@ -477,7 +477,7 @@ fi
 export DISPLAY=:0.0
 apt -y -qq install curl \
   || echo -e ' '${RED}'[!] Issue with apt install'${RESET} 1>&2
-apt -y -qq install xfce4 xfce4-mount-plugin xfce4-notifyd xfce4-places-plugin \
+apt -y -qq install xfce4 xfce4-mount-plugin xfce4-notifyd xfce4-places-plugin xfce4-power-manager \
   || echo -e ' '${RED}'[!] Issue with apt install'${RESET} 1>&2
 (dmidecode | grep -iq virtual) \
   || (apt -y -qq install xfce4-battery-plugin \
@@ -485,6 +485,7 @@ apt -y -qq install xfce4 xfce4-mount-plugin xfce4-notifyd xfce4-places-plugin \
 #--- Configuring XFCE
 mkdir -p ~/.config/xfce4/panel/launcher-{2,4,5,6,7,8,9}/
 mkdir -p ~/.config/xfce4/xfconf/xfce-perchannel-xml/
+#--- Configuring XFCE (Keyboard shortcuts)
 cat <<EOF > ~/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortcuts.xml \
   || echo -e ' '${RED}'[!] Issue with writing file'${RESET} 1>&2
 <?xml version="1.0" encoding="UTF-8"?>
@@ -565,6 +566,21 @@ cat <<EOF > ~/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortcuts.
   <property name="providers" type="array">
     <value type="string" value="xfwm4"/>
     <value type="string" value="commands"/>
+  </property>
+</channel>
+EOF
+#--- Configuring XFCE (Power Options)
+cat <<EOF > ~/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-power-manager.xml \
+  || echo -e ' '${RED}'[!] Issue with writing file'${RESET} 1>&2
+<?xml version="1.0" encoding="UTF-8"?>
+
+<channel name="xfce4-power-manager" version="1.0">
+  <property name="xfce4-power-manager" type="empty">
+    <property name="power-button-action" type="empty"/>
+    <property name="dpms-enabled" type="bool" value="true"/>
+    <property name="blank-on-ac" type="int" value="0"/>
+    <property name="dpms-on-ac-sleep" type="uint" value="0"/>
+    <property name="dpms-on-ac-off" type="uint" value="0"/>
   </property>
 </channel>
 EOF
